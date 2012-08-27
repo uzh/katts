@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query xmlns="http://uzh.ch/ddis/katts/query">
+	<fileSource id="8566940141466928337">
+		<files>
+			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" isZipped="true" zipFileEntry="triples.csv" path="/home/hunziker/Masterarbeit/triples.csv.zip" />
+		</files>
+	</fileSource>
+
+	<tripleFilter applyOnSource="8566940141466928337" groupOn="subject">
+		<filter predicate="wc:price" />
+		<produces>
+			<stream id="tickerPriceStream">
+				<variable type="xsd:decimal" referencesTo="object">ticker.price</variable>
+				<variable type="xsd:string" referencesTo="subject">ticker.recordId</variable>
+			</stream>
+		</produces>
+	</tripleFilter>
+
+	<tripleFilter applyOn="8566940141466928337" groupOn="subject">
+		<filter predicate="wc:ticker" />
+		<produces>
+			<stream id="tickerSymbolStream">
+				<variable type="xsd:decimal" referencesTo="object">ticker.symbol</variable>
+				<variable type="xsd:string" referencesTo="subject">ticker.recordId</variable>
+			</stream>
+		</produces>
+	</tripleFilter>
+
+	<tripleFilter applyOn="8566940141466928337" groupOn="subject">
+		<filter predicate="wc:compname" />
+		<produces>
+			<stream id="tickerCompnameStream">
+				<variable type="xsd:decimal" referencesTo="object">ticker.compname</variable>
+				<variable type="xsd:string" referencesTo="subject">ticker.recordId</variable>
+			</stream>
+		</produces>
+	</tripleFilter>
+
+	<join>
+		<consumes>
+			<stream refid="tickerCompnameStream" groupBy="ticker.recordId" />
+			<stream refid="tickerPriceStream" groupBy="ticker.recordId" />
+		</consumes>
+		<produces>
+			<stream id="tickerPriceCompnameStream" />
+		</produces>
+		<joins>
+			<join onVariable="ticker.recordId" />
+		</joins>
+	</join>
+
+	<join>
+		<consumes>
+			<stream refid="tickerPriceCompnameStream" groupBy="ticker.recordId" />
+			<stream refid="tickerSymbolStream" groupBy="ticker.recordId" />
+		</consumes>
+		<produces>
+			<stream id="tickerPriceCompnameSymbolStream" />
+		</produces>
+		<joins>
+			<join onVariable="ticker.recordId" />
+		</joins>
+	</join>
+
+
+
+
+
+	<min windowSize="30d" slideSize="5d" variable="ticker.price">
+		<consumes>
+			<stream refid="tickerPriceCompnameSymbolStream" groupBy="ticker.symbol" />
+		</consumes>
+		<produces>
+			<stream id="minTickerPrices">
+				<variable type="xsd:decimal" referencesTo="min">ticker.minPrice
+				</variable>
+			</stream>
+		</produces>
+	</min>
+
+	<max windowSize="30d" slideSize="5d" variable="ticker.price">
+		<consumes>
+			<stream refid="tickerPriceCompnameSymbolStream" groupBy="ticker.symbol" />
+		</consumes>
+		<produces>
+			<stream id="maxTickerPrices">
+				<variable type="xsd:decimal" referencesTo="max">ticker.maxPrice
+				</variable>
+			</stream>
+		</produces>
+	</max>
+
+	<join>
+		<consumes>
+			<stream refid="maxTickerPrices" groupBy="ticker.symbol" />
+			<stream refid="minTickerPrices" groupBy="ticker.symbol" />
+		</consumes>
+		<produces>
+			<stream id="minMaxTickerPrices" />
+		</produces>
+		<joins>
+			<join onVariable="ticker.symbol" />
+		</joins>
+	</join>
+
+	<substraction variableOne="ticker.maxPrice" variableTwo="ticker.minPrice">
+		<consumes>
+			<stream refid="minMaxTickerPrices" groupBy="ticker.symbol" />
+		</consumes>
+		<produces>
+			<stream id="volatilityNotAbsTickerPrices">
+				<variable type="xsd:decimal" referencesTo="difference">ticker.volNotAbs
+				</variable>
+			</stream>
+		</produces>
+	</substraction>
+
+	<abs onVariable="ticker.volNotAbs">
+		<consumes>
+			<stream refid="volatilityNotAbsTickerPrices" groupBy="ticker.symbol" />
+		</consumes>
+		<produces>
+			<stream id="volatilityTickerPrices">
+				<variable type="xsd:decimal" referencesTo="abs">ticker.vol
+				</variable>
+			</stream>
+		</produces>
+	</abs>
+
+	<filter>
+		<consumes>
+			<stream refid="volatilityTickerPrices" groupBy="ticker.symbol" />
+		</consumes>
+		<produces>
+			<stream id="highVolatileTickers" />
+		</produces>
+		<conditions>
+			<group type="and">
+				<variableCondition leftVariable="ticker.vol" operator="GT" rightLiteral="50" />
+			</group>
+		</conditions>
+	</filter>
+
+
+	<join intersectionType="equal"> <!-- or "overlaps" or "firstContainsSecond" or "secondContainsFirst" (or "noIntersection" etwas kritisch wegen dem Speicherbedarf )-->
+		<consumes>
+			<stream maxBufferSize="5" streamId="filteredTickerStream">
+				<shuffleGrouping />
+			</stream>
+			<stream maxBufferSize="5" streamId="contracts">
+				<shuffleGrouping />
+			</stream>
+		</consumes>
+		<timeFunctions>
+			<stream  streamId="filteredTickerStream" startFunction="#startDate - #someVariableFromVariableBinding + 3600" endFunction="#startDate" />
+			<stream  streamId="contracts" startFunction="#startDate + #someVariableFromVariableBinding - 3600" endFunction="#endDate"/>
+		</timeFunctions>
+		<joinCondition expression="#stream1.compname.equals(#stream2.company)" />
+		<produces>
+			<stream id="joinedStream" />
+		</produces>
+	</join>
+
+
+
+	<systemOutput>
+		<consumes>
+			<stream refid="highVolatileTickers" groupBy="ticker.symbol" />
+		</consumes>
+	</systemOutput>
+
+</query>

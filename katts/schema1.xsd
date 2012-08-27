@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema elementFormDefault="qualified" version="1.0" targetNamespace="http://uzh.ch/ddis/katts/query" xmlns:tns="http://uzh.ch/ddis/katts/query" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="allGrouping" type="tns:allGrouping"/>
+
+  <xs:element name="fileSource" type="tns:fileSource"/>
+
+  <xs:element name="groupOn" type="tns:groupOn"/>
+
+  <xs:element name="maxAggregate" type="tns:maxAggregate"/>
+
+  <xs:element name="minAggregate" type="tns:minAggregate"/>
+
+  <xs:element name="query" type="tns:query"/>
+
+  <xs:element name="shuffleGrouping" type="tns:shuffleGrouping"/>
+
+  <xs:element name="stream" type="tns:stream"/>
+
+  <xs:element name="systemOutput" type="tns:systemOutput"/>
+
+  <xs:element name="tripleCondition" type="tns:tripleCondition"/>
+
+  <xs:element name="tripleFilter" type="tns:tripleFilter"/>
+
+  <xs:element name="variableGrouping" type="tns:variableGrouping"/>
+
+  <xs:complexType name="query">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="tns:fileSource"/>
+        <xs:element ref="tns:minAggregate"/>
+        <xs:element ref="tns:maxAggregate"/>
+        <xs:element ref="tns:systemOutput"/>
+        <xs:element ref="tns:tripleFilter"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="fileSource">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractSource">
+        <xs:sequence>
+          <xs:element name="files" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="file" type="tns:file" minOccurs="0" maxOccurs="unbounded"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="abstractSource" abstract="true">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractNode">
+        <xs:sequence/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="abstractNode" abstract="true">
+    <xs:sequence/>
+    <xs:attribute name="id" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="file">
+    <xs:sequence/>
+    <xs:attribute name="path" type="xs:string" use="required"/>
+    <xs:attribute name="zipFileEntry" type="xs:string"/>
+    <xs:attribute name="isZipped" type="xs:boolean" use="required"/>
+    <xs:attribute name="mimeType" type="xs:string"/>
+    <xs:attribute name="csvFieldDelimiter" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="minAggregate">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractAggregate">
+        <xs:sequence/>
+        <xs:attribute name="aggregateOn" type="xs:IDREF" use="required"/>
+        <xs:attribute name="windowSize" type="xs:duration" use="required"/>
+        <xs:attribute name="slideSize" type="xs:duration" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="abstractAggregate" abstract="true">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractProcessor">
+        <xs:sequence/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="abstractProcessor" abstract="true">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractNode">
+        <xs:sequence>
+          <xs:element name="consumes" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="stream" type="tns:streamConsumer" minOccurs="0" maxOccurs="unbounded"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="produces" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element ref="tns:stream" minOccurs="0" maxOccurs="unbounded"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="variable">
+    <xs:sequence/>
+    <xs:attribute name="referencesTo" type="xs:string"/>
+    <xs:attribute name="name" type="xs:ID" use="required"/>
+    <xs:attribute name="type" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="streamConsumer">
+    <xs:choice>
+      <xs:element ref="tns:allGrouping"/>
+      <xs:element ref="tns:shuffleGrouping"/>
+      <xs:element ref="tns:variableGrouping"/>
+    </xs:choice>
+    <xs:attribute name="streamId" type="xs:IDREF"/>
+    <xs:attribute name="maxBufferSize" type="xs:int" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="allGrouping">
+    <xs:sequence/>
+  </xs:complexType>
+
+  <xs:complexType name="shuffleGrouping">
+    <xs:sequence/>
+  </xs:complexType>
+
+  <xs:complexType name="variableGrouping">
+    <xs:sequence>
+      <xs:element ref="tns:groupOn" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="groupOn">
+    <xs:sequence/>
+    <xs:attribute name="variableName" type="xs:IDREF" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="stream">
+    <xs:sequence>
+      <xs:element name="variable" type="tns:variable" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+    <xs:attribute name="inheritFrom" type="xs:IDREF"/>
+  </xs:complexType>
+
+  <xs:complexType name="maxAggregate">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractAggregate">
+        <xs:sequence/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="systemOutput">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractOutput">
+        <xs:sequence/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="abstractOutput" abstract="true">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractNode">
+        <xs:sequence>
+          <xs:element name="consumes" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="stream" type="tns:streamConsumer" minOccurs="0" maxOccurs="unbounded"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="tripleFilter">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractNode">
+        <xs:sequence>
+          <xs:element name="conditions" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="condition" type="tns:tripleCondition" minOccurs="0" maxOccurs="unbounded"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="produces" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element ref="tns:stream" minOccurs="0" maxOccurs="unbounded"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="applyOnSource" type="xs:string"/>
+        <xs:attribute name="groupOn" type="xs:string"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="tripleCondition">
+    <xs:sequence/>
+    <xs:attribute name="item" type="xs:string"/>
+    <xs:attribute name="restriction" type="xs:string"/>
+  </xs:complexType>
+</xs:schema>
+

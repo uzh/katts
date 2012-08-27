@@ -1,0 +1,78 @@
+package ch.uzh.ddis.katts.query.source;
+
+import java.io.Serializable;
+
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlTransient;
+
+/**
+ * This class represents a file source. The file source defines the format
+ * and the type of the file.
+ * 
+ * @author Thomas Hunziker
+ *
+ */
+public class File implements Serializable{
+	
+	private static final long serialVersionUID = 1L;
+
+	@XmlAttribute(required=true)
+	private String path;
+	
+	@XmlAttribute(required=false)
+	private String zipFileEntry;
+	
+	@XmlAttribute(required=false)
+	private boolean isZipped = false;
+	
+	@XmlAttribute(required=false)
+	private String mimeType = "text/comma-separated-values";
+	
+	@XmlAttribute(required=false)
+	private String csvFieldDelimiter = ",";
+
+	@XmlTransient
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
+
+	@XmlTransient
+	public String getZipFileEntry() {
+		return zipFileEntry;
+	}
+
+	public void setZipFileEntry(String zipFileEntry) {
+		this.zipFileEntry = zipFileEntry;
+	}
+
+	@XmlTransient
+	public String getCsvFieldDelimiter() {
+		return csvFieldDelimiter;
+	}
+
+	public void setCsvFieldDelimiter(String csvFieldDelimiter) {
+		this.csvFieldDelimiter = csvFieldDelimiter;
+	}
+
+	@XmlTransient
+	public boolean isZipped() {
+		return isZipped;
+	}
+
+	public void setZipped(boolean isZipped) {
+		this.isZipped = isZipped;
+	}
+
+	@XmlTransient
+	public String getMimeType() {
+		return mimeType;
+	}
+
+	public void setMimeType(String mimeType) {
+		this.mimeType = mimeType;
+	}
+}
