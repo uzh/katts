@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query xmlns="http://uzh.ch/ddis/katts/query">
+    <fileSource id="8897655727763874851">
+        <files>
+            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" isZipped="true" zipFileEntry="triples-sample.csv" path="data/triples-sample.csv.zip"/>
+        </files>
+    </fileSource>
+    <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="7061742229678171671">
+        <conditions>
+            <condition restriction="wc:prc" item="predicate"/>
+        </conditions>
+        <produces>
+            <stream id="tickerPrice">
+                <variable type="xs:double" name="ticker_price" referencesTo="object"/>
+                <variable type="xs:string" name="ticker_id" referencesTo="subject"/>
+            </stream>
+        </produces>
+    </tripleFilter>
+    <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="6017081644368877778">
+        <conditions>
+            <condition restriction="wc:ticker" item="predicate"/>
+        </conditions>
+        <produces>
+            <stream id="tickerSymbol">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="object"/>
+                <variable type="xs:string" name="ticker_id" referencesTo="subject"/>
+            </stream>
+        </produces>
+    </tripleFilter>
+    <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="6715347588742850100">
+        <conditions>
+            <condition restriction="wc:comnam" item="predicate"/>
+        </conditions>
+        <produces>
+            <stream id="tickerCompanyName">
+                <variable type="xs:string" name="ticker_compname" referencesTo="object"/>
+                <variable type="xs:string" name="ticker_id" referencesTo="subject"/>
+            </stream>
+        </produces>
+    </tripleFilter>
+<<<<<<< .mine
+    
+    <temporalJoin id="5224022090846748332_001">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerSymbol">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id"/>
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="tickerPrice">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id"/>
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="tickerCompanyName">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id"/>
+                </variableGrouping>
+            </stream>
+        </consumes>
+        
+        <temporalConditions>
+          <insertOn>
+            <temporalCondition variableName="tickerSymbol"/>
+          </insertOn>
+        </temporalConditions>
+        
+        <joinConditions>
+            <sameValue>
+              <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerSymbol"/>
+              <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerPrice"/>
+              <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerCompanyName"/>
+            </sameValue>
+            <!-- <sameValue joinOn="ticker_id"/> -->
+        </joinConditions>
+        
+        <produces>
+            <stream id="tickerStream_2">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol"/>
+                <variable type="xs:double" name="ticker_price" referencesTo="ticker_price"/>
+                <variable type="xs:string" name="ticker_compname" referencesTo="ticker_compname"/>
+            </stream>
+        </produces>
+    </temporalJoin>
+    
+    
+    <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="6704494385085301467">
+=======
+    <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="6788817477757601630">
+>>>>>>> .r1266
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerSymbol">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id"/>
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="tickerPrice">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id"/>
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="tickerCompanyName">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id"/>
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream id="tickerStream">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol"/>
+                <variable type="xs:double" name="ticker_price" referencesTo="ticker_price"/>
+                <variable type="xs:string" name="ticker_compname" referencesTo="ticker_compname"/>
+            </stream>
+        </produces>
+    </oneFieldJoin>
+    <partitioner slideSize="P1D" windowSize="P20D" partitionOn="ticker_symbol" aggregateOn="ticker_price" id="6208158157315429689">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStream">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol"/>
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStream" id="tickerStreamMinMax">
+                <variable type="xs:double" name="ticker_min" referencesTo="min"/>
+                <variable type="xs:double" name="ticker_max" referencesTo="max"/>
+            </stream>
+        </produces>
+        <components>
+            <minPartitioner/>
+            <maxPartitioner/>
+        </components>
+    </partitioner>
+    <expressionFunction expression="#ticker_max / #ticker_min" id="7987247596824458125">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStreamMinMax">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol"/>
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStreamMinMax" id="tickerStreamfct">
+                <variable type="xs:double" name="ticker_fct" referencesTo="result"/>
+            </stream>
+        </produces>
+    </expressionFunction>
+    <expressionFilter expression="#ticker_fct > 1.2" id="7667630733009882228">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStreamfct">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol"/>
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStreamfct" id="filteredTickerStream"/>
+        </produces>
+    </expressionFilter>
+    <fileOutput filePath="data/output.csv" id="8970866840183677242">
+        <consumes>
+            <stream maxBufferSize="5" streamId="filteredTickerStream">
+                <shuffleGrouping/>
+            </stream>
+        </consumes>
+    </fileOutput>
+</query>
+
