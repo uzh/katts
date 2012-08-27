@@ -22,12 +22,12 @@ import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
- * This Bolt joins two streams on a single variable (field) at the same time with 
- * a certain precision. 
+ * This Bolt joins two streams on a single variable (field) at the same time
+ * with a certain precision.
  * 
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 
@@ -38,8 +38,7 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 	private Logger logger = LoggerFactory.getLogger(OneFieldJoinBolt.class);
 
 	@Override
-	public void prepare(Map stormConf, TopologyContext context,
-			OutputCollector collector) {
+	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
 		try {
@@ -56,16 +55,16 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 	@Override
 	public void execute(Event event) {
 		event.getEmittedOn();
-		Object joinOn = event.getVariableValue(this.getConfiguration()
-				.getJoinOn());
-		
-		// This will probably not work for anything but string values and even with string values we're in danger
-		// of working with (http://en.wikipedia.org/wiki/String_interning) strings, which would not provide 
+		Object joinOn = event.getVariableValue(this.getConfiguration().getJoinOn());
+
+		// This will probably not work for anything but string values and even
+		// with string values we're in danger
+		// of working with (http://en.wikipedia.org/wiki/String_interning)
+		// strings, which would not provide
 		// thread safety.
 		synchronized (joinOn) {
 
-			Map<StreamConsumer, PriorityQueue<Event>> variableBuffer = buffers
-					.get(joinOn);
+			Map<StreamConsumer, PriorityQueue<Event>> variableBuffer = buffers.get(joinOn);
 
 			if (variableBuffer == null) {
 				variableBuffer = new HashMap<StreamConsumer, PriorityQueue<Event>>();
@@ -75,8 +74,7 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 				buffers.put(joinOn, variableBuffer);
 			}
 
-			PriorityQueue<Event> streamBuffer = variableBuffer.get(event
-					.getEmittedOn());
+			PriorityQueue<Event> streamBuffer = variableBuffer.get(event.getEmittedOn());
 
 			streamBuffer.add(event);
 			ack(event);
@@ -91,17 +89,14 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 	 * This method tries to find events to join in the queues and emit them on
 	 * the output stream.
 	 */
-	private void joinEventsInBuffers(
-			Map<StreamConsumer, PriorityQueue<Event>> variableBuffer,
-			Event anchorEvent) {
+	private void joinEventsInBuffers(Map<StreamConsumer, PriorityQueue<Event>> variableBuffer, Event anchorEvent) {
 
 		evictUnjoinableEvents(variableBuffer);
 
 		long precision = this.getConfiguration().getJoinPrecision();
 
 		List<Event> peekEvents = new ArrayList<Event>();
-		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer
-				.entrySet()) {
+		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer.entrySet()) {
 
 			// When one queue is empty, no join can be done
 			if (entry.getValue().size() <= 0) {
@@ -118,16 +113,15 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 		for (Event event : peekEvents) {
 			if (event.getStartDate().getTime() < (startDate - precision)
 					|| event.getStartDate().getTime() > (startDate + precision)) {
-				throw new RuntimeException(
-						"The join could not be processed, since some events get out of order. Potentially the OneFieldJoinBolt.evictUnjoinableEvents() failed somehow.");
+				throw new RuntimeException("The join could not be processed, since some events get out of order. "
+						+ "Potentially the OneFieldJoinBolt.evictUnjoinableEvents() failed somehow.");
 			}
 		}
-		
+
 		emitJoinEvents(peekEvents, anchorEvent);
 
 		// Remove the peek events from the queues
-		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer
-				.entrySet()) {
+		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer.entrySet()) {
 			entry.getValue().poll();
 		}
 
@@ -151,22 +145,20 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 	 */
 	private void emitJoinEvents(List<Event> events, Event anchorEvent) {
 		for (Stream stream : this.getStreams()) {
-			VariableBindings bindings = getEmitter().createVariableBindings(stream,
-					anchorEvent);
+			VariableBindings bindings = getEmitter().createVariableBindings(stream, anchorEvent);
 
 			// copy all varables from the input events into the new bindings
 			// variable which we emit from this bolt.
 			for (Event event : events) {
 				for (Variable variable : event.getVariables()) {
-					bindings.add(variable.getName(),
-							event.getVariableValue(variable));
+					bindings.add(variable.getName(), event.getVariableValue(variable));
 				}
 			}
 			bindings.setStartDate(events.get(0).getStartDate());
 			bindings.setEndDate(events.get(0).getEndDate());
-			
+
 			bindings.emit();
-			
+
 		}
 	}
 
@@ -176,21 +168,16 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 	 * 
 	 * @param variableBuffer
 	 */
-	private void evictUnjoinableEvents(
-			Map<StreamConsumer, PriorityQueue<Event>> variableBuffer) {
+	private void evictUnjoinableEvents(Map<StreamConsumer, PriorityQueue<Event>> variableBuffer) {
 		long precision = this.getConfiguration().getJoinPrecision();
-		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer
-				.entrySet()) {
+		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer.entrySet()) {
 			PriorityQueue<Event> queue = entry.getValue();
 
 			if (queue.size() > 0) {
 				Event firstEvent = queue.peek();
-				for (Entry<StreamConsumer, PriorityQueue<Event>> innerEntry : variableBuffer
-						.entrySet()) {
-					if (innerEntry.getValue().size() > 0
-							&& innerEntry.getKey() != entry.getKey()) {
-						if (firstEvent.getStartDate().getTime() < entry
-								.getValue().peek().getStartDate().getTime()
+				for (Entry<StreamConsumer, PriorityQueue<Event>> innerEntry : variableBuffer.entrySet()) {
+					if (innerEntry.getValue().size() > 0 && innerEntry.getKey() != entry.getKey()) {
+						if (firstEvent.getStartDate().getTime() < entry.getValue().peek().getStartDate().getTime()
 								- precision) {
 							// Since the event in the inner loop is greater then
 							// we can be sure, that the outer even
@@ -213,11 +200,9 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 	 * 
 	 * @param variableBuffer
 	 */
-	private void reduceSizeOfAllOversizedQueues(
-			Map<StreamConsumer, PriorityQueue<Event>> variableBuffer) {
+	private void reduceSizeOfAllOversizedQueues(Map<StreamConsumer, PriorityQueue<Event>> variableBuffer) {
 		int max = this.getConfiguration().getMaxBufferSize();
-		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer
-				.entrySet()) {
+		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer.entrySet()) {
 			PriorityQueue<Event> queue = entry.getValue();
 			if (queue.size() > max) {
 				while (queue.size() > max) {
