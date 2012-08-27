@@ -59,7 +59,9 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 		Object joinOn = event.getVariableValue(this.getConfiguration()
 				.getJoinOn());
 		
-		// test comment
+		// This will probably not work for anything but string values and even with string values we're in danger
+		// of working with (http://en.wikipedia.org/wiki/String_interning) strings, which would not provide 
+		// thread safety.
 		synchronized (joinOn) {
 
 			Map<StreamConsumer, PriorityQueue<Event>> variableBuffer = buffers
