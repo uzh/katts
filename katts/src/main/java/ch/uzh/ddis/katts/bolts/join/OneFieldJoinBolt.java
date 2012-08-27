@@ -59,6 +59,7 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 		Object joinOn = event.getVariableValue(this.getConfiguration()
 				.getJoinOn());
 		
+		// test comment
 		synchronized (joinOn) {
 
 			Map<StreamConsumer, PriorityQueue<Event>> variableBuffer = buffers
