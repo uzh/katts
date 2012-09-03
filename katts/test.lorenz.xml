@@ -2,8 +2,8 @@
 <query xmlns="http://uzh.ch/ddis/katts/query">
     <fileSource id="8897655727763874851">
         <files>
-            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" isZipped="true" zipFileEntry="triples-sample.csv" path="data/triples-sample.csv.zip"/>
-            <!--<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/triples-sample.1000.csv"/> -->
+            <!-- <file csvFieldDelimiter="," mimeType="text/comma-separated-values" isZipped="true" zipFileEntry="triples-sample.csv" path="data/triples-sample.csv.zip"/> -->
+            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/triples-sample.1000.csv"/>
         </files>
     </fileSource>
     <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="7061742229678171671">
@@ -85,6 +85,8 @@
         </produces>
     </temporalJoin>    
     
+    
+    
     <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="6704494385085301467">
         <consumes>
             <stream maxBufferSize="5" streamId="tickerSymbol">
@@ -111,6 +113,9 @@
             </stream>
         </produces>
     </oneFieldJoin>
+    
+    
+    
     <partitioner slideSize="P1D" windowSize="P20D" partitionOn="ticker_symbol" aggregateOn="ticker_price" id="6208158157315429689">
         <consumes>
             <stream maxBufferSize="5" streamId="tickerStream">
@@ -158,7 +163,7 @@
     </expressionFilter>
     <fileOutput filePath="data/test.lorenz.output.csv" id="8970866840183677242">
         <consumes>
-            <stream maxBufferSize="5" streamId="filteredTickerStream">
+            <stream maxBufferSize="5" streamId="tickerStream_2">
                 <shuffleGrouping/>
             </stream>
         </consumes>

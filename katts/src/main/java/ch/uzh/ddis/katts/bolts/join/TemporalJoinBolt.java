@@ -15,6 +15,7 @@ import ch.uzh.ddis.katts.query.processor.join.JoinConditionConfiguration;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
+import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
  * The temporal join basically happens in two steps. First, all events arrive over the input streams are kept in the
@@ -109,7 +110,6 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		joinResults = this.joinCondition.join(newBindings, streamId);
 		this.evictionRuleManager.executeAfterEvictionRules(newBindings, streamId);
 
-		
 		/*
 		 * Emit the joined results by creating a variableBindings object for each stream
 		 */
@@ -122,10 +122,12 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 			for (SimpleVariableBindings simpleBindings : joinResults) {
 				VariableBindings bindingsToEmit = getEmitter().createVariableBindings(stream, event);
 
-				for (String key : simpleBindings.keySet()) {
-					bindingsToEmit.add(key, simpleBindings.get(key));
+				for (Variable variable : stream.getVariables()) {
+					if (simpleBindings.get(variable.getName()) == null) {
+						throw new NullPointerException();
+					}
+					bindingsToEmit.add(variable, simpleBindings.get(variable.getName()));
 				}
-
 				bindingsToEmit.setStartDate((Date) simpleBindings.get("startDate"));
 				bindingsToEmit.setEndDate((Date) simpleBindings.get("endDate"));
 

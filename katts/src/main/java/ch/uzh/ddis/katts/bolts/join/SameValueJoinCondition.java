@@ -92,6 +92,7 @@ public class SameValueJoinCondition implements JoinCondition {
 
 					if (!bindingsForValues.containsKey(fieldValue)) {
 						// we don't have to check any other cache and can safely abort here.
+						setsToJoin.clear();
 						break;
 					}
 
@@ -101,7 +102,8 @@ public class SameValueJoinCondition implements JoinCondition {
 
 			if (setsToJoin.size() > 0) {
 				result = new HashSet<SimpleVariableBindings>();
-				for (SimpleVariableBindings bindings : createCartesianBindings(setsToJoin)) {
+				List<SimpleVariableBindings> cartesianBindings = createCartesianBindings(setsToJoin);
+				for (SimpleVariableBindings bindings : cartesianBindings) {
 					result.add(merge(newBindings, bindings));
 				}
 			}
@@ -125,12 +127,7 @@ public class SameValueJoinCondition implements JoinCondition {
 	 */
 	private SimpleVariableBindings merge(SimpleVariableBindings b1, SimpleVariableBindings b2) {
 		SimpleVariableBindings mergedBindings = new SimpleVariableBindings();
-
-		for (String key : b1.keySet()) {
-			if (!ignoredBindings.contains(key)) {
-				mergedBindings.put(key, b1.get(key));
-			}
-		}
+		mergedBindings.putAll(b1);
 
 		/*
 		 * For now, we hard code the handling of startDate and endDate conflicts here. For the future, we could think of
@@ -151,16 +148,16 @@ public class SameValueJoinCondition implements JoinCondition {
 						Date d1 = (Date) existingValue;
 						Date d2 = (Date) conflictingValue;
 						newValue = new Date(Math.max(d1.getTime(), d2.getTime()));
-					} else {
+					} else if (!ignoredBindings.contains(key)) {
 						throw new IllegalStateException(String.format("Conflicting values for key '%1s' "
 								+ "when trying to merge variable bindings %2s into %s3.", key, b2.toString(),
 								mergedBindings.toString()));
 					}
 
 					mergedBindings.put(key, newValue);
-				} else {
-					mergedBindings.put(key, b2.get(key));
 				}
+			} else {
+				mergedBindings.put(key, b2.get(key));
 			}
 		}
 
