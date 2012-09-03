@@ -12,6 +12,9 @@ public interface Bolt extends IRichBolt{
 
 	public void setConsumerStreams(Collection<StreamConsumer> streamConsumer);
 
+	/**
+	 * @return a collection containing all the outgoing streams of this bolt. 
+	 */
 	public Collection<Stream> getStreams();
 
 	public void setStreams(Collection<Stream> streams);

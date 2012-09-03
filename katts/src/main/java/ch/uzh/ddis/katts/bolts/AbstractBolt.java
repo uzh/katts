@@ -23,6 +23,10 @@ public abstract class AbstractBolt extends BaseRichBolt implements Bolt {
 
 	private Map<String, StreamConsumer> streamConsumer = new LinkedHashMap<String, StreamConsumer>();
 
+	/*
+	 * This map holds a reference to all outgoing streams of this bolt. The key of the map is the id of the
+	 * stream while the stream is the actual object representation of the outgoing stream.
+	 */
 	private Map<String, Stream> streams = new LinkedHashMap<String, Stream>();
 
 	private OutputCollector collector;
