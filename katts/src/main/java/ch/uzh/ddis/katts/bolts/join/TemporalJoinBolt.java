@@ -1,6 +1,7 @@
 package ch.uzh.ddis.katts.bolts.join;
 
 import java.lang.reflect.Constructor;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -9,25 +10,22 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
+import ch.uzh.ddis.katts.bolts.VariableBindings;
 import ch.uzh.ddis.katts.query.processor.join.JoinConditionConfiguration;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
+import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
 /**
- * The temporal join basically happens in two steps. First, all events arrive
- * over the input streams are kept in the join cache. The semantic join
- * operation that checks for the actual join conditions is then executed over
- * the data in this cache. Events that do not satisfy the temporal conditions
- * anymore are evicted from the join cache.
+ * The temporal join basically happens in two steps. First, all events arrive over the input streams are kept in the
+ * join cache. The semantic join operation that checks for the actual join conditions is then executed over the data in
+ * this cache. Events that do not satisfy the temporal conditions anymore are evicted from the join cache.
  * 
- * There are three steps that are being executed on the arrival of each new
- * element in the cache. First, a configurable set of eviction rules will be
- * applied to the cache, in order to remove all data entries that have to be
- * removed from the cache <i>before</i> the join conditions are checked. Second,
- * the actual join operation is executed, which will emit all variable bindings
- * that satisfy all join conditions. Lastly, there is a second set of eviction
- * rules that can be configured to be executed <i>after</i> the join has been
- * executed.
+ * There are three steps that are being executed on the arrival of each new element in the cache. First, a configurable
+ * set of eviction rules will be applied to the cache, in order to remove all data entries that have to be removed from
+ * the cache <i>before</i> the join conditions are checked. Second, the actual join operation is executed, which will
+ * emit all variable bindings that satisfy all join conditions. Lastly, there is a second set of eviction rules that can
+ * be configured to be executed <i>after</i> the join has been executed.
  * 
  * @author lfischer
  */
@@ -45,8 +43,7 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	private JoinCondition joinCondition;
 
 	/**
-	 * This manager manages the eviction indices and provides methods for
-	 * invoking the eviction rules.
+	 * This manager manages the eviction indices and provides methods for invoking the eviction rules.
 	 */
 	private EvictionRuleManager evictionRuleManager;
 
@@ -56,8 +53,7 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	// private Logger logger = LoggerFactory.getLogger(TemporalJoinBolt.class);
 
 	/**
-	 * Creates a new instance of this bolt type using the configuration
-	 * provided.
+	 * Creates a new instance of this bolt type using the configuration provided.
 	 * 
 	 * @param configuration
 	 *            the jaxb configuration object.
@@ -113,15 +109,31 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		joinResults = this.joinCondition.join(newBindings, streamId);
 		this.evictionRuleManager.executeAfterEvictionRules(newBindings, streamId);
 
-		if (joinResults.size() > 0) {
-			for (SimpleVariableBindings r : joinResults) {
-				System.out.println(r);
+		
+		/*
+		 * Emit the joined results by creating a variableBindings object for each stream
+		 */
+		for (Stream stream : this.getStreams()) {
+
+			/*
+			 * copy all variable bindings from the result of the join into the new bindings variable which we emit from
+			 * this bolt.
+			 */
+			for (SimpleVariableBindings simpleBindings : joinResults) {
+				VariableBindings bindingsToEmit = getEmitter().createVariableBindings(stream, event);
+
+				for (String key : simpleBindings.keySet()) {
+					bindingsToEmit.add(key, simpleBindings.get(key));
+				}
+
+				bindingsToEmit.setStartDate((Date) simpleBindings.get("startDate"));
+				bindingsToEmit.setEndDate((Date) simpleBindings.get("endDate"));
+
+				bindingsToEmit.emit();
 			}
 		}
 
 		ack(event);
-
-		// emit the joined results
 	}
 
 	@Override

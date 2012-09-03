@@ -23,6 +23,12 @@ import com.google.common.collect.ImmutableSet;
 public class SameValueJoinCondition implements JoinCondition {
 
 	/**
+	 * When merging variable binding in the {@link #merge(SimpleVariableBindings, SimpleVariableBindings)} method we
+	 * ignore all keys that appear in this list.
+	 */
+	private static final Set<String> ignoredBindings = ImmutableSet.of("sequenceNumber");
+
+	/**
 	 * This empty set will be returned by the join method if the new binding could not be joined the the ones already in
 	 * the cache.
 	 */
@@ -119,7 +125,12 @@ public class SameValueJoinCondition implements JoinCondition {
 	 */
 	private SimpleVariableBindings merge(SimpleVariableBindings b1, SimpleVariableBindings b2) {
 		SimpleVariableBindings mergedBindings = new SimpleVariableBindings();
-		mergedBindings.putAll(b1);
+
+		for (String key : b1.keySet()) {
+			if (!ignoredBindings.contains(key)) {
+				mergedBindings.put(key, b1.get(key));
+			}
+		}
 
 		/*
 		 * For now, we hard code the handling of startDate and endDate conflicts here. For the future, we could think of

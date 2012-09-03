@@ -2,7 +2,8 @@
 <query xmlns="http://uzh.ch/ddis/katts/query">
     <fileSource id="8897655727763874851">
         <files>
-            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/triples-sample.1000.csv"/>
+            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" isZipped="true" zipFileEntry="triples-sample.csv" path="data/triples-sample.csv.zip"/>
+            <!--<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/triples-sample.1000.csv"/> -->
         </files>
     </fileSource>
     <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="7061742229678171671">
@@ -155,7 +156,7 @@
             <stream inheritFrom="tickerStreamfct" id="filteredTickerStream"/>
         </produces>
     </expressionFilter>
-    <fileOutput filePath="data/output.csv" id="8970866840183677242">
+    <fileOutput filePath="data/test.lorenz.output.csv" id="8970866840183677242">
         <consumes>
             <stream maxBufferSize="5" streamId="filteredTickerStream">
                 <shuffleGrouping/>
