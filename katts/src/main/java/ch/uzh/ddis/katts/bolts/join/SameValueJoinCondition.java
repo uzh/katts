@@ -1,6 +1,7 @@
 package ch.uzh.ddis.katts.bolts.join;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -119,7 +120,39 @@ public class SameValueJoinCondition implements JoinCondition {
 	private SimpleVariableBindings merge(SimpleVariableBindings b1, SimpleVariableBindings b2) {
 		SimpleVariableBindings mergedBindings = new SimpleVariableBindings();
 		mergedBindings.putAll(b1);
-		mergedBindings.putAll(b2);
+
+		/*
+		 * For now, we hard code the handling of startDate and endDate conflicts here. For the future, we could think of
+		 * creating a conflict management facility.
+		 */
+		for (String key : b2.keySet()) {
+			if (mergedBindings.containsKey(key)) {
+				if (!mergedBindings.get(key).equals(b2.get(key))) {
+					Object existingValue = mergedBindings.get(key);
+					Object conflictingValue = b2.get(key);
+					Object newValue = existingValue;
+
+					if (key.equals("startDate")) {
+						Date d1 = (Date) existingValue;
+						Date d2 = (Date) conflictingValue;
+						newValue = new Date(Math.min(d1.getTime(), d2.getTime()));
+					} else if (key.equals("endDate")) {
+						Date d1 = (Date) existingValue;
+						Date d2 = (Date) conflictingValue;
+						newValue = new Date(Math.max(d1.getTime(), d2.getTime()));
+					} else {
+						throw new IllegalStateException(String.format("Conflicting values for key '%1s' "
+								+ "when trying to merge variable bindings %2s into %s3.", key, b2.toString(),
+								mergedBindings.toString()));
+					}
+
+					mergedBindings.put(key, newValue);
+				} else {
+					mergedBindings.put(key, b2.get(key));
+				}
+			}
+		}
+
 		return mergedBindings;
 	}
 
