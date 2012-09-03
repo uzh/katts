@@ -25,6 +25,7 @@ import ch.uzh.ddis.katts.query.processor.filter.ExpressionFilter;
 import ch.uzh.ddis.katts.query.processor.filter.TripleFilter;
 import ch.uzh.ddis.katts.query.processor.function.ExpressionFunction;
 import ch.uzh.ddis.katts.query.processor.join.OneFieldJoin;
+import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.source.FileSource;
 
 /**
@@ -45,6 +46,7 @@ public class Query {
 		@XmlElementRef(type=ExpressionFunction.class),
 		@XmlElementRef(type=Partitioner.class),
 		@XmlElementRef(type=OneFieldJoin.class),
+		@XmlElementRef(type=TemporalJoinConfiguration.class),
 		@XmlElementRef(type=SystemOutput.class),
 		@XmlElementRef(type=TripleFilter.class),
 		@XmlElementRef(type=ExpressionFilter.class),

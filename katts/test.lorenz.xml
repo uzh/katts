@@ -2,7 +2,7 @@
 <query xmlns="http://uzh.ch/ddis/katts/query">
     <fileSource id="8897655727763874851">
         <files>
-            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" isZipped="true" zipFileEntry="triples-sample.csv" path="data/triples-sample.csv.zip"/>
+            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/triples-sample.1000.csv"/>
         </files>
     </fileSource>
     <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="7061742229678171671">
@@ -12,17 +12,6 @@
         <produces>
             <stream id="tickerPrice">
                 <variable type="xs:double" name="ticker_price" referencesTo="object"/>
-                <variable type="xs:string" name="ticker_id" referencesTo="subject"/>
-            </stream>
-        </produces>
-    </tripleFilter>
-    <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="6017081644368877778">
-        <conditions>
-            <condition restriction="wc:ticker" item="predicate"/>
-        </conditions>
-        <produces>
-            <stream id="tickerSymbol">
-                <variable type="xs:string" name="ticker_symbol" referencesTo="object"/>
                 <variable type="xs:string" name="ticker_id" referencesTo="subject"/>
             </stream>
         </produces>
@@ -38,7 +27,18 @@
             </stream>
         </produces>
     </tripleFilter>
-<<<<<<< .mine
+    <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="6017081644368877778">
+        <conditions>
+            <condition restriction="wc:ticker" item="predicate"/>
+        </conditions>
+        <produces>
+            <stream id="tickerSymbol">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="object"/>
+                <variable type="xs:string" name="ticker_id" referencesTo="subject"/>
+            </stream>
+        </produces>
+    </tripleFilter>
+   
     
     <temporalJoin id="5224022090846748332_001">
         <consumes>
@@ -59,20 +59,21 @@
             </stream>
         </consumes>
         
-        <temporalConditions>
-          <insertOn>
-            <temporalCondition variableName="tickerSymbol"/>
-          </insertOn>
-        </temporalConditions>
+        <evictBefore>
+          <evict from="*" on="*" if="#from.endDate lt #on.startDate"/>
+        </evictBefore>
         
-        <joinConditions>
+        <joinCondition>
+            <sameValue onField="ticker_id"/>
+            <!--
             <sameValue>
               <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerSymbol"/>
               <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerPrice"/>
               <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerCompanyName"/>
             </sameValue>
-            <!-- <sameValue joinOn="ticker_id"/> -->
-        </joinConditions>
+            <expressionCondition expression="#stream1.compname.equals(#stream2.company)" />
+             -->
+        </joinCondition>
         
         <produces>
             <stream id="tickerStream_2">
@@ -81,13 +82,9 @@
                 <variable type="xs:string" name="ticker_compname" referencesTo="ticker_compname"/>
             </stream>
         </produces>
-    </temporalJoin>
-    
+    </temporalJoin>    
     
     <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="6704494385085301467">
-=======
-    <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="6788817477757601630">
->>>>>>> .r1266
         <consumes>
             <stream maxBufferSize="5" streamId="tickerSymbol">
                 <variableGrouping>

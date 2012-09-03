@@ -22,11 +22,7 @@ public class Producers implements List<Stream>, Serializable{
 
 	private static final long serialVersionUID = 1L;
 	private ArrayList<Stream> list = new ArrayList<Stream>();
-	private Node node;
-	
-	public Producers() {
-		
-	}
+	private final Node node;
 	
 	public Producers(Node node) {
 		this.node = node;
@@ -158,10 +154,6 @@ public class Producers implements List<Stream>, Serializable{
 
 	public Node getNode() {
 		return node;
-	}
-
-	public void setNode(Node node) {
-		this.node = node;
 	}
 
 }

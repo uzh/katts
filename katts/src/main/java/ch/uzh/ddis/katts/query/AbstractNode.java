@@ -36,6 +36,7 @@ public abstract class AbstractNode implements Node{
 		
 		int parallelism = getDeclaredParallelism(builder);
 		
+		// does this work with nodes that only produce??
 		if (this instanceof ConsumerNode) {
 			Bolt bolt = ((ConsumerNode)this).getBolt();
 			bolt.setConsumerStreams(((ConsumerNode)this).getConsumers());
