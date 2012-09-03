@@ -32,12 +32,9 @@ public class FileOutputBolt extends AbstractBolt {
 	private int numberOfColumns;
 
 	@Override
-	public void prepare(Map stormConf, TopologyContext context,
-			OutputCollector collector) {
+	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
-		
-		
 		FileWriter fstream;
 		try {
 			fstream = new FileWriter(this.getConfiguration().getFilePath());
@@ -45,23 +42,22 @@ public class FileOutputBolt extends AbstractBolt {
 		} catch (IOException e) {
 			logger.error("Could not open file writer.", e);
 		}
-		
-		// TODO: Currently the output stream can only consume one 
+
+		// TODO: Currently the output stream can only consume one
 		// stream. This should be changed to multiple streams
 		stream = this.getStreamConsumer().iterator().next();
 		numberOfColumns = stream.getStream().getAllVariables().size() + 2;
 		String[] headerLine = new String[numberOfColumns];
 		headerLine[0] = "Start";
 		headerLine[1] = "End";
-		
+
 		int i = 2;
 		for (Variable variable : stream.getStream().getAllVariables()) {
 			headerLine[i] = variable.getName();
 			i++;
 		}
-		
+
 		writer.writeNext(headerLine);
-				
 
 	}
 
@@ -73,11 +69,21 @@ public class FileOutputBolt extends AbstractBolt {
 
 		int i = 2;
 		for (Variable variable : stream.getStream().getAllVariables()) {
-			line[i] = event.getVariableValue(variable).toString();
+			Object variableValue = event.getVariableValue(variable);
+			if (variableValue == null) {
+				throw new IllegalStateException(String.format("Missing variable '%1s' in event: %2s",
+						variable.toString(), event.toString()));
+			}
+			line[i] = variableValue.toString();
 			i++;
 		}
 		writer.writeNext(line);
-		
+		try {
+			writer.flush();
+		} catch (IOException e) {
+			logger.error(String.format("Couldn't write output into file '%1s'", this.getConfiguration().getFilePath()));
+		}
+
 		ack(event);
 	}
 
