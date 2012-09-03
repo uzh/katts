@@ -27,6 +27,7 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  */
 public class VariableBindings {
 
+	/**  The stream on which the variable bindings of this object should be emitted on. */
 	private Stream stream;
 	private Emitter emitter = null;
 	private Map<Variable, Object> variableData = new HashMap<Variable, Object>();
