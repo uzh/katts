@@ -39,7 +39,7 @@ public class SameValueJoinConditionConfiguration implements JoinConditionConfigu
 
 	@Override
 	public String toString() {
-		return String.format("<sameValue onFieldd='%1s'/>",joinField);
+		return String.format("<sameValue onField='%1s'/>",joinField);
 	}
 	
 }
