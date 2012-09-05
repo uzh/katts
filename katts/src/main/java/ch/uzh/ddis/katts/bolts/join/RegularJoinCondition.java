@@ -8,61 +8,67 @@ import java.util.Map;
 import java.util.Set;
 
 import ch.uzh.ddis.katts.query.processor.join.JoinConditionConfiguration;
-import ch.uzh.ddis.katts.query.processor.join.SameValueJoinConditionConfiguration;
+import ch.uzh.ddis.katts.query.processor.join.JoinVariableConfiguration;
+import ch.uzh.ddis.katts.query.processor.join.RegularJoinConditionConfiguration;
 
 import com.google.common.collect.HashMultimap;
 
-/**
- * This condition joins the variable bindings of each stream if they share the same value on a given field.
- * 
- * @author fischer
- * 
- */
-public class SameValueJoinCondition extends AbstractJoinCondition {
+public class RegularJoinCondition extends AbstractJoinCondition {
+
+	/** The name of the field to join for each stream. */
+	private Map<String, String> fieldNames;
 
 	/**
 	 * This set contains the identifiers of all streams this condition works on.
 	 */
 	private Set<String> streamIds;
 
-	/** The name of the field, this condition joins on. */
-	private String joinField;
-
 	/**
 	 * This map contains a multimap for each stream this condition works on. Each multimap contains all the bindings
-	 * that share the same value on the field with name joinField. The key of this map is the shared value itself.
+	 * that share the same value on their respective joinField. The key of this map is the shared value itself.
 	 */
 	private Map<String, HashMultimap<String, SimpleVariableBindings>> joinCache;
 
 	@Override
 	public void prepare(JoinConditionConfiguration configuration, Set<String> streamIds) {
-		SameValueJoinConditionConfiguration castConfiguration;
 
-		if (!(configuration instanceof SameValueJoinConditionConfiguration)) {
+		if (!(configuration instanceof RegularJoinConditionConfiguration)) {
 			throw new IllegalStateException("An object of type " + configuration.getClass()
 					+ " cannot be used to configure an object of type " + this.getClass());
-		}
+		} else {
+			Set<String> testSet;
+			RegularJoinConditionConfiguration castConfiguration = (RegularJoinConditionConfiguration) configuration;
 
-		castConfiguration = (SameValueJoinConditionConfiguration) configuration;
+			this.streamIds = streamIds;
 
-		if (castConfiguration.getJoinField() == null) {
-			throw new IllegalArgumentException("Missing join field 'joinOn' in configuration: " + configuration);
-		}
+			/*
+			 * create field name map and make sure there is at least one variable definition for all defined stream
+			 * identifiers.
+			 */
+			testSet = new HashSet<String>(streamIds);
+			this.fieldNames = new HashMap<String, String>();
+			for (JoinVariableConfiguration joinVariableConfiguration : castConfiguration.getJoinVariables()) {
+				testSet.remove(joinVariableConfiguration.getStreamId());
+				this.fieldNames.put(joinVariableConfiguration.getStreamId(), joinVariableConfiguration.getJoinField());
+			}
+			if (testSet.size() > 0) {
+				throw new IllegalArgumentException("Missing join variable for the following stream(s): "
+						+ testSet.toString());
+			}
 
-		this.joinField = castConfiguration.getJoinField();
-		this.joinCache = new HashMap<String, HashMultimap<String, SimpleVariableBindings>>();
-		this.streamIds = streamIds;
-
-		for (String streamId : this.streamIds) { // create a join map per stream
-			HashMultimap<String, SimpleVariableBindings> mapForStream = HashMultimap.create();
-			this.joinCache.put(streamId, mapForStream);
+			// create join cache
+			this.joinCache = new HashMap<String, HashMultimap<String, SimpleVariableBindings>>();
+			for (String streamId : streamIds) { // create a join map per stream
+				HashMultimap<String, SimpleVariableBindings> mapForStream = HashMultimap.create();
+				this.joinCache.put(streamId, mapForStream);
+			}
 		}
 	}
 
 	@Override
 	public Set<SimpleVariableBindings> join(SimpleVariableBindings newBindings, String fromStreamId) {
 		Set<SimpleVariableBindings> result = AbstractJoinCondition.emptySet;
-		Object fieldValue = newBindings.get(this.joinField.toString());
+		Object fieldValue = newBindings.get(this.fieldNames.get(fromStreamId));
 
 		if (fieldValue != null) {
 			List<Set<SimpleVariableBindings>> setsToJoin;
@@ -105,7 +111,8 @@ public class SameValueJoinCondition extends AbstractJoinCondition {
 
 	@Override
 	public void removeBindingsFromCache(SimpleVariableBindings bindings, String streamId) {
-		this.joinCache.get(streamId).remove(bindings.get(this.joinField), bindings);
+		String joinFieldNameForStream = this.fieldNames.get(streamId);
+		this.joinCache.get(streamId).remove(bindings.get(joinFieldNameForStream), bindings);
 	}
 
 	@Override

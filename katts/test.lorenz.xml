@@ -6,6 +6,9 @@
             <file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/triples-sample.1000.csv"/>
         </files>
     </fileSource>
+    
+    
+    
     <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="7061742229678171671">
         <conditions>
             <condition restriction="wc:prc" item="predicate"/>
@@ -40,6 +43,7 @@
         </produces>
     </tripleFilter>
    
+   
     
     <temporalJoin id="5224022090846748332_001">
         <consumes>
@@ -65,15 +69,15 @@
         </evictBefore>
         
         <joinCondition>
-            <sameValue onField="ticker_id"/>
-            <!--
-            <sameValue>
-              <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerSymbol"/>
-              <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerPrice"/>
-              <joinVariable type="xs:string" variableName="ticker_id" streamId="tickerCompanyName"/>
-            </sameValue>
-            <expressionCondition expression="#stream1.compname.equals(#stream2.company)" />
-             -->
+           <!--  <sameValue onField="ticker_id"/>
+            
+            <expressionCondition expression="#stream1.compname.equals(#stream2.company)" /> -->
+            
+            <regularJoin>
+              <joinVariable fieldName="ticker_id" streamId="tickerSymbol"/>
+              <joinVariable fieldName="ticker_id" streamId="tickerPrice"/>
+              <joinVariable fieldName="ticker_id" streamId="tickerCompanyName"/>
+            </regularJoin> 
         </joinCondition>
         
         <produces>
@@ -161,7 +165,7 @@
             <stream inheritFrom="tickerStreamfct" id="filteredTickerStream"/>
         </produces>
     </expressionFilter>
-    <fileOutput filePath="data/test.lorenz.output.csv" id="8970866840183677242">
+    <fileOutput filePath="data/test.lorenz.output.RegularJoin.csv" id="8970866840183677242">
         <consumes>
             <stream maxBufferSize="5" streamId="tickerStream_2">
                 <shuffleGrouping/>

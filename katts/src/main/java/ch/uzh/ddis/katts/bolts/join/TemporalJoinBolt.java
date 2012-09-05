@@ -76,7 +76,7 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		// Create and configure the join condition
 		if (this.configuration.getJoinCondition().size() != 1) {
 			// TODO lorenz: there has to be better way to do this...
-			throw new IllegalStateException("Zero or multiple join conditions configured. "
+			throw new IllegalArgumentException("Zero or multiple join conditions configured. "
 					+ "You must configure exactly ONE!");
 		} else {
 			JoinConditionConfiguration config;

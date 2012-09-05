@@ -1,2 +1,6 @@
 OneFieldJoin
-TemporalJoin
+TemporalJoinConfiguration
+EvictionRuleConfiguration
+JoinVariableConfiguration
+RegularJoinConditionConfiguration
+SameValueJoinConditionConfiguration
