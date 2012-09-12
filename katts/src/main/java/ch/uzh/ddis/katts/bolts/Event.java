@@ -24,10 +24,23 @@ public class Event implements Comparable<Event>{
 	private Date startDate;
 	private Date endDate;
 	
+	public Event() {
+		
+	}
+	
 	public Event(Tuple tuple, Bolt bolt, StreamConsumer emittedOn) {
 		this.setTuple(tuple);
 		this.setBolt(bolt);
 		this.setEmittedOn(emittedOn);
+		this.setSequenceNumber(tuple.getLongByField("sequenceNumber"));
+		this.setStartDate((Date)tuple.getValueByField("startDate"));
+		this.setEndDate((Date)tuple.getValueByField("endDate"));
+	}
+	
+	public Event(Event event) {
+		this.setTuple(event.getTuple());
+		this.setBolt(event.getBolt());
+		this.setEmittedOn(event.getEmittedOn());
 		this.setSequenceNumber(tuple.getLongByField("sequenceNumber"));
 		this.setStartDate((Date)tuple.getValueByField("startDate"));
 		this.setEndDate((Date)tuple.getValueByField("endDate"));
