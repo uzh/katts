@@ -98,6 +98,9 @@ public class Query {
 	 */
 	@XmlTransient
 	public List<Node> getNodes() {
+		for (Node node : this.nodes){
+			node.setQuery(this);
+		}
 		return nodes;
 	}
 

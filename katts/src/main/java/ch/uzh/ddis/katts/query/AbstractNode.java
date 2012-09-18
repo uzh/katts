@@ -24,6 +24,9 @@ public abstract class AbstractNode implements Node{
 	
 	@XmlAttribute(required=false)
 	private String id = String.valueOf(Math.abs(Utils.randomLong()));
+	
+	@XmlTransient
+	private Query query;
 
 	@Override
 	public boolean validate() throws InvalidNodeConfigurationException {
@@ -85,5 +88,14 @@ public abstract class AbstractNode implements Node{
 			stream.getGrouping().attachToBolt(bolt, stream);
 		}
 		
+	}
+
+	@Override
+	public Query getQuery() {
+		return query;
+	}
+
+	public void setQuery(Query query) {
+		this.query = query;
 	}
 }

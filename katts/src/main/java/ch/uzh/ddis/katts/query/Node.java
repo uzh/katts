@@ -2,6 +2,8 @@ package ch.uzh.ddis.katts.query;
 
 import java.io.Serializable;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 
@@ -53,5 +55,21 @@ public interface Node extends Serializable{
 	 * @param topology
 	 */
 	public void createTopology(TopologyBuilder topology);
+	
+	/**
+	 * This method returns the {@link Query} XML element. This is a reverse linking mechanism.
+	 * 
+	 * @return The query object, which is associate with this node.
+	 */
+	@XmlTransient
+	public Query getQuery();
+	
+	/**
+	 * With this method the linked {@link Query} can be set.
+	 * 
+	 * @param query The query object, which is related to this node.
+	 * @return
+	 */
+	public void setQuery(Query query);
 
 }

@@ -73,7 +73,6 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 	public int getParallelism() {
 		// We assume that a regular processor is fully parallelizable  
 		return 0;
-//		return 1;
 	}
 	
 }
