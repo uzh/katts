@@ -16,36 +16,31 @@ import ch.uzh.ddis.katts.query.stream.grouping.ShuffleGrouping;
 import ch.uzh.ddis.katts.query.stream.grouping.VariableGrouping;
 
 /**
- * This class is the consuming part of a {@link Stream}. The {@link ConsumerNode} can
- * define by this class which stream should be consumed and how the stream should be grouped
- * (see {@link Grouping}).
- * Additionally some configuration on how the stream should be processed
- * can be defined.
+ * This class is the consuming part of a {@link Stream}. The {@link ConsumerNode} can define by this class which stream
+ * should be consumed and how the stream should be grouped (see {@link Grouping}). Additionally some configuration on
+ * how the stream should be processed can be defined.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
-public class StreamConsumer implements Serializable{
-	
+public class StreamConsumer implements Serializable {
+
 	@XmlTransient
 	private static final long serialVersionUID = 1L;
 
-	@XmlElementRefs({ 
-		@XmlElementRef(type=AllGrouping.class), 
-		@XmlElementRef(type=ShuffleGrouping.class), 
-		@XmlElementRef(type=VariableGrouping.class), 
-	})
+	@XmlElementRefs({ @XmlElementRef(type = AllGrouping.class), @XmlElementRef(type = ShuffleGrouping.class),
+			@XmlElementRef(type = VariableGrouping.class), })
 	private Grouping grouping = new ShuffleGrouping();
-	
+
 	@XmlIDREF
-	@XmlAttribute(name="streamId")
+	@XmlAttribute(name = "streamId")
 	private Stream stream;
-	
+
 	@XmlTransient
 	private Node node;
-	
+
 	@XmlTransient
-	private int maxBufferSize = 5;
+	private long bufferTimeout = -1;
 
 	@XmlTransient
 	public Stream getStream() {
@@ -74,29 +69,26 @@ public class StreamConsumer implements Serializable{
 		this.node = node;
 	}
 
-	/**
-	 * This method returns the maximal buffer size in processing
-	 * this stream. The buffer size is usually used by synchronized
-	 * nodes and joining nodes. The buffer size is relative to the
-	 * number of variable bindings in it.
-	 * 
-	 * @return
-	 */
-	@XmlAttribute(name="maxBufferSize", required=true)
-	public int getMaxBufferSize() {
-		return maxBufferSize;
+	@XmlTransient
+	public long getRealBufferTimout() {
+		return getBufferTimeout();
 	}
 
 	/**
-	 * Sets the buffer size. See {@link #getMaxBufferSize()} for more information at
-	 * the buffer size.
+	 * The buffer timeout defines the number of milliseconds an event is stored in the buffer. The timeout is defined
+	 * relative to the event time and not to the system time.
 	 * 
-	 * @param maxBufferSize
+	 * @return The number of milliseconds an event is queued in the buffer. -1 indicates an infinite timeout and -2 indicates the default timeout.
 	 */
-	public void setMaxBufferSize(int maxBufferSize) {
-		this.maxBufferSize = maxBufferSize;
+	@XmlAttribute(name = "bufferTimeout")
+	public long getBufferTimeout() {
+		return bufferTimeout;
 	}
-	
+
+	public void setBufferTimeout(long bufferTimeout) {
+		this.bufferTimeout = bufferTimeout;
+	}
+
 	// TODO: Implement the hashCode method
 
 }

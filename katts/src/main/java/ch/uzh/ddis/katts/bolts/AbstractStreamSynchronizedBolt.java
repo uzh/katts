@@ -80,14 +80,31 @@ public abstract class AbstractStreamSynchronizedBolt extends AbstractSynchronize
 
 		StreamSynchronizedEventWrapper next = buffer.peek();
 
-		if (next != null && isInTemporalOrder(next)) {
-			executeSynchronizedStreamEvent(next);
+		boolean bufferTimeout = false;
+		long timeout = next.getEmittedOn().getRealBufferTimout();
+		if (timeout > 0) {
+			Date lastDate = lastDatePerStream.get(next.getEmittedOn());
 
-			// Since we found an event with correct temporal order, try to find
-			// other events and execute them.
-			executeEventsInBuffer();
+			if (Math.abs((lastDate.getTime() - next.getSynchronizationDate().getTime())) > timeout) {
+				bufferTimeout = true;
+			}
 		}
 
+		if (next != null && (isInTemporalOrder(next) || bufferTimeout)) {
+			executeSynchronizedStreamEvent(next);
+		}
+
+	}
+
+	@Override
+	public void ack(Event event) {
+		super.ack(event);
+
+		buffer.remove(event);
+
+		// Since we found an event with correct temporal order, try to find
+		// other events and execute them.
+		executeEventsInBuffer();
 	}
 
 	/**
@@ -130,13 +147,13 @@ public abstract class AbstractStreamSynchronizedBolt extends AbstractSynchronize
 	 */
 	protected Date getSynchronizationDate(Event event) {
 		setupSynchronizationDateExpression();
-		
+
 		StandardEvaluationContext context = new StandardEvaluationContext();
 		context.setVariable("event", event);
 
 		return (Date) eventSynchronizationExpression.getValue(context);
 	}
-	
+
 	/**
 	 * This method setups the SpEL expression for determine the synchronization date.
 	 */

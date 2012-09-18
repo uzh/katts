@@ -52,7 +52,7 @@ public abstract class AbstractSynchronizedBolt extends AbstractBolt {
 		}
 
 		for (StreamConsumer stream : this.getStreamConsumer()) {
-			buffers.put(stream, new PriorityQueue<Event>(stream.getMaxBufferSize(), new EventTimeComparator()));
+			buffers.put(stream, new PriorityQueue<Event>(20, new EventTimeComparator()));
 		}
 	}
 
@@ -95,7 +95,18 @@ public abstract class AbstractSynchronizedBolt extends AbstractBolt {
 		// TODO: Check if we need to do some thread synchronization
 
 		Event next = buffer.peek();
-		if (next != null && isInSequence(next) || buffer.size() > stream.getMaxBufferSize()) {
+
+		boolean bufferTimeout = false;
+		long timeout = stream.getRealBufferTimout();
+		if (timeout > 0) {
+			Date lastDate = lastDateProcessed.get(next.getEmittedOn());
+
+			if (Math.abs((lastDate.getTime() - next.getStartDate().getTime())) > timeout) {
+				bufferTimeout = true;
+			}
+		}
+
+		if (next != null && (isInSequence(next) || bufferTimeout)) {
 			lastDateProcessed.put(next.getEmittedOn(), next.getStartDate());
 			executeSynchronizedEvent(next);
 		}

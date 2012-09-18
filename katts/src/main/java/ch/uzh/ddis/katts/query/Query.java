@@ -13,6 +13,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -53,6 +54,9 @@ public class Query {
 		@XmlElementRef(type=FileOutput.class),
 	}) 
 	private List<Node> nodes = new ArrayList<Node>();
+	
+	@XmlTransient
+	private long defaultBufferTimeout = -1;
 	
 	
 	/**
@@ -131,6 +135,15 @@ public class Query {
 		} catch (JAXBException e) {
 			return super.toString();
 		}
+	}
+
+	@XmlAttribute()
+	public long getDefaultBufferTimeout() {
+		return defaultBufferTimeout;
+	}
+
+	public void setDefaultBufferTimeout(long defaultBufferTimeout) {
+		this.defaultBufferTimeout = defaultBufferTimeout;
 	}
 	
 	/**
