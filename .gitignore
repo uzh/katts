@@ -9,3 +9,5 @@ evaluation/target
 evaluation/bin
 evaluation/bin/*
 evaluation/target/*
+evaluation/evaluation/bin/target/classes/META-INF/maven/katts/evaluation/pom.properties
+
