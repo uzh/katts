@@ -6,3 +6,6 @@ evaluation/.classpath
 evaluation/.project
 evaluation/.settings
 evaluation/target
+evaluation/bin
+evaluation/bin/*
+evaluation/target/*
