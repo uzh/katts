@@ -8,7 +8,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.commons.collections.MapIterator;
+import org.apache.commons.collections.keyvalue.MultiKey;
 import org.apache.commons.collections.map.MultiKeyMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +34,7 @@ public final class Recorder {
 
 	private CSVWriter taskCsvWriter;
 	private CSVWriter messageCountWriter;
+	private CSVWriter finalMessageCountWriter;
 	private CSVWriter vmStatsWriter;
 	private Map stormConfiguration;
 	private Logger logger = LoggerFactory.getLogger(Recorder.class);
@@ -55,12 +59,19 @@ public final class Recorder {
 		try {
 			taskCsvWriter = new CSVWriter(new FileWriter(this.getFilePath("tasks")));
 			messageCountWriter = new CSVWriter(new FileWriter(this.getFilePath("message_count")));
+			finalMessageCountWriter = new CSVWriter(new FileWriter(this.getFilePath("final_message_count")));
 			vmStatsWriter = new CSVWriter(new FileWriter(this.getFilePath("vm_stats")));
 			
 		} catch (IOException e) {
 			throw new RuntimeException("Could not intialize the monitoring file.", e);
 		}
 		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				writeFinalCountsToHarddisk();
+			}
+		});
 		
 	}
 
@@ -160,5 +171,26 @@ public final class Recorder {
 		}
 		return hostname;
 	}
+	
+	
+	private void writeFinalCountsToHarddisk() {
+		MapIterator it = messageCounter.mapIterator();
+		
+		// The final message count file structure is: sourceTaskId, destinationTaskId, messageCount
+		
+		while(it.hasNext()) {
+			MultiKey next = (MultiKey) it.next();
+			
+			String[] line = new String[3];
+			int i = 0;
+			for (Object key : next.getKeys()) {
+				line[i] = (String)key;
+			}
+			line[i] = (String)messageCounter.get(next);
+			
+			finalMessageCountWriter.writeNext(line);
+		}
+	}
+	
 
 }
