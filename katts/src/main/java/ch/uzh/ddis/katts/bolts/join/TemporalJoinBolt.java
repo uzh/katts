@@ -8,6 +8,7 @@ import java.util.Set;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
+import ch.uzh.ddis.katts.bolts.AbstractStreamSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
@@ -30,9 +31,11 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  * 
  * @author lfischer
  */
-public class TemporalJoinBolt extends AbstractSynchronizedBolt {
+public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 
 	// TODO lorenz: use global storage facility
+
+	private static final long serialVersionUID = 1L;
 
 	/** This object holds the configuration details for this bolt. */
 	private final TemporalJoinConfiguration configuration;
@@ -74,25 +77,19 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		}
 
 		// Create and configure the join condition
-		if (this.configuration.getJoinCondition().size() != 1) {
-			// TODO lorenz: there has to be better way to do this...
-			throw new IllegalArgumentException("Zero or multiple join conditions configured. "
-					+ "You must configure exactly ONE!");
-		} else {
-			JoinConditionConfiguration config;
-			Constructor<? extends JoinCondition> constructor;
+		JoinConditionConfiguration config;
+		Constructor<? extends JoinCondition> constructor;
 
-			// there is always exactly one condition!
-			config = this.configuration.getJoinCondition().get(0);
-			try {
-				constructor = config.getImplementingClass().getConstructor();
-				this.joinCondition = constructor.newInstance();
-			} catch (Exception e) {
-				throw new RuntimeException("Could not instantiate the configured join condition.", e);
-			}
-
-			this.joinCondition.prepare(config, this.incomingStreamIds);
+		// there is always exactly one condition!
+		config = this.configuration.getJoinCondition();
+		try {
+			constructor = config.getImplementingClass().getConstructor();
+			this.joinCondition = constructor.newInstance();
+		} catch (Exception e) {
+			throw new RuntimeException("Could not instantiate the configured join condition.", e);
 		}
+
+		this.joinCondition.prepare(config, this.incomingStreamIds);
 
 		// Create and configure the eviction rules
 		this.evictionRuleManager = new EvictionRuleManager(this.configuration.getBeforeEvictionRules(),
@@ -141,6 +138,12 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	@Override
 	public String getId() {
 		return this.configuration.getId();
+	}
+
+	@Override
+	public String getSynchronizationDateExpression() {
+		// TODO Make this configurable
+		return "event.getEndDate()";
 	}
 
 }

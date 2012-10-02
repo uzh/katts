@@ -26,10 +26,9 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 	@XmlElementRefs({ @XmlElementRef(type = EvictionRuleConfiguration.class) })
 	private List<EvictionRuleConfiguration> evictAfter = new ArrayList<EvictionRuleConfiguration>();
 
-	@XmlElementWrapper(name = "joinCondition")
 	@XmlElementRefs({ @XmlElementRef(type = SameValueJoinConditionConfiguration.class),
-			@XmlElementRef(type = RegularJoinConditionConfiguration.class) })
-	private List<JoinConditionConfiguration> joinCondition = new ArrayList<JoinConditionConfiguration>();
+	@XmlElementRef(type = RegularJoinConditionConfiguration.class) })
+	private JoinConditionConfiguration joinCondition = null;
 
 	/**
 	 * @return all the eviction rules that need to be executed <b>before</b> the join happens.
@@ -48,8 +47,12 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 	/**
 	 * @return a list of all join conditions that have to be met, in order for a variable binding set to be emitted.
 	 */
-	public List<JoinConditionConfiguration> getJoinCondition() {
+	public JoinConditionConfiguration getJoinCondition() {
 		return this.joinCondition;
+	}
+
+	public void setJoinCondition(JoinConditionConfiguration joinCondition) {
+		this.joinCondition = joinCondition;
 	}
 
 	@Override

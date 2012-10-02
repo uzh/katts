@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,7 @@ import ch.uzh.ddis.katts.query.source.FileSource;
  *
  */
 @XmlRootElement()
-public class Query {
+public class Query implements Serializable {
 
 	@XmlElementRefs({ 
 		@XmlElementRef(type=FileSource.class),
@@ -136,7 +137,7 @@ public class Query {
 		try {
 			return getQueryAsString();
 		} catch (JAXBException e) {
-			return super.toString();
+			throw new RuntimeException("Could not build query.", e);
 		}
 	}
 

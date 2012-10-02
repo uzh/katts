@@ -91,32 +91,32 @@
     
     
     
-    <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="6704494385085301467">
-        <consumes>
-            <stream maxBufferSize="5" streamId="tickerSymbol">
-                <variableGrouping>
-                    <groupOn variableName="ticker_id"/>
-                </variableGrouping>
-            </stream>
-            <stream maxBufferSize="5" streamId="tickerPrice">
-                <variableGrouping>
-                    <groupOn variableName="ticker_id"/>
-                </variableGrouping>
-            </stream>
-            <stream maxBufferSize="5" streamId="tickerCompanyName">
-                <variableGrouping>
-                    <groupOn variableName="ticker_id"/>
-                </variableGrouping>
-            </stream>
-        </consumes>
-        <produces>
-            <stream id="tickerStream">
-                <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol"/>
-                <variable type="xs:double" name="ticker_price" referencesTo="ticker_price"/>
-                <variable type="xs:string" name="ticker_compname" referencesTo="ticker_compname"/>
-            </stream>
-        </produces>
-    </oneFieldJoin>
+<!--     <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="6704494385085301467"> -->
+<!--         <consumes> -->
+<!--             <stream maxBufferSize="5" streamId="tickerSymbol"> -->
+<!--                 <variableGrouping> -->
+<!--                     <groupOn variableName="ticker_id"/> -->
+<!--                 </variableGrouping> -->
+<!--             </stream> -->
+<!--             <stream maxBufferSize="5" streamId="tickerPrice"> -->
+<!--                 <variableGrouping> -->
+<!--                     <groupOn variableName="ticker_id"/> -->
+<!--                 </variableGrouping> -->
+<!--             </stream> -->
+<!--             <stream maxBufferSize="5" streamId="tickerCompanyName"> -->
+<!--                 <variableGrouping> -->
+<!--                     <groupOn variableName="ticker_id"/> -->
+<!--                 </variableGrouping> -->
+<!--             </stream> -->
+<!--         </consumes> -->
+<!--         <produces> -->
+<!--             <stream id="tickerStream"> -->
+<!--                 <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol"/> -->
+<!--                 <variable type="xs:double" name="ticker_price" referencesTo="ticker_price"/> -->
+<!--                 <variable type="xs:string" name="ticker_compname" referencesTo="ticker_compname"/> -->
+<!--             </stream> -->
+<!--         </produces> -->
+<!--     </oneFieldJoin> -->
     
     
     

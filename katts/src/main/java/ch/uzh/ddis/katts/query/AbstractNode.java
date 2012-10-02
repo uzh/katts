@@ -91,6 +91,7 @@ public abstract class AbstractNode implements Node{
 	}
 
 	@Override
+	@XmlTransient
 	public Query getQuery() {
 		return query;
 	}
