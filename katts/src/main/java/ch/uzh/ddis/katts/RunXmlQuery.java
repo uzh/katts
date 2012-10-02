@@ -8,6 +8,7 @@ import java.util.List;
 import javax.xml.bind.JAXBException;
 
 import ch.uzh.ddis.katts.monitoring.Recorder;
+import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.monitoring.VmMonitor;
 import ch.uzh.ddis.katts.query.Query;
 import backtype.storm.Config;
@@ -29,6 +30,8 @@ public class RunXmlQuery {
 		String monitoringPath = "";
 		String topologyName = "katts-topology";
 		String path = null;
+		String terminationCheckInterval = null;
+		String terminationFilePath = null;
 		
 		for(int i = 0; i < args.length; i++){
 			if(args[i].equalsIgnoreCase("--monitoring-record-interval")) {
@@ -46,6 +49,14 @@ public class RunXmlQuery {
 			else if(args[i].equalsIgnoreCase("--topology-name")) {
 				i++;
 				topologyName = args[i];
+			}
+			else if(args[i].equalsIgnoreCase("--termination-check-interval")) {
+				i++;
+				terminationCheckInterval = args[i];
+			}
+			else if(args[i].equalsIgnoreCase("--termination-file-path")) {
+				i++;
+				terminationFilePath = args[i];
 			}
 			else {
 				path = args[i];
@@ -78,6 +89,14 @@ public class RunXmlQuery {
 		Config conf = new Config();
 		conf.setNumWorkers(numberOfWorkers);
 		conf.setMaxSpoutPending(5000);
+		
+		if (terminationCheckInterval != null) {
+			conf.put(TerminationMonitor.CONF_TERMINATION_CHECK_INTERVAL, terminationCheckInterval);
+		}
+		
+		if (terminationFilePath != null) {
+			conf.put(TerminationMonitor.CONF_TERMINATION_FILE_PATH, terminationFilePath);
+		}
 		
 		if (monitoring) {
 			

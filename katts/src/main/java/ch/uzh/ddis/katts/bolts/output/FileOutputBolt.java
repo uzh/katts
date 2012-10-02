@@ -18,6 +18,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import ch.uzh.ddis.katts.bolts.AbstractBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerBolt;
+import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
@@ -30,6 +31,7 @@ public class FileOutputBolt extends AbstractBolt {
 	private StreamConsumer stream;
 	private CSVWriter writer;
 	private int numberOfColumns;
+	private TerminationMonitor terminationMonitor;
 
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
@@ -58,6 +60,8 @@ public class FileOutputBolt extends AbstractBolt {
 		}
 
 		writer.writeNext(headerLine);
+		
+		terminationMonitor = TerminationMonitor.getInstance(stormConf);
 
 	}
 
@@ -85,6 +89,8 @@ public class FileOutputBolt extends AbstractBolt {
 		}
 
 		ack(event);
+		
+		terminationMonitor.dataIsSendToOutput();
 	}
 
 	public FileOutputConfiguration getConfiguration() {

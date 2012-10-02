@@ -1,11 +1,15 @@
 package ch.uzh.ddis.katts;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.text.NumberFormat;
 
 public class TestLogging {
 
-	public static void main(String[] args) throws UnknownHostException {
+	public static void main(String[] args) throws IOException {
 		
 		java.net.InetAddress localMachine = java.net.InetAddress.getLocalHost();
 		System.out.println("Hostname of local machine: " + localMachine.getHostName());
@@ -24,8 +28,6 @@ public class TestLogging {
 	    sb.append("total free memory: " + format.format((freeMemory + (maxMemory - allocatedMemory)) / 1024) + "\n");
 		
 		System.out.println(sb);
-		
-		
 		
 	}
 	
