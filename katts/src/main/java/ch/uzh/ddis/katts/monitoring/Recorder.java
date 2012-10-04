@@ -57,10 +57,10 @@ public final class Recorder {
 		this.monitoringPath = (String) this.stormConfiguration.get(MONITORING_FOLDER_PATH);
 		
 		try {
-			taskCsvWriter = new CSVWriter(new FileWriter(this.getFilePath("tasks")));
-			messageCountWriter = new CSVWriter(new FileWriter(this.getFilePath("message_count")));
+			taskCsvWriter 			= new CSVWriter(new FileWriter(this.getFilePath("tasks")));
+			messageCountWriter 		= new CSVWriter(new FileWriter(this.getFilePath("message_count")));
 			finalMessageCountWriter = new CSVWriter(new FileWriter(this.getFilePath("final_message_count")));
-			vmStatsWriter = new CSVWriter(new FileWriter(this.getFilePath("vm_stats")));
+			vmStatsWriter 			= new CSVWriter(new FileWriter(this.getFilePath("vm_stats")));
 			
 		} catch (IOException e) {
 			throw new RuntimeException("Could not intialize the monitoring file.", e);
@@ -102,12 +102,12 @@ public final class Recorder {
 		Long counter = (Long)messageCounter.get(sourceTask, targetTask);
 		if (counter == null) {
 			counter = 1l;
-			messageCounter.put(sourceTask, targetTask, 1);
 		}
 		else {
 			counter++;
-			messageCounter.put(sourceTask, targetTask, counter);
 		}
+		
+		messageCounter.put(sourceTask, targetTask, counter);
 		
 		if (counter%NUMBER_OF_MESSAGE_PER_RECORD == 0) {
 			String[] line = new String[4];
@@ -124,7 +124,7 @@ public final class Recorder {
 	public synchronized void recordMemoryStats(long maxMemory, long allocatedMemory, long freeMemory) {
 		String[] line = new String[5];
 		line[0] = formatter.format(new Date());
-		line[1] = formatter.format(this.getHostName());
+		line[1] = this.getHostName();
 		line[2] = Long.toString(maxMemory);
 		line[3] = Long.toString(allocatedMemory);
 		line[4] = Long.toString(freeMemory);
@@ -184,7 +184,7 @@ public final class Recorder {
 			String[] line = new String[3];
 			int i = 0;
 			for (Object key : next.getKeys()) {
-				line[i] = (String)key;
+				line[i] = ((Integer)key).toString();
 			}
 			line[i] = (String)messageCounter.get(next);
 			
