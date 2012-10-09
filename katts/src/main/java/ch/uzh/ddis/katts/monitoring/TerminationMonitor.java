@@ -26,11 +26,11 @@ public class TerminationMonitor {
 
 	private TerminationMonitor(Map stormConf) {
 
-		if (stormConf.containsKey("katts.terminationCheckInterval")) {
+		if (stormConf.containsKey(CONF_TERMINATION_CHECK_INTERVAL)) {
 			terminationCheckInterval = Integer.valueOf((String) stormConf.get(CONF_TERMINATION_CHECK_INTERVAL));
 		}
 
-		if (stormConf.containsKey("katts.terminationCheckInterval")) {
+		if (stormConf.containsKey(CONF_TERMINATION_FILE_PATH)) {
 			pathToWriteFileWhenTerminated = (String) stormConf.get(CONF_TERMINATION_FILE_PATH);
 		}
 
@@ -39,7 +39,7 @@ public class TerminationMonitor {
 			WaitMonitor waiter = new WaitMonitor(this);
 
 			runner = new Thread(waiter);
-			runner.run();
+			runner.start();
 		}
 
 	}
@@ -78,12 +78,12 @@ public class TerminationMonitor {
 					throw new RuntimeException(
 							"The termination monitor could not send the monitor thread to background.", e);
 				}
-
+				
 				// When the flag is not changed, then we know that in the measured interval
 				// no data is send to output.
 				if (!monitor.isDataSendToOutput) {
 					isStopped = true;
-
+					
 					if (monitor.pathToWriteFileWhenTerminated != null) {
 						try {
 							File file = new File(monitor.pathToWriteFileWhenTerminated);

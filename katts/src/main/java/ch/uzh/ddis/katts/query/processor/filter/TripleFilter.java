@@ -18,6 +18,7 @@ import ch.uzh.ddis.katts.query.AbstractNode;
 import ch.uzh.ddis.katts.query.Node;
 import ch.uzh.ddis.katts.query.ProducerNode;
 import ch.uzh.ddis.katts.query.source.Source;
+import ch.uzh.ddis.katts.query.stream.Producers;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 
@@ -47,7 +48,7 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 	private List<TripleCondition> conditions = new ArrayList<TripleCondition>();
 
 	@XmlTransient
-	private List<Stream> producers = new ArrayList<Stream>();
+	private List<Stream> producers = new Producers(this);
 
 	@XmlElementWrapper(name = "produces")
 	@XmlElement(name = "stream")
@@ -58,13 +59,13 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 
 	public void setProducers(List<Stream> producers) {
 		this.producers = producers;
-		for (Stream p : this.producers) {
-			p.setNode(this);
-		}
+//		for (Stream p : this.producers) {
+//			p.setNode(this);
+//		}
 	}
 
 	public void appendProducer(Stream producer) {
-		producer.setNode(this);
+//		producer.setNode(this);
 		this.getProducers().add(producer);
 	}
 

@@ -8,6 +8,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 
 import ch.uzh.ddis.katts.query.AbstractNode;
+import ch.uzh.ddis.katts.query.stream.Producers;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
@@ -28,7 +29,7 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 	private List<StreamConsumer> consumers = new ArrayList<StreamConsumer>();
 	
 	@XmlTransient
-	private List<Stream> producers = new ArrayList<Stream>();
+	private List<Stream> producers = new Producers(this);
 	
 	@XmlElementWrapper(name="consumes")
 	@XmlElement(name="stream")

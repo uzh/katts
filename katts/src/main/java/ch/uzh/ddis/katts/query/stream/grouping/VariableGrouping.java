@@ -48,7 +48,18 @@ public class VariableGrouping implements Grouping{
 			variables.add(groupOn.getVariable().getName());
 		}
 		
-		bolt.fieldsGrouping(stream.getStream().getNode().getId(), stream.getStream().getId(), new Fields(variables));
+//		System.out.println(stream.getStream().getNode());
+//		
+//		
+		
+		bolt.fieldsGrouping(
+				stream.
+				getStream().
+				getNode().
+				getId(), 
+				stream.getStream().getId(), 
+				new Fields(variables)
+		);
 	}
 
 	/**

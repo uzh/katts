@@ -1,5 +1,6 @@
 package ch.uzh.ddis.katts.monitoring;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -39,7 +40,7 @@ public final class Recorder {
 	private Map stormConfiguration;
 	private Logger logger = LoggerFactory.getLogger(Recorder.class);
 
-	private DateFormat formatter = new SimpleDateFormat("dd.MM.yyyy H:m:s");
+	private DateFormat formatter = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z");
 
 	
 	/**
@@ -57,8 +58,9 @@ public final class Recorder {
 		this.monitoringPath = (String) this.stormConfiguration.get(MONITORING_FOLDER_PATH);
 		
 		try {
-			taskCsvWriter 			= new CSVWriter(new FileWriter(this.getFilePath("tasks")));
+			createMonitoringDirectoryIfNotExists();
 			messageCountWriter 		= new CSVWriter(new FileWriter(this.getFilePath("message_count")));
+			taskCsvWriter 			= new CSVWriter(new FileWriter(this.getFilePath("tasks")));
 			finalMessageCountWriter = new CSVWriter(new FileWriter(this.getFilePath("final_message_count")));
 			vmStatsWriter 			= new CSVWriter(new FileWriter(this.getFilePath("vm_stats")));
 			
@@ -75,7 +77,7 @@ public final class Recorder {
 		
 	}
 
-	public static Recorder getInstance(Map stormConf, String topologyName) {
+	public static synchronized Recorder getInstance(Map stormConf, String topologyName) {
 
 		if (instance == null) {
 			instance = new Recorder(stormConf, topologyName);
@@ -88,7 +90,7 @@ public final class Recorder {
 		return instance;
 	}
 
-	public synchronized void appendTask(int taskId, String componentId) {
+	public void appendTask(int taskId, String componentId) {
 		String[] line = new String[3];
 		line[0] = Integer.toString(taskId);
 		line[1] = componentId;
@@ -148,10 +150,16 @@ public final class Recorder {
 		if (!monitoringPath.endsWith("/")) {
 			path.append("/");
 		}
+		
 
-		path.append(getHostName()).append("_").append(this.topologyName).append("_").append(logDataType).append(".csv");
+		path.append(this.topologyName).append("_").append(logDataType).append(".csv");
 
 		return path.toString();
+	}
+	
+	private void createMonitoringDirectoryIfNotExists() {
+		File file = new File(monitoringPath);
+		file.mkdirs();
 	}
 
 	private String getHostName() {
@@ -190,6 +198,18 @@ public final class Recorder {
 			
 			finalMessageCountWriter.writeNext(line);
 		}
+		
+		try {
+			finalMessageCountWriter.close();
+			vmStatsWriter.close();
+			taskCsvWriter.close();
+			messageCountWriter.close();
+			
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
+		
 	}
 	
 
