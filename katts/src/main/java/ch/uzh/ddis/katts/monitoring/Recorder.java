@@ -97,6 +97,13 @@ public final class Recorder {
 		line[2] = this.getHostName();
 		
 		taskCsvWriter.writeNext(line);
+		
+		try {
+			taskCsvWriter.flush();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
 	}
 
 	public synchronized void recordMessageSending(int sourceTask, int targetTask) {
@@ -119,6 +126,13 @@ public final class Recorder {
 			line[3] = counter.toString();
 			
 			messageCountWriter.writeNext(line);
+			
+			try {
+				messageCountWriter.flush();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			
 		}
 		
 	}
@@ -132,6 +146,11 @@ public final class Recorder {
 		line[4] = Long.toString(freeMemory);
 		
 		vmStatsWriter.writeNext(line);
+		try {
+			vmStatsWriter.flush();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public String getMonitoringPath() {
@@ -200,15 +219,22 @@ public final class Recorder {
 		}
 		
 		try {
-			finalMessageCountWriter.close();
-			vmStatsWriter.close();
-			taskCsvWriter.close();
-			messageCountWriter.close();
-			
+			finalMessageCountWriter.flush();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 		
+//		try {
+//			
+//			vmStatsWriter.close();
+//			taskCsvWriter.close();
+//			messageCountWriter.close();
+//			finalMessageCountWriter.close();
+//			
+//		} catch (IOException e) {
+//			throw new RuntimeException(e);
+//		}
+//		
 		
 	}
 	
