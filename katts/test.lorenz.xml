@@ -80,6 +80,10 @@
             </regularJoin> 
         </joinCondition>
         
+        <evictAfter>
+          <!-- <evict from="*" on="*" if="#from.endDate lt #on.startDate"/> -->
+        </evictAfter>
+                
         <produces>
             <stream id="tickerStream_2">
                 <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol"/>
@@ -165,7 +169,7 @@
             <stream inheritFrom="tickerStreamfct" id="filteredTickerStream"/>
         </produces>
     </expressionFilter>
-    <fileOutput filePath="data/test.lorenz.output.RegularJoin.csv" id="8970866840183677242">
+    <fileOutput filePath="data/test.lorenz.output.csv" id="8970866840183677242">
         <consumes>
             <stream maxBufferSize="5" streamId="tickerStream_2">
                 <shuffleGrouping/>

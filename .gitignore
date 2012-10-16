@@ -2,6 +2,7 @@ katts/.classpath
 katts/.project
 katts/.settings
 katts/target
+<<<<<<< HEAD
 evaluation/.classpath
 evaluation/.project
 evaluation/.settings
@@ -11,3 +12,17 @@ evaluation/bin/*
 evaluation/target/*
 evaluation/evaluation/bin/target/classes/META-INF/maven/katts/evaluation/pom.properties
 
+=======
+
+katts/data/test.lorenz.output.OneFieldJoin.csv
+
+katts/data/test.lorenz.output.RegularJoin.csv
+
+katts/data/.DS_Store
+
+katts/data/test.lorenz.output.SameValueJoin.csv
+
+katts/data/test.lorenz.output.csv
+
+katts/data/output.csv
+>>>>>>> new test setup
