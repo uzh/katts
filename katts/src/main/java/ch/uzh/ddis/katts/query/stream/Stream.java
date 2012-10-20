@@ -38,7 +38,7 @@ public class Stream implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@XmlTransient
-	private String id = String.valueOf(Math.abs(Utils.randomLong()));
+	private String id = String.valueOf(Math.abs(Utils.secureRandomLong()));
 	
 	@XmlTransient
 	private VariableList variables = new VariableList();

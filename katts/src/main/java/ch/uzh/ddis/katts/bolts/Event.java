@@ -53,7 +53,7 @@ public class Event implements Comparable<Event>{
 	@SuppressWarnings("unchecked")
 	public <T> T getVariableValue(Variable variable) {
 		T returnValue = null;
-		Object object = tuple.get(variable.getName());
+		Object object = tuple.getValueByField(variable.getName());
 		
 		try {
 			returnValue = (T) object;

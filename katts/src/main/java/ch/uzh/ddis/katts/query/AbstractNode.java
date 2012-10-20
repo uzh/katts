@@ -23,7 +23,7 @@ public abstract class AbstractNode implements Node{
 	private static final long serialVersionUID = 1L;
 	
 	@XmlAttribute(required=false)
-	private String id = String.valueOf(Math.abs(Utils.randomLong()));
+	private String id = String.valueOf(Math.abs(Utils.secureRandomLong()));
 	
 	@XmlTransient
 	private Query query;

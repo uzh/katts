@@ -40,7 +40,7 @@ public class Variable implements Serializable{
 	
 	@XmlAttribute(required=true)
 	@XmlID
-	private String name = String.valueOf(Math.abs(Utils.randomLong()));
+	private String name = String.valueOf(Math.abs(Utils.secureRandomLong()));
 
 	/**
 	 * Returns the type as string. 

@@ -28,10 +28,8 @@ public class SimpleVariableBindings extends HashMap<String, Object> {
 	}
 
 	public SimpleVariableBindings(Tuple tuple) {
-		for (Object item : tuple.entrySet()) {
-			Map.Entry entry = (Map.Entry) item;
-			
-			put(entry.getKey().toString(), entry.getValue());
+		for (String variableName : tuple.getFields()) {
+			put(variableName, tuple.getValueByField(variableName));
 		}
 	}
 
