@@ -19,7 +19,7 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder{
 	 * parallelism in the way that in the end 2.5 more threads exists than
 	 * workers. 
 	 */
-	public static float FACTOR_OF_THREADS_TO_WORKERS = 2.5f;
+	public float factorOfThreadsPerProcessor = 1.1f;
 
 	public Query getQuery() {
 		return query;
@@ -40,7 +40,7 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder{
 	
 	/**
 	 * This method sets the parallelism to a optimal value depending
-	 * on the number of workers. The constant  FACTOR_OF_THREADS_TO_WORKERS
+	 * on the number of workers. The constant  factorOfThreadsPerProcessor
 	 * controls the behavior of this method.
 	 * 
 	 * @param numberOfWorkers
@@ -60,7 +60,7 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder{
 			}
 		}
 		
-		float parallelism = (FACTOR_OF_THREADS_TO_WORKERS * (float)numberOfWorkers - numberOfWorkersPretermined) / expectedNumberOfInfiniteParallelNodes;
+		float parallelism = (factorOfThreadsPerProcessor * (float)numberOfWorkers - numberOfWorkersPretermined) / expectedNumberOfInfiniteParallelNodes;
 		
 		this.setParallelism(Math.round(Math.max(parallelism, 1)));
 	}
@@ -78,6 +78,14 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder{
 		// TODO: Optimize the resulting storm topology (e.g. MultiBolts)
 		
 		return topology;
+	}
+
+	public float getFactorOfThreadsPerProcessor() {
+		return factorOfThreadsPerProcessor;
+	}
+
+	public void setFactorOfThreadsPerProcessor(float factorOfThreadsPerProcessor) {
+		this.factorOfThreadsPerProcessor = factorOfThreadsPerProcessor;
 	}
 	
 	
