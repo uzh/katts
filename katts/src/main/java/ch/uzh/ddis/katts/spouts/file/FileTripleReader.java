@@ -1,5 +1,8 @@
 package ch.uzh.ddis.katts.spouts.file;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +27,8 @@ public class FileTripleReader implements IRichSpout{
 	private SpoutOutputCollector collector;
 	private FileTripleReaderConfiguration configuration;
 	private List<Source> sources = new ArrayList<Source>();
+	
+	public static final String CONF_STARTING_FILE_PATH_VAR_NAME = "katts_starting_file_path";
 	
 	@Override
 	public void nextTuple() {
@@ -72,6 +77,20 @@ public class FileTripleReader implements IRichSpout{
 		collector = aCollector;
 		
 		buildSources();
+		
+		try {
+			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
+				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
+				java.io.File file = new java.io.File(startingFilePath);
+				file.getParentFile().mkdirs();
+				FileWriter fstream = new FileWriter(file);
+				BufferedWriter out = new BufferedWriter(fstream);
+				out.write(Long.toString(System.currentTimeMillis()));
+				out.close();
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("Could not write the starting file", e);
+		}
 		
 	}
 

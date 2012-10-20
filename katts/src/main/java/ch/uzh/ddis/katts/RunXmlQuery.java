@@ -11,6 +11,7 @@ import ch.uzh.ddis.katts.monitoring.Recorder;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.monitoring.VmMonitor;
 import ch.uzh.ddis.katts.query.Query;
+import ch.uzh.ddis.katts.spouts.file.FileTripleReader;
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;
@@ -32,6 +33,7 @@ public class RunXmlQuery {
 		String path = null;
 		String terminationCheckInterval = null;
 		String terminationFilePath = null;
+		String startingFilePath = null;
 		int numberOfProcessors = 10;
 		int numberOfWorkers = 1000;
 		float factorOfThreadsPerProcessor = 1.1f;
@@ -52,6 +54,9 @@ public class RunXmlQuery {
 			} else if (args[i].equalsIgnoreCase("--termination-check-interval")) {
 				i++;
 				terminationCheckInterval = args[i];
+			} else if (args[i].equalsIgnoreCase("--starting-file-path")) {
+				i++;
+				startingFilePath = args[i];
 			} else if (args[i].equalsIgnoreCase("--termination-file-path")) {
 				i++;
 				terminationFilePath = args[i];
@@ -100,6 +105,10 @@ public class RunXmlQuery {
 
 		if (terminationCheckInterval != null) {
 			conf.put(TerminationMonitor.CONF_TERMINATION_CHECK_INTERVAL, terminationCheckInterval);
+		}
+
+		if (startingFilePath != null) {
+			conf.put(FileTripleReader.CONF_STARTING_FILE_PATH_VAR_NAME, startingFilePath);
 		}
 
 		if (terminationFilePath != null) {
