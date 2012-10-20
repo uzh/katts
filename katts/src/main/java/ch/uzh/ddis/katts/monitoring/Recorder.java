@@ -213,7 +213,7 @@ public final class Recorder {
 			for (Object key : next.getKeys()) {
 				line[i] = ((Integer)key).toString();
 			}
-			line[i] = (String)messageCounter.get(next);
+			line[i] = Long.toString((Long)messageCounter.get(next));
 			
 			finalMessageCountWriter.writeNext(line);
 		}
@@ -223,19 +223,6 @@ public final class Recorder {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		
-//		try {
-//			
-//			vmStatsWriter.close();
-//			taskCsvWriter.close();
-//			messageCountWriter.close();
-//			finalMessageCountWriter.close();
-//			
-//		} catch (IOException e) {
-//			throw new RuntimeException(e);
-//		}
-//		
-		
 	}
 	
 
