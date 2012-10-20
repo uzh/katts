@@ -14,6 +14,8 @@ On a debian linux system (kraken is such a system) you need to make that the fol
   libtool
   autoconf
   openjdk-6-jdk
+  
+For controlling the distribution of the tasks on processors, the util "taskset" must be present. By default this is present on debian / ubuntu like systems. But you may need to install it.
 
 
 More information can be found here: https://github.com/nathanmarz/storm/wiki/Installing-native-dependencies. 

@@ -17,3 +17,8 @@ katts/data/.DS_Store
 katts/data/test.lorenz.output.SameValueJoin.csv
 katts/data/test.lorenz.output.csv
 katts/data/output.csv
+submission_environment/experiments/*
+submission_environment/sample_experiment/evaluation/*
+submission_environment/sample_experiment/tmp/*
+submission_environment/dependencies/bin/*
+

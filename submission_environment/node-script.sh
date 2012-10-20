@@ -46,6 +46,27 @@ fi
 EXPERIMENT_FOLDER="$EXPERIMENT_FOLDER"
 EXPERIMENT="$EXPERIMENT"
 
+
+
+# Construct the processor affinity list:
+PROCESSOR_LIST=""
+NUMBER_OF_PROCESSORS_PER_NODE=0
+for processorId in $NODE_PROCESSOR_LIST
+do
+	if [ "$PROCESSOR_LIST" == "" ]; then
+		PROCESSOR_LIST="$processorId"
+	else
+		PROCESSOR_LIST="$PROCESSOR_LIST,$processorId"
+	fi
+	let NUMBER_OF_PROCESSORS_PER_NODE=NUMBER_OF_PROCESSORS_PER_NODE+1 
+done
+
+# Ensure that the number of nodes variable is set correctly
+NUMBER_OF_NODES="$NUMBER_OF_NODES"
+
+let NUMBER_OF_PROCESSORS=NUMBER_OF_PROCESSORS_PER_NODE*NUMBER_OF_NODES
+
+
 # Setup strom configuration
 kattsHome="$KATTS_HOME"
 sed -i "s/\$JOB_TMP_DIR/$(echo $JOB_TMP_DIR | sed -e 's/\\/\\\\/g' -e 's/\//\\\//g' -e 's/&/\\\&/g')/g" "$JOB_TMP_DIR/storm/conf/storm.yaml"
@@ -85,6 +106,20 @@ if [ "$nimbusNode" == "$nodeHostname" ]; then
 	eval ${NIMBUS_JOB} &
 	NIMBUS_JOB_PID=`ps ax | grep -e "${NIMBUS_JOB}" | grep -v grep | awk '{print $1}'`
 
+	# Set the processor affinity (this works only with linux like systems in this way)
+	taskset -cp "$PROCESSOR_LIST" "$NIMBUS_JOB_PID"
+
+
+	# Start UI
+	if [ "$NUMBER_OF_PROCESSES_PER_NODE" == "yes" ]
+	then
+		UI_JOB="$JOB_TMP_DIR/storm/bin/storm ui"
+		eval ${UI_JOB} &
+		UI_JOB_PID=`ps ax | grep -e "${UI_JOB}" | grep -v grep | awk '{print $1}'`
+	fi
+
+
+
 else
 	# Since we need to start ZooKeeper on the master node, we need to wait a bit
 	# to give time to setup the cluster, before starting the supervisors
@@ -104,11 +139,8 @@ SUPERVISOR_JOB="$JOB_TMP_DIR/storm/bin/storm supervisor"
 eval ${SUPERVISOR_JOB} &
 SUPERVISOR_JOB_PID=`ps ax | grep -e "${SUPERVISOR_JOB}" | grep -v grep | awk '{print $1}'`
 
-# UI
-UI_JOB="$JOB_TMP_DIR/storm/bin/storm ui"
-eval ${UI_JOB} &
-UI_JOB_PID=`ps ax | grep -e "${UI_JOB}" | grep -v grep | awk '{print $1}'`
-
+# Set the processor affinity (this works only with linux like systems in this way)
+taskset -cp "$PROCESSOR_LIST" "$SUPERVISOR_JOB_PID"
 
 
 # Wait that the supervisor is ready
@@ -159,7 +191,7 @@ if [ "$nimbusNode" == "$nodeHostname" ]; then
 	chmod -R 0777 "$EXPERIMENT_FOLDER"
 	
 	# Deploy the topology to the storm cluster	
-	DEPLOY_TOPOLOGY="$JOB_TMP_DIR/storm/bin/storm jar $TOPOLOGY_JAR $TOPOLOGY_DEPLOYMENT_CLASS_NAME $ADDITIONAL_PARAMETERS $QUERY_TMP_FILE -c nimbus.host=$nimbusNode"
+	DEPLOY_TOPOLOGY="$JOB_TMP_DIR/storm/bin/storm jar $TOPOLOGY_JAR $TOPOLOGY_DEPLOYMENT_CLASS_NAME --number-of-processors $NUMBER_OF_PROCESSORS --number-of-workers $NUMBER_OF_NODES  $ADDITIONAL_PARAMETERS $QUERY_TMP_FILE -c nimbus.host=$nimbusNode"
 	eval ${DEPLOY_TOPOLOGY}
 	
 	# Make a file to store the starting time
@@ -192,6 +224,12 @@ kill $SUPERVISOR_JOB_PID
 
 if [ "$nimbusNode" == "$nodeHostname" ]; then
 	kill $NIMBUS_JOB_PID
+	
+	# Kill UI
+	if [ "$NUMBER_OF_PROCESSES_PER_NODE" == "yes" ]
+	then
+		kill $UI_JOB_PID
+	fi
 fi
 
 # Give the processes sometime to shutdown

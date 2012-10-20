@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N katts-$EXPERIMENT
-#PBS -l nodes=$NUMBER_OF_NODES:ppn=23
-#PBS -l walltime=$WALLTIME,cput=2400000,mem=55000mb
+#PBS -l nodes=$NUMBER_OF_NODES:ppn=$NUMBER_OF_PROCESSOR_RESERVED_PER_NODE
+#PBS -l walltime=$WALLTIME,mem=$EXPECTED_MEMORY_CONSUMPTION
 #PBS -j oe
 #PBS -m b
 #PBS -m e
@@ -14,28 +14,11 @@
 # Author: Thomas Hunziker
 #
 
-#counter=0
-#while [ "$counter" != "$NUMBER_OF_NODES" ] 
-#do
-#	pbsdsh -v -n "$counter" "$EXPERIMENT_TMP_FOLDER/node-script.sh" &
-#	let counter=counter+1 
-#done
-
 echo "Try to distribute the scripts..."
 
-nodes=`uniq $PBS_NODEFILE`
-
-#echo $nodes
-
-#for node in $nodes
-#do
-#	#echo $node
-#	#pbsdsh -v -h "$node" "$EXPERIMENT_TMP_FOLDER/node-script.sh" &
-#	pbsdsh -v -n "$node" "$EXPERIMENT_FOLDER/test.sh"
-#done
+pbsdsh -u "$EXPERIMENT_TMP_FOLDER/node-script.sh" 
 
 echo "Scripts are distributed..."
-pbsdsh -u "$EXPERIMENT_TMP_FOLDER/node-script.sh" 
 
 
 EVALUATION_FOLDER="$EXPERIMENT_FOLDER/evaluation"

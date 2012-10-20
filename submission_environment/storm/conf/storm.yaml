@@ -13,9 +13,7 @@ storm.local.hostname: "$LOCAL_HOSTNAME"
 # nimbus.thrift.port: 9835
 
 
-# We have only one Worker per machine
+# We have only one Worker per machine (For each Worker a JVM is created. This normally not required.)
 supervisor.slots.ports:
     - 6700
-#    - 6701
-#    - 6702
-#    - 6703
+
