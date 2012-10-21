@@ -22,6 +22,8 @@ public class TaskMonitor extends BaseTaskHook {
 		recorder = Recorder.getInstance(stormConf, topologyId);
 		recorder.appendTask(thisTaskId, componentId);
 		
+		
+		
 	}
 
 	@Override

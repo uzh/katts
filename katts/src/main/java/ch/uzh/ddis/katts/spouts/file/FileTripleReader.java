@@ -9,6 +9,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
+
 import ch.uzh.ddis.katts.query.source.File;
 import ch.uzh.ddis.katts.spouts.file.source.CSVSource;
 import ch.uzh.ddis.katts.spouts.file.source.Source;
@@ -83,10 +85,7 @@ public class FileTripleReader implements IRichSpout{
 				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
 				java.io.File file = new java.io.File(startingFilePath);
 				file.getParentFile().mkdirs();
-				FileWriter fstream = new FileWriter(file);
-				BufferedWriter out = new BufferedWriter(fstream);
-				out.write(Long.toString(System.currentTimeMillis()));
-				out.close();
+				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
 			}
 		} catch (IOException e) {
 			throw new RuntimeException("Could not write the starting file", e);

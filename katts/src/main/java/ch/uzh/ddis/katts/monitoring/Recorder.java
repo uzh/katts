@@ -167,8 +167,7 @@ public final class Recorder {
 			path.append("/");
 		}
 		
-
-		path.append(this.topologyName).append("_").append(logDataType).append(".csv");
+		path.append(logDataType).append(".csv");
 
 		return path.toString();
 	}

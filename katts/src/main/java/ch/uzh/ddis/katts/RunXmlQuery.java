@@ -1,11 +1,15 @@
 package ch.uzh.ddis.katts;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.JAXBException;
+
+import org.apache.commons.io.FileUtils;
 
 import ch.uzh.ddis.katts.monitoring.Recorder;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
@@ -16,8 +20,11 @@ import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.InvalidTopologyException;
+import backtype.storm.generated.StormTopology;
 
 public class RunXmlQuery {
+	
+	public static final String CONF_EVALUATION_FOLDER_NAME = "katts_evaluation_folder";
 
 	public static void main(String[] args) {
 
@@ -34,6 +41,7 @@ public class RunXmlQuery {
 		String terminationCheckInterval = null;
 		String terminationFilePath = null;
 		String startingFilePath = null;
+		String evaluationFolder = null;
 		int numberOfProcessors = 10;
 		int numberOfWorkers = 1000;
 		float factorOfThreadsPerProcessor = 1.1f;
@@ -60,6 +68,9 @@ public class RunXmlQuery {
 			} else if (args[i].equalsIgnoreCase("--termination-file-path")) {
 				i++;
 				terminationFilePath = args[i];
+			} else if (args[i].equalsIgnoreCase("--evaluation-folder-path")) {
+				i++;
+				evaluationFolder = args[i];
 			} else	if (args[i].equalsIgnoreCase("--number-of-processors")) {
 				i++;
 				numberOfProcessors = Integer.valueOf(args[i]);
@@ -69,7 +80,12 @@ public class RunXmlQuery {
 			} else	if (args[i].equalsIgnoreCase("--factor-of-threads-per-processor")) {
 				i++;
 				factorOfThreadsPerProcessor = Float.valueOf(args[i]);
-			} else {
+			} 
+			else if (args[i].startsWith("--")) {
+				i++;
+				// Unknown parameter, ignore it.
+			}
+			else {
 				path = args[i];
 			}
 		}
@@ -114,6 +130,10 @@ public class RunXmlQuery {
 		if (terminationFilePath != null) {
 			conf.put(TerminationMonitor.CONF_TERMINATION_FILE_PATH, terminationFilePath);
 		}
+		
+		if (evaluationFolder != null) {
+			conf.put(CONF_EVALUATION_FOLDER_NAME, evaluationFolder);
+		}
 
 		if (monitoring) {
 
@@ -128,11 +148,26 @@ public class RunXmlQuery {
 		}
 
 		builder.setQuery(query);
-		builder.setParallelismByNumberOfWorkers(numberOfProcessors);
 		builder.setFactorOfThreadsPerProcessor(factorOfThreadsPerProcessor);
+		builder.setParallelismByNumberOfWorkers(numberOfProcessors);
+		
+		// Write out some information about the job for evaluations purposes:
+		if (evaluationFolder != null) {
+			
+			try {
+				FileUtils.writeStringToFile(new File(evaluationFolder + "/number_of_processors"), Integer.toString(numberOfProcessors));
+				FileUtils.writeStringToFile(new File(evaluationFolder + "/expected_number_of_tasks"), Long.toString(builder.getEstimatedNumberOfTasks()));
+				FileUtils.writeStringToFile(new File(evaluationFolder + "/factor_of_threads_per_processor"), Float.toString(builder.getFactorOfThreadsPerProcessor()));
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
+		}
+		
 
 		try {
-			StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
+			StormTopology topology = builder.createTopology();
+			StormSubmitter.submitTopology(topologyName, conf, topology);
 		} catch (AlreadyAliveException e) {
 			e.printStackTrace();
 			System.exit(0);
@@ -140,7 +175,7 @@ public class RunXmlQuery {
 			e.printStackTrace();
 			System.exit(0);
 		}
-
+		
 	}
 
 	private static String getUsageMessage() {
