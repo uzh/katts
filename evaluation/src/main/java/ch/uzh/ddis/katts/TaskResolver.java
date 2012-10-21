@@ -21,7 +21,7 @@ public class TaskResolver {
 		
 		for (String[] line : lines) {
 			// The tasks file has the structure: taskId, componentId, hostname
-			tasks.put(line[0], line[1]);
+			tasks.put(line[0], line[2]);
 		}
 	}
 	
