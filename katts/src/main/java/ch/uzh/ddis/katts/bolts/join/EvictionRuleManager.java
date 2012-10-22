@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -21,9 +22,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 
 /**
- * Eviction rules define conditions under which certain elements can be evicted
- * from the caches of {@link JoinCondition} and the eviction rule indices. They
- * make use of optimized data structures in order to keep the set of variable
+ * Eviction rules define conditions under which certain elements can be evicted from the caches of {@link JoinCondition}
+ * and the eviction rule indices. They make use of optimized data structures in order to keep the set of variable
  * bindings in the current join cache relevant.
  * 
  * @author fischer
@@ -53,35 +53,26 @@ public class EvictionRuleManager {
 	private JoinCondition joinCondition;
 
 	/**
-	 * Rules for the
-	 * {@link #executeBeforeEvictionRules(SimpleVariableBindings, String)}
-	 * method grouped by the identifier of the stream on which they have to
-	 * operate. See
-	 * {@link #executeEvitionRules(List, SimpleVariableBindings, String)} for
-	 * more information.
+	 * Rules for the {@link #executeBeforeEvictionRules(SimpleVariableBindings, String)} method grouped by the
+	 * identifier of the stream on which they have to operate. See
+	 * {@link #executeEvitionRules(List, SimpleVariableBindings, String)} for more information.
 	 * 
-	 * @see EvictionRuleManager#executeAfterEvictionRules(SimpleVariableBindings,
-	 *      String)
+	 * @see EvictionRuleManager#executeAfterEvictionRules(SimpleVariableBindings, String)
 	 */
 	private HashMultimap<String, EvictionRuleConfiguration> beforeEvictionRules;
 
 	/**
-	 * The for the
-	 * {@link #executeAfterEvictionRules(SimpleVariableBindings, String)} method
-	 * will execute. See
-	 * {@link #executeEvitionRules(List, SimpleVariableBindings, String)} for
-	 * more information.
+	 * The for the {@link #executeAfterEvictionRules(SimpleVariableBindings, String)} method will execute. See
+	 * {@link #executeEvitionRules(List, SimpleVariableBindings, String)} for more information.
 	 * 
-	 * @see EvictionRuleManager#executeAfterEvictionRules(SimpleVariableBindings,
-	 *      String)
+	 * @see EvictionRuleManager#executeAfterEvictionRules(SimpleVariableBindings, String)
 	 */
 	private HashMultimap<String, EvictionRuleConfiguration> afterEvictionRules;
 
 	/**
-	 * For each <b>stream</b> we keep a sorted {@link TreeMap} of all variable
-	 * bindings for both the <b>start</b> and the <b>end</b> time of the
-	 * variable bindings that arrived over it. This data structure keeps all
-	 * this information as follows:
+	 * For each <b>stream</b> we keep a sorted {@link TreeMap} of all variable bindings for both the <b>start</b> and
+	 * the <b>end</b> time of the variable bindings that arrived over it. This data structure keeps all this information
+	 * as follows:
 	 * 
 	 * <pre>
 	 * Map&lt;streamId, Map&lt;DT, TreeMap&lt;TimeValue, HashSet&lt;VariableBinding&gt;&gt;&gt;&gt;
@@ -89,41 +80,32 @@ public class EvictionRuleManager {
 	 * 
 	 * <ul>
 	 * <li>The key of the outer most map is the identifier of the stream.</li>
-	 * <li>The key of the map inside the first map states if the contained
-	 * treemap is sorted by either the start (DT.START) or end (DT.END) time of
-	 * the variable binding</li>
-	 * <li>The key of the TreeMap is a long value representing the standard java
-	 * time of the variable binding.</li>
-	 * <li>The inner most HashSet then contains all variable bindings for the
-	 * given date, date type, and stream.</li>
+	 * <li>The key of the map inside the first map states if the contained treemap is sorted by either the start
+	 * (DT.START) or end (DT.END) time of the variable binding</li>
+	 * <li>The key of the TreeMap is a long value representing the standard java time of the variable binding.</li>
+	 * <li>The inner most HashSet then contains all variable bindings for the given date, date type, and stream.</li>
 	 * </ul>
 	 */
 	private HashMap<String, HashMap<DT, TreeMap<Long, HashSet<SimpleVariableBindings>>>> evictionCaches;
 
 	/**
-	 * After creating the manager, new bindings can be added to its indexes
-	 * using the {@link #addBindingsToIndices(SimpleVariableBindings, String)}
-	 * method. The methods
+	 * After creating the manager, new bindings can be added to its indexes using the
+	 * {@link #addBindingsToIndices(SimpleVariableBindings, String)} method. The methods
 	 * {@link #executeBeforeEvictionRules(SimpleVariableBindings, String)} and
-	 * {@link #executeAfterEvictionRules(SimpleVariableBindings, String)}
-	 * methods will evict variable bindings from the indexes of this manager and
-	 * also from the index of the provided {@link #joinCondition}.
+	 * {@link #executeAfterEvictionRules(SimpleVariableBindings, String)} methods will evict variable bindings from the
+	 * indexes of this manager and also from the index of the provided {@link #joinCondition}.
 	 * 
 	 * @param beforeEvictionRules
-	 *            a collection of configuration details for the eviction rules
-	 *            that have to be executed <i>before</i> the actual join takes
-	 *            place.
+	 *            a collection of configuration details for the eviction rules that have to be executed <i>before</i>
+	 *            the actual join takes place.
 	 * @param afterEvictionRules
-	 *            a collection of configuration details for the eviction rules
-	 *            that have to be executed <i>before</i> the actual join takes
-	 *            place.
+	 *            a collection of configuration details for the eviction rules that have to be executed <i>before</i>
+	 *            the actual join takes place.
 	 * @param joinCondition
-	 *            the configured join condition instance. This reference is
-	 *            necessary, so the rules in this manager can remove the evicted
-	 *            variable bindings from the join cache accordingly.
+	 *            the configured join condition instance. This reference is necessary, so the rules in this manager can
+	 *            remove the evicted variable bindings from the join cache accordingly.
 	 * @param streamIds
-	 *            a set containing the identifiers of all streams this condition
-	 *            will process data of.
+	 *            a set containing the identifiers of all streams this condition will process data of.
 	 * 
 	 * @see #addBindingsToIndices(SimpleVariableBindings, String)
 	 * @see #executeBeforeEvictionRules(SimpleVariableBindings, String)
@@ -135,8 +117,7 @@ public class EvictionRuleManager {
 		this.streamIds = streamIds;
 
 		/*
-		 * create a sorted treemap for both the start times and the end times of
-		 * variable bindings per stream
+		 * create a sorted treemap for both the start times and the end times of variable bindings per stream
 		 */
 		this.evictionCaches = new HashMap<String, HashMap<DT, TreeMap<Long, HashSet<SimpleVariableBindings>>>>();
 		for (String streamId : streamIds) {
@@ -155,13 +136,10 @@ public class EvictionRuleManager {
 	}
 
 	/**
-	 * This method creates the rule index maps for fast rule retrieval. The are
-	 * later used by the
-	 * {@link #executeEvitionRules(List, SimpleVariableBindings, String)}
-	 * method.
+	 * This method creates the rule index maps for fast rule retrieval. The are later used by the
+	 * {@link #executeEvitionRules(List, SimpleVariableBindings, String)} method.
 	 * 
-	 * @see EvictionRuleManager#executeEvitionRules(List,
-	 *      SimpleVariableBindings, String)
+	 * @see EvictionRuleManager#executeEvitionRules(List, SimpleVariableBindings, String)
 	 * @return a map based on the
 	 */
 	private HashMultimap<String, EvictionRuleConfiguration> createRuleMaps(List<EvictionRuleConfiguration> rules) {
@@ -177,16 +155,14 @@ public class EvictionRuleManager {
 	}
 
 	/**
-	 * This method evaluates the configured expression of the 'from' and 'to'
-	 * fields in the configuration of an eviction rule. These fields can contain
-	 * either a single star ("*") character or a comma separated list of stream
-	 * identifiers. The validity of the stream identifiers are tested against
-	 * the contents of the member variable {@link #streamIds}.
+	 * This method evaluates the configured expression of the 'from' and 'to' fields in the configuration of an eviction
+	 * rule. These fields can contain either a single star ("*") character or a comma separated list of stream
+	 * identifiers. The validity of the stream identifiers are tested against the contents of the member variable
+	 * {@link #streamIds}.
 	 * 
 	 * @param expression
 	 *            the configuration expression to be evaluated.
-	 * @return a list containing all identifiers configured by the supplied
-	 *         expression
+	 * @return a list containing all identifiers configured by the supplied expression
 	 */
 	private List<String> evaluateIdExpression(String expression) {
 		List<String> result = new ArrayList<String>();
@@ -214,61 +190,51 @@ public class EvictionRuleManager {
 	}
 
 	/**
-	 * Calling this method will run all eviction rules that have been configured
-	 * to be ran "before" the join.
+	 * Calling this method will run all eviction rules that have been configured to be ran "before" the join.
 	 * 
-	 * <b>Please Note:</b> This method will not add the bindings to this
-	 * managers indices. You will have to do this yourself using the
-	 * {@link #addBindingsToIndices(SimpleVariableBindings, String)} method.
+	 * <b>Please Note:</b> This method will not add the bindings to this managers indices. You will have to do this
+	 * yourself using the {@link #addBindingsToIndices(SimpleVariableBindings, String)} method.
 	 * 
 	 * @param newBindings
 	 *            the new variable bindings object that has been received.
 	 * @param arrivedOnStreamId
-	 *            the identifier of the stream the variable bindings have been
-	 *            received on.
+	 *            the identifier of the stream the variable bindings have been received on.
 	 */
 	public void executeBeforeEvictionRules(SimpleVariableBindings newBindings, String arrivedOnStreamId) {
 		executeEvitionRules(this.beforeEvictionRules, newBindings, arrivedOnStreamId);
 	}
 
 	/**
-	 * Calling this method will run all eviction rules that have been configured
-	 * to be ran "after" the join.
+	 * Calling this method will run all eviction rules that have been configured to be ran "after" the join.
 	 * 
-	 * <b>Please Note:</b> This method will not add the bindings to this
-	 * managers indices. You will have to do this yourself using the
-	 * {@link #addBindingsToIndices(SimpleVariableBindings, String)} method.
+	 * <b>Please Note:</b> This method will not add the bindings to this managers indices. You will have to do this
+	 * yourself using the {@link #addBindingsToIndices(SimpleVariableBindings, String)} method.
 	 * 
 	 * @param newBindings
 	 *            the new variable bindings object that has been received.
 	 * @param arrivedOnStreamId
-	 *            the identifier of the stream the variable bindings have been
-	 *            received on.
+	 *            the identifier of the stream the variable bindings have been received on.
 	 */
 	public void executeAfterEvictionRules(SimpleVariableBindings newBindings, String arrivedOnStreamId) {
 		executeEvitionRules(this.afterEvictionRules, newBindings, arrivedOnStreamId);
 	}
 
 	/**
-	 * Executes the provided eviction rules for the new provided bindings that
-	 * have arrived on the stream identified by arrivedOnStreamId.
+	 * Executes the provided eviction rules for the new provided bindings that have arrived on the stream identified by
+	 * arrivedOnStreamId.
 	 * 
-	 * The user can specify the stream on which the rule is "listening" on
-	 * (using the "on" field). This field accepts a comma separated list of
-	 * stream identifiers or a single star ('*') character. Whenever a new
-	 * variable binding arrives, we check which rules need to be executed based
-	 * on the identifier of the stream the variable binding arrived on. The way
-	 * the "from" field es evaluated works analogous. See
-	 * {@link #createRuleMaps()} and {@link #evaluateIdExpression(String)} for
-	 * how the index maps we use here are being created.
+	 * The user can specify the stream on which the rule is "listening" on (using the "on" field). This field accepts a
+	 * comma separated list of stream identifiers or a single star ('*') character. Whenever a new variable binding
+	 * arrives, we check which rules need to be executed based on the identifier of the stream the variable binding
+	 * arrived on. The way the "from" field es evaluated works analogous. See {@link #createRuleMaps()} and
+	 * {@link #evaluateIdExpression(String)} for how the index maps we use here are being created.
 	 * 
 	 * @param evictionRules
 	 *            the rules to execute.
 	 * @param newBindings
 	 *            the new variable bindings object that has been received.
 	 * @param arrivedOnStreamId
-	 *            the identifier of the stream the variable bindings have been
-	 *            received on.
+	 *            the identifier of the stream the variable bindings have been received on.
 	 * @see #createRuleMaps()
 	 */
 	private void executeEvitionRules(HashMultimap<String, EvictionRuleConfiguration> evictionRules,
@@ -277,12 +243,10 @@ public class EvictionRuleManager {
 		ExpressionParser expressionParser = new SpelExpressionParser();
 
 		/*
-		 * Example expression: * #{ from.getLongByField('endDate') <
-		 * on.getLongByField('startDate') }
+		 * Example expression: * #{ from.getLongByField('endDate') < on.getLongByField('startDate') }
 		 * 
-		 * since we expect most of the eviction expression being based on
-		 * 'endDate' and 'startDate' our objects support these two fields in the
-		 * java bean notation
+		 * since we expect most of the eviction expression being based on 'endDate' and 'startDate' our objects support
+		 * these two fields in the java bean notation
 		 * 
 		 * #{ from.endDate < on.startDate }
 		 */
@@ -309,14 +273,13 @@ public class EvictionRuleManager {
 
 				// TODO lorenz: support equals conditions!
 				/*
-				 * Our treemap is sorted by the date of the "from" condition. We
-				 * start looking for items to evict starting from both ends of
-				 * the treemap and stop as soon as the expression is false for
-				 * the first time. This way we make sure, that we only process
-				 * as many items as we absolutely have to.
+				 * Our treemap is sorted by the date of the "from" condition. We start looking for items to evict
+				 * starting from both ends of the treemap and stop as soon as the expression is false for the first
+				 * time. This way we make sure, that we only process as many items as we absolutely have to.
 				 */
-				for (Iterator<Long> iter : ImmutableList.of(sortedMap.navigableKeySet().iterator(), sortedMap
-						.descendingKeySet().iterator())) {
+				for (NavigableSet<Long> set : ImmutableList.of(sortedMap.navigableKeySet(),
+						sortedMap.descendingKeySet())) {
+					Iterator<Long> iter = set.iterator();
 					List<SimpleVariableBindings> bindingsToRemove = new ArrayList<SimpleVariableBindings>();
 
 					while (iter.hasNext()) {
@@ -367,8 +330,7 @@ public class EvictionRuleManager {
 	 * @param newBindings
 	 *            the new variable bindings object that has been received.
 	 * @param arrivedOnStreamId
-	 *            the identifier of the stream the variable bindings have been
-	 *            received on.
+	 *            the identifier of the stream the variable bindings have been received on.
 	 */
 	public void addBindingsToIndices(SimpleVariableBindings newBindings, String arrivedOnStreamId) {
 		for (DT dt : DT.values()) {
