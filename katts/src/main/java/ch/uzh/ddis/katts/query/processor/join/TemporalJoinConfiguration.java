@@ -26,8 +26,10 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 	@XmlElementRefs({ @XmlElementRef(type = EvictionRuleConfiguration.class) })
 	private List<EvictionRuleConfiguration> evictAfter = new ArrayList<EvictionRuleConfiguration>();
 
-	@XmlElementRefs({ @XmlElementRef(type = SameValueJoinConditionConfiguration.class),
-	@XmlElementRef(type = RegularJoinConditionConfiguration.class) })
+	@XmlElementRefs({ 
+		@XmlElementRef(type = SameValueJoinConditionConfiguration.class),
+		@XmlElementRef(type = RegularJoinConditionConfiguration.class)
+		})
 	private JoinConditionConfiguration joinCondition = null;
 
 	/**
