@@ -9,7 +9,6 @@ import java.util.Set;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import ch.uzh.ddis.katts.bolts.AbstractStreamSynchronizedBolt;
-import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
 import ch.uzh.ddis.katts.query.processor.join.JoinConditionConfiguration;
@@ -143,7 +142,7 @@ public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 	@Override
 	public String getSynchronizationDateExpression() {
 		// TODO Make this configurable
-		return "event.getEndDate()";
+		return "#event.endDate";
 	}
 
 }
