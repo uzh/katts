@@ -1,5 +1,5 @@
 #!/bin/bash
-export JAVA_HOME=$(/usr/libexec/java_home)
+export JAVA_HOME=${JAVA_HOME:/usr/libexec/java_home}
 
 if [ ! -d "$JAVA_HOME/include" ]; then
     echo "
@@ -13,12 +13,14 @@ Looks like you're missing your 'include' directory. If you're using Mac OS X, Yo
 fi
 
 #install zeromq
-wget http://download.zeromq.org/historic/zeromq-2.1.7.tar.gz
+wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
 tar -xzf zeromq-2.1.7.tar.gz
 cd zeromq-2.1.7
 ./configure
 make
 sudo make install
+
+cd ../
 
 #install jzmq (both native and into local maven cache)
 git clone https://github.com/nathanmarz/jzmq.git
