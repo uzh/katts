@@ -40,9 +40,6 @@ public final class Recorder {
 	private Map stormConfiguration;
 	private Logger logger = LoggerFactory.getLogger(Recorder.class);
 
-	private DateFormat formatter = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z");
-
-	
 	/**
 	 * This configuration sets after how many messages an record is written.
 	 */
@@ -120,7 +117,7 @@ public final class Recorder {
 		
 		if (counter%NUMBER_OF_MESSAGE_PER_RECORD == 0) {
 			String[] line = new String[4];
-			line[0] = formatter.format(new Date());
+			line[0] = Long.toString(System.currentTimeMillis());
 			line[1] = Integer.toString(sourceTask);
 			line[2] = Integer.toString(targetTask);
 			line[3] = counter.toString();
@@ -139,7 +136,7 @@ public final class Recorder {
 
 	public synchronized void recordMemoryStats(long maxMemory, long allocatedMemory, long freeMemory) {
 		String[] line = new String[5];
-		line[0] = formatter.format(new Date());
+		line[0] = Long.toString(System.currentTimeMillis());
 		line[1] = this.getHostName();
 		line[2] = Long.toString(maxMemory);
 		line[3] = Long.toString(allocatedMemory);
@@ -170,8 +167,7 @@ public final class Recorder {
 			path.append("/");
 		}
 		
-
-		path.append(this.topologyName).append("_").append(logDataType).append(".csv");
+		path.append(logDataType).append(".csv");
 
 		return path.toString();
 	}
@@ -212,8 +208,9 @@ public final class Recorder {
 			int i = 0;
 			for (Object key : next.getKeys()) {
 				line[i] = ((Integer)key).toString();
+				i++;
 			}
-			line[i] = (String)messageCounter.get(next);
+			line[i] = Long.toString((Long)messageCounter.get(next));
 			
 			finalMessageCountWriter.writeNext(line);
 		}
@@ -223,19 +220,6 @@ public final class Recorder {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		
-//		try {
-//			
-//			vmStatsWriter.close();
-//			taskCsvWriter.close();
-//			messageCountWriter.close();
-//			finalMessageCountWriter.close();
-//			
-//		} catch (IOException e) {
-//			throw new RuntimeException(e);
-//		}
-//		
-		
 	}
 	
 

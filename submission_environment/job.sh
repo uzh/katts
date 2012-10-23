@@ -74,8 +74,13 @@ if [ -f "$BOOTSTRAP_FILE" ]; then
 	. $BOOTSTRAP_FILE
 fi
 
+<<<<<<< HEAD
 # Variable that are exportet to the torque script (variable names should not contain whitespaces):
 variables="KATTS_JOB_TMP_FOLDER KATTS_HOME KATTS_JOB_FOLDER KATTS_JOB TOPOLOGY_JAR QUERY_FILE ADDITIONAL_PARAMETERS NUMBER_OF_NODES WALLTIME DEBUG TOPOLOGY_DEPLOYMENT_CLASS_NAME STARTUP_UI NODE_PROCESSOR_LIST NUMBER_OF_PROCESSOR_RESERVED_PER_NODE EXPECTED_MEMORY_CONSUMPTION GOOGLE_USERNAME GOOGLE_PASSWORD GOOGLE_SPREADSHEET_NAME"
+=======
+# Variable that are exportet to the torque script (variables should not contain empty chars):
+variables="EXPERIMENT_TMP_FOLDER KATTS_HOME EXPERIMENT_FOLDER EXPERIMENT TOPOLOGY_JAR QUERY_FILE ADDITIONAL_PARAMETERS NUMBER_OF_NODES WALLTIME DEBUG TOPOLOGY_DEPLOYMENT_CLASS_NAME"
+>>>>>>> 2178ed49e8197e54b1cd5cd784dc7e1281161351
 
 # Create the torque script:
 cp "torque-script.sh" "$KATTS_JOB_TMP_FOLDER"
@@ -122,7 +127,12 @@ then
 	cat "$KATTS_JOB_TMP_FOLDER/torque-script.sh" | qsub -d "$KATTS_JOB_TMP_FOLDER/torque-log"
 	
 else
+<<<<<<< HEAD
 	bash "$KATTS_JOB_TMP_FOLDER/torque-script.sh"
 fi
 
 
+=======
+	bash "$EXPERIMENT_TMP_FOLDER/torque-script.sh"
+fi
+>>>>>>> 2178ed49e8197e54b1cd5cd784dc7e1281161351

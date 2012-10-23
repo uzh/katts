@@ -10,9 +10,43 @@ public class AggregateEvaluationData {
 			System.exit(0);
 		}
 		
-		String pathToEvaluationFolder = args[0];
+		String googleSpreadSheetName = null;
+		String googleUsername = null;
+		String googlePassword = null;
+		String pathToEvaluationFolder = "";
+		String jobName = null;
 		
-		Aggregator aggregator = new Aggregator(pathToEvaluationFolder);
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].equalsIgnoreCase("--google-spreadsheet-name")) {
+				i++;
+				googleSpreadSheetName = args[i];
+			} else if (args[i].equalsIgnoreCase("--google-username")) {
+				i++;
+				googleUsername = args[i];
+			} else if (args[i].equalsIgnoreCase("--google-password")) {
+				i++;
+				googlePassword = args[i];
+			} else if (args[i].equalsIgnoreCase("--job-name")) {
+				i++;
+				jobName = args[i];
+			} 
+			else if (args[i].startsWith("--")) {
+				i++;
+				// Unknown parameter, ignore it.
+			}
+			else {
+				pathToEvaluationFolder = args[i];
+			}
+		}
+		
+		Aggregator aggregator = new Aggregator(pathToEvaluationFolder, jobName);
+		
+		if (googleSpreadSheetName != null && googleUsername != null && googlePassword != null) {
+			GoogleSpreadsheet spreadsheet = new GoogleSpreadsheet(googleUsername, googlePassword, googleSpreadSheetName);
+			aggregator.setGoogleSpreadsheet(spreadsheet);
+		}
+		
+		
 		aggregator.aggregateMessagePerHost();
 		
 		

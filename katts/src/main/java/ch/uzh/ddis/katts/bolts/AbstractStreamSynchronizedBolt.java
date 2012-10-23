@@ -77,23 +77,22 @@ public abstract class AbstractStreamSynchronizedBolt extends AbstractSynchronize
 	 * This method executes all events in the buffer, with the correct temporal order.
 	 */
 	private void executeEventsInBuffer() {
-
 		StreamSynchronizedEventWrapper next = buffer.peek();
+		if (next != null) {
+			boolean bufferTimeout = false;
+			long timeout = next.getEmittedOn().getRealBufferTimout();
+			if (timeout > 0) {
+				Date lastDate = lastDatePerStream.get(next.getEmittedOn());
 
-		boolean bufferTimeout = false;
-		long timeout = next.getEmittedOn().getRealBufferTimout();
-		if (timeout > 0) {
-			Date lastDate = lastDatePerStream.get(next.getEmittedOn());
+				if (Math.abs((lastDate.getTime() - next.getSynchronizationDate().getTime())) > timeout) {
+					bufferTimeout = true;
+				}
+			}
 
-			if (Math.abs((lastDate.getTime() - next.getSynchronizationDate().getTime())) > timeout) {
-				bufferTimeout = true;
+			if ((isInTemporalOrder(next) || bufferTimeout)) {
+				executeSynchronizedStreamEvent(next);
 			}
 		}
-
-		if (next != null && (isInTemporalOrder(next) || bufferTimeout)) {
-			executeSynchronizedStreamEvent(next);
-		}
-
 	}
 
 	@Override

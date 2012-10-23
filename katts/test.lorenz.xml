@@ -2,8 +2,17 @@
 <query xmlns="http://uzh.ch/ddis/katts/query">
     <fileSource id="8897655727763874851">
         <files>
-            <!-- <file csvFieldDelimiter="," mimeType="text/comma-separated-values" isZipped="true" zipFileEntry="triples-sample.csv" path="data/triples-sample.csv.zip"/> -->
-            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/triples-sample.1000.csv"/>
+            <!--  <file csvFieldDelimiter="," 
+                  mimeType="text/comma-separated-values" 
+                  isZipped="true" 
+                  zipFileEntry="triples-sample.csv" 
+                  path="data/triples-sample.csv.zip"/>  -->
+            <!-- <file csvFieldDelimiter="," 
+                  mimeType="text/comma-separated-values" 
+                  path="data/triples-sample.1000.csv"/> -->
+            <file csvFieldDelimiter="," 
+                  mimeType="text/comma-separated-values" 
+                  path="data/2001_7ticker_wrds_crsp.sorted.triples"/>      
         </files>
     </fileSource>
     
@@ -11,7 +20,7 @@
     
     <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="7061742229678171671">
         <conditions>
-            <condition restriction="wc:prc" item="predicate"/>
+            <condition restriction="PRC" item="predicate"/> <!-- ticker price -->
         </conditions>
         <produces>
             <stream id="tickerPrice">
@@ -22,7 +31,7 @@
     </tripleFilter>
     <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="6715347588742850100">
         <conditions>
-            <condition restriction="wc:comnam" item="predicate"/>
+            <condition restriction="COMNAM" item="predicate"/> <!-- company name -->
         </conditions>
         <produces>
             <stream id="tickerCompanyName">
@@ -33,7 +42,7 @@
     </tripleFilter>
     <tripleFilter groupOn="subject" applyOnSource="8897655727763874851" id="6017081644368877778">
         <conditions>
-            <condition restriction="wc:ticker" item="predicate"/>
+            <condition restriction="TICKER" item="predicate"/> <!-- ticker symbol -->
         </conditions>
         <produces>
             <stream id="tickerSymbol">
@@ -68,24 +77,26 @@
           <evict from="*" on="*" if="#from.endDate lt #on.startDate"/>
         </evictBefore>
         
-        <joinCondition>
-           <!--  <sameValue onField="ticker_id"/>
+        <!-- join condition -->
+        <sameValue onField="ticker_id"/>
+        
+        <!-- <joinCondition>
+             <sameValue onField="ticker_id"/>
             
-            <expressionCondition expression="#stream1.compname.equals(#stream2.company)" /> -->
-            
+            <expressionCondition expression="#stream1.compname.equals(#stream2.company)" /> 
             <regularJoin>
               <joinVariable fieldName="ticker_id" streamId="tickerSymbol"/>
               <joinVariable fieldName="ticker_id" streamId="tickerPrice"/>
               <joinVariable fieldName="ticker_id" streamId="tickerCompanyName"/>
             </regularJoin> 
-        </joinCondition>
+        </joinCondition>-->
         
         <evictAfter>
           <!-- <evict from="*" on="*" if="#from.endDate lt #on.startDate"/> -->
         </evictAfter>
                 
         <produces>
-            <stream id="tickerStream_2">
+            <stream id="tickerStream">
                 <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol"/>
                 <variable type="xs:double" name="ticker_price" referencesTo="ticker_price"/>
                 <variable type="xs:string" name="ticker_compname" referencesTo="ticker_compname"/>
@@ -171,7 +182,7 @@
     </expressionFilter>
     <fileOutput filePath="data/test.lorenz.output.csv" id="8970866840183677242">
         <consumes>
-            <stream maxBufferSize="5" streamId="tickerStream_2">
+            <stream maxBufferSize="5" streamId="filteredTickerStream">
                 <shuffleGrouping/>
             </stream>
         </consumes>

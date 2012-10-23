@@ -1,10 +1,12 @@
 package ch.uzh.ddis.katts.monitoring;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
+
+import org.apache.commons.io.FileUtils;
+
+import ch.uzh.ddis.katts.RunXmlQuery;
 
 public class TerminationMonitor {
 
@@ -14,11 +16,15 @@ public class TerminationMonitor {
 
 	private boolean isDataSendToOutput = false;
 
-	private int terminationCheckInterval = 60000;
+	private int terminationCheckInterval = 20000;
 	
 	private long lastOutputSendOn = 0;
+	
+	private long messageCount = 0;
 
 	private String pathToWriteFileWhenTerminated = null;
+	
+	private String evaluationFolder = null;
 	
 	public static final String CONF_TERMINATION_CHECK_INTERVAL = "katts.terminationCheckInterval";
 	public static final String CONF_TERMINATION_FILE_PATH = "katts.terminationFilePath";
@@ -32,6 +38,10 @@ public class TerminationMonitor {
 
 		if (stormConf.containsKey(CONF_TERMINATION_FILE_PATH)) {
 			pathToWriteFileWhenTerminated = (String) stormConf.get(CONF_TERMINATION_FILE_PATH);
+		}
+
+		if (stormConf.containsKey(RunXmlQuery.CONF_EVALUATION_FOLDER_NAME)) {
+			evaluationFolder = (String) stormConf.get(RunXmlQuery.CONF_EVALUATION_FOLDER_NAME);
 		}
 
 		if (terminationCheckInterval > 0 ) {
@@ -52,9 +62,10 @@ public class TerminationMonitor {
 		return instance;
 	}
 
-	public void dataIsSendToOutput() {
+	public synchronized void dataIsSendToOutput() {
 		isDataSendToOutput = true;
 		lastOutputSendOn = System.currentTimeMillis();
+		messageCount++;
 	}
 	
 	
@@ -88,16 +99,22 @@ public class TerminationMonitor {
 						try {
 							File file = new File(monitor.pathToWriteFileWhenTerminated);
 							file.getParentFile().mkdirs();
-							FileWriter fstream;
-							fstream = new FileWriter(file);
-							BufferedWriter out = new BufferedWriter(fstream);
-							Long millis = monitor.lastOutputSendOn;
-							out.write(millis.toString());
-							out.close();
+							FileUtils.writeStringToFile(file, Long.toString(monitor.lastOutputSendOn));
 						} catch (IOException e) {
 							throw new RuntimeException("The termination monitor could not write the termination file.", e);
 						}
 					}
+					
+					if (monitor.evaluationFolder != null) {
+						try {
+							File file = new File(monitor.evaluationFolder + "/number_of_tuples_outputed");
+							file.getParentFile().mkdirs();
+							FileUtils.writeStringToFile(file, Long.toString(monitor.messageCount));
+						} catch (IOException e) {
+							throw new RuntimeException("The termination monitor could create the file for the number of tuples outputed.", e);
+						}
+					}
+					
 					
 				}
 			}

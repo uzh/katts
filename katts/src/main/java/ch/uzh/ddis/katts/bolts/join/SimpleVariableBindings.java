@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import backtype.storm.tuple.Tuple;
 
@@ -20,8 +19,6 @@ import backtype.storm.tuple.Tuple;
  * @author fischer
  * 
  */
-@SuppressWarnings("rawtypes")
-// tuple is not typed, so we can't really do anything here.
 public class SimpleVariableBindings extends HashMap<String, Object> {
 
 	public SimpleVariableBindings() {
