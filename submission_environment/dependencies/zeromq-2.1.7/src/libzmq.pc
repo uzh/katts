@@ -1,4 +1,4 @@
-prefix=/home/user/hunziker/katts/submission_environment/dependencies/bin
+prefix=/home/user/lfischer/katts/submission_environment/dependencies/bin
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
