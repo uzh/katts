@@ -32,7 +32,7 @@ public class FileTripleReader implements IRichSpout {
 	private List<Source> sources = new ArrayList<Source>();
 
 	public static final String CONF_STARTING_FILE_PATH_VAR_NAME = "katts_starting_file_path";
-	
+
 	@Override
 	public void nextTuple() {
 		final String dateStringValue;
@@ -43,12 +43,12 @@ public class FileTripleReader implements IRichSpout {
 		List<String> triple = null;
 		try {
 			triple = sources.iterator().next().getNextTriple();
-			if (triple == null) {
-				return;
-			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(String.format("Unable to read next triple because: %1s", e.getMessage()), e);
+		}
+
+		if (triple == null) {
+			return;
 		}
 
 		// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
@@ -90,7 +90,7 @@ public class FileTripleReader implements IRichSpout {
 
 		try {
 			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
-				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
+				String startingFilePath = (String) conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
 				java.io.File file = new java.io.File(startingFilePath);
 				file.getParentFile().mkdirs();
 				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
@@ -98,18 +98,7 @@ public class FileTripleReader implements IRichSpout {
 		} catch (IOException e) {
 			throw new RuntimeException("Could not write the starting file", e);
 		}
-		
-		try {
-			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
-				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
-				java.io.File file = new java.io.File(startingFilePath);
-				file.getParentFile().mkdirs();
-				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
-			}
-		} catch (IOException e) {
-			throw new RuntimeException("Could not write the starting file", e);
-		}
-		
+
 	}
 
 	private void buildSources() {
