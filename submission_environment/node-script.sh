@@ -6,7 +6,7 @@
 # Author: Thomas Hunziker
 #
 
-NODES_FOLDER="$EXPERIMENT_TMP_FOLDER/nodes"
+NODES_FOLDER="$KATTS_JOB_TMP_FOLDER/nodes"
 if [ ! -d "$NODES_FOLDER" ]; then
 	mkdir "$NODES_FOLDER"
 fi
@@ -37,15 +37,17 @@ cp -r "$KATTS_HOME/storm" "$JOB_TMP_DIR/"
 #JAVA_HOME="/usr/lib/jvm/java-6-sun-1.6.0.26"
 
 
-EVALUATION_FOLDER="$EXPERIMENT_FOLDER/evaluation"
+EVALUATION_FOLDER="$KATTS_JOB_FOLDER/evaluation"
 rm -rdf "$EVALUATION_FOLDER"
 if [ ! -d "$EVALUATION_FOLDER" ]; then
 	mkdir "$EVALUATION_FOLDER"
 fi
 
-EXPERIMENT_FOLDER="$EXPERIMENT_FOLDER"
-EXPERIMENT="$EXPERIMENT"
+KATTS_JOB_FOLDER="$KATTS_JOB_FOLDER"
+KATTS_JOB="$KATTS_JOB"
 
+# Copy data from home to temp direcotry:
+cp -r "$KATTS_JOB_FOLDER/data" "$JOB_TMP_DIR/"
 
 
 # Construct the processor affinity list:
@@ -83,7 +85,7 @@ if [ "$nimbusNode" == "$nodeHostname" ]; then
 	ZOOKEEPER_FOLDER="$JOB_TMP_DIR/zookeeper"
 	sed -i "s/\$JOB_TMP_DIR/$(echo $JOB_TMP_DIR | sed -e 's/\\/\\\\/g' -e 's/\//\\\//g' -e 's/&/\\\&/g')/g" "$ZOOKEEPER_FOLDER/conf/zoo.cfg"
 	
-	ZOO_LOG_DIR="$EXPERIMENT_TMP_FOLDER/zookeeper-log"
+	ZOO_LOG_DIR="$KATTS_JOB_TMP_FOLDER/zookeeper-log"
 	
 	# Create Tmp folder
 	if [ ! -d "$ZOO_LOG_DIR" ]; then
@@ -96,10 +98,7 @@ if [ "$nimbusNode" == "$nodeHostname" ]; then
 	bash "$JOB_TMP_DIR/zookeeper/bin/zkServer.sh" start
 	
 	# Debug output
-	if [ "$DEBUG" == "True" ]
-	then
-		echo "Start the nimbus daemon"
-	fi
+	echo "Start the nimbus daemon"
 	
 	# Start Nimbus node 
 	NIMBUS_JOB="$JOB_TMP_DIR/storm/bin/storm nimbus"
@@ -111,7 +110,7 @@ if [ "$nimbusNode" == "$nodeHostname" ]; then
 
 
 	# Start UI
-	if [ "$NUMBER_OF_PROCESSES_PER_NODE" == "yes" ]
+	if [ "$STARTUP_UI" == "yes" ]
 	then
 		UI_JOB="$JOB_TMP_DIR/storm/bin/storm ui"
 		eval ${UI_JOB} &
@@ -128,10 +127,7 @@ fi
 
 
 # Debug output
-if [ "$DEBUG" == "True" ]
-then
-	echo "Start the supervisor daemon"
-fi
+echo "Start the supervisor daemon"
 
 
 # Startup the supervisor
@@ -144,7 +140,7 @@ taskset -cp "$PROCESSOR_LIST" "$SUPERVISOR_JOB_PID"
 
 
 # Wait that the supervisor is ready
-sleep 20
+sleep 10
 
 TERMINATION_FILE="$EVALUATION_FOLDER/terminated_on"
 
@@ -157,7 +153,7 @@ if [ "$nimbusNode" == "$nodeHostname" ]; then
 	
 	# Variable that are exportet to the $ADDITIONAL_PARAMETERS and to the query.xml
 	
-	variables="JOB_TMP_DIR EVALUATION_FOLDER MONITORING_DATA_PATH EXPERIMENT_FOLDER TERMINATION_FILE EXPERIMENT"
+	variables="JOB_TMP_DIR EVALUATION_FOLDER MONITORING_DATA_PATH KATTS_JOB_FOLDER TERMINATION_FILE KATTS_JOB"
 
 	for variable in $variables
 	do
@@ -168,7 +164,7 @@ if [ "$nimbusNode" == "$nodeHostname" ]; then
 	done
 
 	# Create the query script:
-	QUERY_TMP_FILE="$EXPERIMENT_TMP_FOLDER/query.xml"
+	QUERY_TMP_FILE="$KATTS_JOB_TMP_FOLDER/query.xml"
 	cp "$QUERY_FILE" "$QUERY_TMP_FILE"
 
 	for variable in $variables
@@ -181,30 +177,29 @@ if [ "$nimbusNode" == "$nodeHostname" ]; then
 
 
 	# Debug output
-	if [ "$DEBUG" == "True" ]
-	then
-		echo ""
-		echo "Deploy query"
-	fi
+	echo ""
+	echo "Deploy query"
 	
 	chmod -R 0777 "$JOB_TMP_DIR"
-	chmod -R 0777 "$EXPERIMENT_FOLDER"
+	chmod -R 0777 "$KATTS_JOB_FOLDER"
 	
 	# Deploy the topology to the storm cluster	
-	DEPLOY_TOPOLOGY="$JOB_TMP_DIR/storm/bin/storm jar $TOPOLOGY_JAR $TOPOLOGY_DEPLOYMENT_CLASS_NAME --number-of-processors $NUMBER_OF_PROCESSORS --number-of-workers $NUMBER_OF_NODES  $ADDITIONAL_PARAMETERS $QUERY_TMP_FILE -c nimbus.host=$nimbusNode"
+	DEPLOY_TOPOLOGY="$JOB_TMP_DIR/storm/bin/storm jar $TOPOLOGY_JAR $TOPOLOGY_DEPLOYMENT_CLASS_NAME --topology-name $KATTS_JOB --number-of-processors $NUMBER_OF_PROCESSORS --number-of-workers $NUMBER_OF_NODES  $ADDITIONAL_PARAMETERS $QUERY_TMP_FILE -c nimbus.host=$nimbusNode"
 	eval ${DEPLOY_TOPOLOGY}
 	
-	# Make a file to store the starting time
-	touch "$EVALUATION_FOLDER/start"
+	# Write the number of nodes for this job into the evaluation folder:
+	echo "$NUMBER_OF_NODES" > "$EVALUATION_FOLDER/number_of_nodes"
+	
+	# Write the number of processors per node for this job into the evaluation folder:
+	echo "$NUMBER_OF_PROCESSORS_PER_NODE" > "$EVALUATION_FOLDER/number_of_processors_per_node"
+	
+	
 fi
 
 chmod -R 0777 "$JOB_TMP_DIR"
 
 # Debug output
-if [ "$DEBUG" == "True" ]
-then
-	echo "Running... "
-fi
+echo "Running... "
 
 
 # Monitor the termination file, if it is written, then we can continue
@@ -213,35 +208,35 @@ while [ ! -f "$TERMINATION_FILE" ]; do
 done
 
 # Debug output
-if [ "$DEBUG" == "True" ]
-then
-	echo "Terminating the processes... "
-fi
+echo "Terminating the processes... "
 
-
-# Kill the processes
-kill $SUPERVISOR_JOB_PID
 
 if [ "$nimbusNode" == "$nodeHostname" ]; then
+	
+	DEPLOY_TOPOLOGY="$JOB_TMP_DIR/storm/bin/storm kill $KATTS_JOB -c nimbus.host=$nimbusNode"
+	eval ${DEPLOY_TOPOLOGY}
+	
 	kill $NIMBUS_JOB_PID
 	
 	# Kill UI
-	if [ "$NUMBER_OF_PROCESSES_PER_NODE" == "yes" ]
+	if [ "$STARTUP_UI" == "yes" ]
 	then
 		kill $UI_JOB_PID
 	fi
+	
+	# Create the data dir
+	mkdir "$EVALUATION_FOLDER/data"
+	
+else 
+	# Give the nimbus time to shutdown the toplogy, before killing the supervisors
+	sleep 16
 fi
 
-# Give the processes sometime to shutdown
-sleep 10
 
-# Copy all evaluation data to the experiment folder
-mkdir "$EVALUATION_FOLDER/data"
-EVALUATION_DATA_FOLDER="$EVALUATION_FOLDER/data/$nodeHostname"
-mkdir "$EVALUATION_DATA_FOLDER"
-cp -r "$MONITORING_DATA_PATH"/* "$EVALUATION_DATA_FOLDER"
+kill $SUPERVISOR_JOB_PID
 
 if [ "$nimbusNode" == "$nodeHostname" ]; then
+	
 	COMPLEATION_FILE="$EVALUATION_FOLDER/completed_on"
 	touch "$COMPLEATION_FILE"
 fi

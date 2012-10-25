@@ -21,4 +21,5 @@ submission_environment/experiments/*
 submission_environment/sample_experiment/evaluation/*
 submission_environment/sample_experiment/tmp/*
 submission_environment/dependencies/bin/*
-
+submission_environment/sample_job/evaluation/*
+submission_environment/sample_job/tmp/*
