@@ -78,7 +78,7 @@ fi
 variables="KATTS_JOB_TMP_FOLDER KATTS_HOME KATTS_JOB_FOLDER KATTS_JOB TOPOLOGY_JAR QUERY_FILE ADDITIONAL_PARAMETERS NUMBER_OF_NODES WALLTIME DEBUG TOPOLOGY_DEPLOYMENT_CLASS_NAME STARTUP_UI NODE_PROCESSOR_LIST NUMBER_OF_PROCESSOR_RESERVED_PER_NODE EXPECTED_MEMORY_CONSUMPTION GOOGLE_USERNAME GOOGLE_PASSWORD GOOGLE_SPREADSHEET_NAME"
 
 # Create the torque script:
-cp "torque-script.sh" "$KATTS_JOB_TMP_FOLDER"
+cp "scripts/torque-script.sh" "$KATTS_JOB_TMP_FOLDER"
 
 for variable in $variables
 do
@@ -90,7 +90,7 @@ done
 
 
 # Create the node script:
-cp "node-script.sh" "$KATTS_JOB_TMP_FOLDER"
+cp "scripts/node-script.sh" "$KATTS_JOB_TMP_FOLDER"
 
 for variable in $variables
 do
@@ -102,7 +102,7 @@ done
 
 
 # Create the evaluation data copy script
-cp "evaluation-data-copy.sh" "$KATTS_JOB_TMP_FOLDER"
+cp "scripts/evaluation-data-copy.sh" "$KATTS_JOB_TMP_FOLDER"
 
 for variable in $variables
 do
