@@ -109,7 +109,7 @@
             <stream inheritFrom="tickerStreamfct" id="filteredTickerStream"/>
         </produces>
     </expressionFilter>
-    <fileOutput filePath="$KATTS_JOB_FOLDER/data/output.csv" id="outputBolt">
+    <fileOutput filePath="$KATTS_JOB_FOLDER/evaluation/output.csv" id="outputBolt">
         <consumes>
             <stream bufferTimeout="-1" streamId="filteredTickerStream">
                 <shuffleGrouping/>
