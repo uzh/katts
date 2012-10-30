@@ -1,0 +1,19 @@
+storm.local.dir: "$JOB_TMP_DIR/storm/mnt"
+
+java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib:$KATTS_DIR/dependencies/bin/lib"
+
+storm.zookeeper.servers:
+     - "$NIMBUS_HOSTNAME"
+
+nimbus.host: "$NIMBUS_HOSTNAME"
+
+storm.local.hostname: "$LOCAL_HOSTNAME"
+
+
+# nimbus.thrift.port: 9835
+
+
+# We have only one Worker per machine (For each Worker a JVM is created. This normally not required.)
+supervisor.slots.ports:
+    - 6700
+

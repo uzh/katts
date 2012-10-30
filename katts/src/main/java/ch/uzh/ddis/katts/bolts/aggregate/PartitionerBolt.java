@@ -240,7 +240,7 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 		// size is smaller as the slide size, we need to check, if the even
 		// is in the current window.
 		if (this.isEventInsideWindow(event)) {
-			double aggregateValue = event.getVariableValue(aggregateOnField);
+			double aggregateValue = (Double)event.getVariableValue(aggregateOnField);
 
 			Map<String, Object> storages = buckets.get(bucketWindowIndex);
 			for (PartitionerComponent component : this.getComponents()) {

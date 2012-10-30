@@ -88,17 +88,17 @@ public class FileTripleReader implements IRichSpout {
 
 		buildSources();
 
-		try {
-			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
-				String startingFilePath = (String) conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
-				java.io.File file = new java.io.File(startingFilePath);
-				file.getParentFile().mkdirs();
-				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
-			}
-		} catch (IOException e) {
-			throw new RuntimeException("Could not write the starting file", e);
-		}
-
+//		try {
+//			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
+//				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
+//				java.io.File file = new java.io.File(startingFilePath);
+//				file.getParentFile().mkdirs();
+//				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
+//			}
+//		} catch (IOException e) {
+//			throw new RuntimeException("Could not write the starting file", e);
+//		}
+		
 	}
 
 	private void buildSources() {
@@ -115,8 +115,8 @@ public class FileTripleReader implements IRichSpout {
 				InputStream inputStream = source.buildInputStream(file);
 				source.setFileInputStream(inputStream);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				throw new RuntimeException(String.format("Unable to read input file '%1s' because: %2s", 
+					file.getPath(), e.getMessage()), e);
 			}
 			this.sources.add(source);
 		}

@@ -16,13 +16,8 @@ public class TaskMonitor extends BaseTaskHook {
 		
 		String topologyId = context.getStormId();
 		
-		String componentId = context.getComponentId(context.getThisTaskId());
 		thisTaskId = context.getThisTaskId();
-		
 		recorder = Recorder.getInstance(stormConf, topologyId);
-		recorder.appendTask(thisTaskId, componentId);
-		
-		
 		
 	}
 
