@@ -35,13 +35,9 @@ public class RunXmlQuery {
 
 		long monitoringRecordInterval = 15;
 		boolean monitoring = true;
-		String monitoringPath = "";
 		String topologyName = "katts-topology";
 		String path = null;
 		String terminationCheckInterval = null;
-		String terminationFilePath = null;
-		String startingFilePath = null;
-		String evaluationFolder = null;
 		int numberOfProcessors = 10;
 		int numberOfWorkers = 1000;
 		float factorOfThreadsPerProcessor = 1.1f;
@@ -53,24 +49,12 @@ public class RunXmlQuery {
 			} else if (args[i].equalsIgnoreCase("--monitoring")) {
 				i++;
 				monitoring = args[i].equals("0") ? false : true;
-			} else if (args[i].equalsIgnoreCase("--monitoring-path")) {
-				i++;
-				monitoringPath = args[i];
 			} else if (args[i].equalsIgnoreCase("--topology-name")) {
 				i++;
 				topologyName = args[i];
 			} else if (args[i].equalsIgnoreCase("--termination-check-interval")) {
 				i++;
 				terminationCheckInterval = args[i];
-			} else if (args[i].equalsIgnoreCase("--starting-file-path")) {
-				i++;
-				startingFilePath = args[i];
-			} else if (args[i].equalsIgnoreCase("--termination-file-path")) {
-				i++;
-				terminationFilePath = args[i];
-			} else if (args[i].equalsIgnoreCase("--evaluation-folder-path")) {
-				i++;
-				evaluationFolder = args[i];
 			} else	if (args[i].equalsIgnoreCase("--number-of-processors")) {
 				i++;
 				numberOfProcessors = Integer.valueOf(args[i]);
@@ -123,25 +107,11 @@ public class RunXmlQuery {
 			conf.put(TerminationMonitor.CONF_TERMINATION_CHECK_INTERVAL, terminationCheckInterval);
 		}
 
-		if (startingFilePath != null) {
-			conf.put(FileTripleReader.CONF_STARTING_FILE_PATH_VAR_NAME, startingFilePath);
-		}
-
-		if (terminationFilePath != null) {
-			conf.put(TerminationMonitor.CONF_TERMINATION_FILE_PATH, terminationFilePath);
-		}
-		
-		if (evaluationFolder != null) {
-			conf.put(CONF_EVALUATION_FOLDER_NAME, evaluationFolder);
-		}
-
 		if (monitoring) {
 
 			List<String> hookClass = new ArrayList<String>();
 			hookClass.add("ch.uzh.ddis.katts.monitoring.TaskMonitor");
 			conf.put(Config.TOPOLOGY_AUTO_TASK_HOOKS, hookClass);
-
-			conf.put(Recorder.MONITORING_FOLDER_PATH, monitoringPath);
 
 			// Log every 15 seconds the Java Virtual Machine properties
 			conf.put(VmMonitor.RECORD_INVERVAL, monitoringRecordInterval);
@@ -151,18 +121,18 @@ public class RunXmlQuery {
 		builder.setFactorOfThreadsPerProcessor(factorOfThreadsPerProcessor);
 		builder.setParallelismByNumberOfWorkers(numberOfProcessors);
 		
-		// Write out some information about the job for evaluations purposes:
-		if (evaluationFolder != null) {
-			
-			try {
-				FileUtils.writeStringToFile(new File(evaluationFolder + "/number_of_processors"), Integer.toString(numberOfProcessors));
-				FileUtils.writeStringToFile(new File(evaluationFolder + "/expected_number_of_tasks"), Long.toString(builder.getEstimatedNumberOfTasks()));
-				FileUtils.writeStringToFile(new File(evaluationFolder + "/factor_of_threads_per_processor"), Float.toString(builder.getFactorOfThreadsPerProcessor()));
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(0);
-			}
-		}
+//		// Write out some information about the job for evaluations purposes:
+//		if (evaluationFolder != null) {
+//			
+//			try {
+//				FileUtils.writeStringToFile(new File(evaluationFolder + "/number_of_processors"), Integer.toString(numberOfProcessors));
+//				FileUtils.writeStringToFile(new File(evaluationFolder + "/expected_number_of_tasks"), Long.toString(builder.getEstimatedNumberOfTasks()));
+//				FileUtils.writeStringToFile(new File(evaluationFolder + "/factor_of_threads_per_processor"), Float.toString(builder.getFactorOfThreadsPerProcessor()));
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//				System.exit(0);
+//			}
+//		}
 		
 
 		try {

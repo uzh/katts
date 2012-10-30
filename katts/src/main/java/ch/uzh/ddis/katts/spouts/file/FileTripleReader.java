@@ -47,8 +47,9 @@ public class FileTripleReader implements IRichSpout {
 				return;
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			// TODO: Log this into the logger. We can't throw here an exception, because 
+			// the error can came from the fact, that the line was some how corrupted.
 		}
 
 		// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
@@ -88,27 +89,27 @@ public class FileTripleReader implements IRichSpout {
 
 		buildSources();
 
-		try {
-			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
-				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
-				java.io.File file = new java.io.File(startingFilePath);
-				file.getParentFile().mkdirs();
-				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
-			}
-		} catch (IOException e) {
-			throw new RuntimeException("Could not write the starting file", e);
-		}
-		
-		try {
-			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
-				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
-				java.io.File file = new java.io.File(startingFilePath);
-				file.getParentFile().mkdirs();
-				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
-			}
-		} catch (IOException e) {
-			throw new RuntimeException("Could not write the starting file", e);
-		}
+//		try {
+//			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
+//				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
+//				java.io.File file = new java.io.File(startingFilePath);
+//				file.getParentFile().mkdirs();
+//				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
+//			}
+//		} catch (IOException e) {
+//			throw new RuntimeException("Could not write the starting file", e);
+//		}
+//		
+//		try {
+//			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
+//				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
+//				java.io.File file = new java.io.File(startingFilePath);
+//				file.getParentFile().mkdirs();
+//				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
+//			}
+//		} catch (IOException e) {
+//			throw new RuntimeException("Could not write the starting file", e);
+//		}
 		
 	}
 
@@ -126,8 +127,7 @@ public class FileTripleReader implements IRichSpout {
 				InputStream inputStream = source.buildInputStream(file);
 				source.setFileInputStream(inputStream);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				throw new RuntimeException(e);
 			}
 			this.sources.add(source);
 		}

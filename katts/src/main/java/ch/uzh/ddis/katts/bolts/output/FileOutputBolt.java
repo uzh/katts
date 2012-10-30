@@ -42,7 +42,7 @@ public class FileOutputBolt extends AbstractBolt {
 			fstream = new FileWriter(this.getConfiguration().getFilePath());
 			writer = new CSVWriter(fstream);
 		} catch (IOException e) {
-			logger.error("Could not open file writer.", e);
+			throw new RuntimeException("Could not open file writer.", e);
 		}
 
 		// TODO: Currently the output stream can only consume one

@@ -2,10 +2,14 @@ package ch.uzh.ddis.katts;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
+import backtype.storm.generated.ExecutorSummary;
+import backtype.storm.generated.TopologySummary;
 import backtype.storm.utils.Utils;
 import ch.uzh.ddis.katts.monitoring.Recorder;
 import ch.uzh.ddis.katts.monitoring.VmMonitor;
@@ -42,6 +46,35 @@ public class RunXmlQueryLocally {
 
 		LocalCluster cluster = new LocalCluster();
 		cluster.submitTopology("test", conf, builder.createTopology());
+		
+		
+		while (true) {
+			
+			Thread.sleep(15000);
+			
+			int rs = cluster.getClusterInfo().get_nimbus_uptime_secs();
+			
+			for (TopologySummary topology : cluster.getClusterInfo().get_topologies()) {
+				
+				for (ExecutorSummary executor : cluster.getTopologyInfo(topology.get_id()).get_executors()) {
+					System.out.println(executor.get_component_id() + ": " + executor);
+					
+//					for (Entry<String, Map<String, Long>> entry : executor.get_stats().get_emitted().entrySet()) {
+//
+//						System.out.println(entry.getKey());
+//						
+//						
+//					}
+					
+				}
+				
+			}
+			
+			
+		}
+
+		
+		
 	}
 
 }

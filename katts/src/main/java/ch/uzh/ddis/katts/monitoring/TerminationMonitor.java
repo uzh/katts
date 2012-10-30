@@ -2,11 +2,19 @@ package ch.uzh.ddis.katts.monitoring;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
+
+import backtype.storm.Config;
 
 import ch.uzh.ddis.katts.RunXmlQuery;
+import ch.uzh.ddis.katts.utils.Cluster;
 
 public class TerminationMonitor {
 
@@ -17,18 +25,21 @@ public class TerminationMonitor {
 	private boolean isDataSendToOutput = false;
 
 	private int terminationCheckInterval = 20000;
-	
+
 	private long lastOutputSendOn = 0;
-	
+
 	private long messageCount = 0;
 
 	private String pathToWriteFileWhenTerminated = null;
-	
+
 	private String evaluationFolder = null;
+
+	private ZooKeeper zooKeeper;
 	
+
 	public static final String CONF_TERMINATION_CHECK_INTERVAL = "katts.terminationCheckInterval";
-	public static final String CONF_TERMINATION_FILE_PATH = "katts.terminationFilePath";
-	
+	public static final String KATTS_TERMINATION_ZK_PATH = "/katts_terminated";
+	public static final String KATTS_TUPLES_OUTPUTTED_ZK_PATH = "/katts_number_of_tuples_outputed";
 
 	private TerminationMonitor(Map stormConf) {
 
@@ -36,15 +47,12 @@ public class TerminationMonitor {
 			terminationCheckInterval = Integer.valueOf((String) stormConf.get(CONF_TERMINATION_CHECK_INTERVAL));
 		}
 
-		if (stormConf.containsKey(CONF_TERMINATION_FILE_PATH)) {
-			pathToWriteFileWhenTerminated = (String) stormConf.get(CONF_TERMINATION_FILE_PATH);
-		}
-
-		if (stormConf.containsKey(RunXmlQuery.CONF_EVALUATION_FOLDER_NAME)) {
-			evaluationFolder = (String) stormConf.get(RunXmlQuery.CONF_EVALUATION_FOLDER_NAME);
-		}
-
-		if (terminationCheckInterval > 0 ) {
+		if (terminationCheckInterval > 0) {
+			try {
+				zooKeeper = Cluster.createZooKeeper(stormConf);
+			} catch (Exception e) {
+				throw new RuntimeException("Can't create termination ZooKeeper watcher.", e);
+			}
 
 			WaitMonitor waiter = new WaitMonitor(this);
 
@@ -67,8 +75,7 @@ public class TerminationMonitor {
 		lastOutputSendOn = System.currentTimeMillis();
 		messageCount++;
 	}
-	
-	
+
 	private class WaitMonitor implements Runnable {
 
 		TerminationMonitor monitor;
@@ -89,32 +96,25 @@ public class TerminationMonitor {
 					throw new RuntimeException(
 							"The termination monitor could not send the monitor thread to background.", e);
 				}
-				
+
 				// When the flag is not changed, then we know that in the measured interval
 				// no data is send to output.
 				if (!monitor.isDataSendToOutput) {
 					isStopped = true;
-					
-					if (monitor.pathToWriteFileWhenTerminated != null) {
-						try {
-							File file = new File(monitor.pathToWriteFileWhenTerminated);
-							file.getParentFile().mkdirs();
-							FileUtils.writeStringToFile(file, Long.toString(monitor.lastOutputSendOn));
-						} catch (IOException e) {
-							throw new RuntimeException("The termination monitor could not write the termination file.", e);
-						}
+
+					try {
+						monitor.zooKeeper.create(KATTS_TERMINATION_ZK_PATH, Long.toString(monitor.lastOutputSendOn).getBytes(),
+								Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					} catch (Exception e) {
+						throw new RuntimeException("The termination barrier could not be written.", e);
 					}
-					
-					if (monitor.evaluationFolder != null) {
-						try {
-							File file = new File(monitor.evaluationFolder + "/number_of_tuples_outputed");
-							file.getParentFile().mkdirs();
-							FileUtils.writeStringToFile(file, Long.toString(monitor.messageCount));
-						} catch (IOException e) {
-							throw new RuntimeException("The termination monitor could create the file for the number of tuples outputed.", e);
-						}
+
+					try {
+						monitor.zooKeeper.create(KATTS_TUPLES_OUTPUTTED_ZK_PATH, Long.toString(monitor.messageCount).getBytes(),
+								Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					} catch (Exception e) {
+						throw new RuntimeException("The termination barrier could not be written.", e);
 					}
-					
 					
 				}
 			}
