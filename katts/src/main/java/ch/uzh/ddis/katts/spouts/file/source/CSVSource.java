@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -24,11 +25,7 @@ public class CSVSource extends AbstractSource{
 		if (line == null) {
 			return null;
 		}
-		List<String> list = new ArrayList<String>();
-		for (String item : line) {
-			list.add(item);
-		}
-		return list;
+		return Arrays.asList(line);
 	}
 
 	@Override
