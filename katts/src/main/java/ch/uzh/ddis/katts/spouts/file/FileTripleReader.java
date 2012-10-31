@@ -7,19 +7,26 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
+import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.query.source.File;
 import ch.uzh.ddis.katts.spouts.file.source.CSVSource;
 import ch.uzh.ddis.katts.spouts.file.source.Source;
 import ch.uzh.ddis.katts.spouts.file.source.ZipSourceWrapper;
+import ch.uzh.ddis.katts.utils.Cluster;
 
 public class FileTripleReader implements IRichSpout {
 
@@ -30,8 +37,6 @@ public class FileTripleReader implements IRichSpout {
 	private SpoutOutputCollector collector;
 	private FileTripleReaderConfiguration configuration;
 	private List<Source> sources = new ArrayList<Source>();
-
-	public static final String CONF_STARTING_FILE_PATH_VAR_NAME = "katts_starting_file_path";
 
 	@Override
 	public void nextTuple() {
@@ -88,17 +93,8 @@ public class FileTripleReader implements IRichSpout {
 
 		buildSources();
 
-//		try {
-//			if (conf.get(CONF_STARTING_FILE_PATH_VAR_NAME) != null) {
-//				String startingFilePath = (String)conf.get(CONF_STARTING_FILE_PATH_VAR_NAME);
-//				java.io.File file = new java.io.File(startingFilePath);
-//				file.getParentFile().mkdirs();
-//				FileUtils.writeStringToFile(file, Long.toString(System.currentTimeMillis()));
-//			}
-//		} catch (IOException e) {
-//			throw new RuntimeException("Could not write the starting file", e);
-//		}
-		
+		StarterMonitor.getInstance(conf).start();
+
 	}
 
 	private void buildSources() {
@@ -115,8 +111,8 @@ public class FileTripleReader implements IRichSpout {
 				InputStream inputStream = source.buildInputStream(file);
 				source.setFileInputStream(inputStream);
 			} catch (Exception e) {
-				throw new RuntimeException(String.format("Unable to read input file '%1s' because: %2s", 
-					file.getPath(), e.getMessage()), e);
+				throw new RuntimeException(String.format("Unable to read input file '%1s' because: %2s",
+						file.getPath(), e.getMessage()), e);
 			}
 			this.sources.add(source);
 		}
