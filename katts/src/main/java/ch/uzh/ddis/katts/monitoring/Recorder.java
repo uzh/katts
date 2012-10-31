@@ -1,33 +1,28 @@
 package ch.uzh.ddis.katts.monitoring;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.collections.MapIterator;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.apache.commons.collections.map.MultiKeyMap;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import au.com.bytecode.opencsv.CSVWriter;
+import ch.uzh.ddis.katts.utils.Cluster;
 
 
-// TODO: Write out the counters, when the class is destroyed
-
-
-public final class Recorder {
+public final class Recorder implements Watcher {
 
 	private static Recorder instance;
 
-	public static final String MONITORING_FOLDER_PATH = "katts.monitoring.folder.path";
+	public static final String KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH = "katts_message_monitoring";
 
 	private String monitoringPath;
 	private String topologyName;
@@ -41,28 +36,37 @@ public final class Recorder {
 	
 	private MultiKeyMap messageCounter = new MultiKeyMap();
 	
+	private ZooKeeper zooKeeper;
+	private Logger logger = LoggerFactory.getLogger(StarterMonitor.class);
+	
 
 	private Recorder(Map stormConf, String topologyName) {
 		this.stormConfiguration = stormConf;
 		this.topologyName = topologyName;
 		
-//		try {
-////			createMonitoringDirectoryIfNotExists();
-////			messageCountWriter 		= new CSVWriter(new FileWriter(this.getFilePath("message_count")));
-////			taskCsvWriter 			= new CSVWriter(new FileWriter(this.getFilePath("tasks")));
-////			finalMessageCountWriter = new CSVWriter(new FileWriter(this.getFilePath("final_message_count")));
-////			vmStatsWriter 			= new CSVWriter(new FileWriter(this.getFilePath("vm_stats")));
-//			
-//		} catch (IOException e) {
-//			throw new RuntimeException("Could not intialize the monitoring file.", e);
-//		}
+		try {
+			zooKeeper = Cluster.createZooKeeper(stormConfiguration);
+		} catch (IOException e) {
+			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the message sending behaviour.", e);
+		}
 		
-//		Runtime.getRuntime().addShutdownHook(new Thread() {
-//			@Override
-//			public void run() {
-//				writeFinalCounts();
-//			}
-//		});
+		try {
+			zooKeeper.create(KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, new byte[0],
+					Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+		} catch (KeeperException e) {
+			if (e.code().equals("KeeperException.NodeExists")) {
+				logger.info("The root monitoring entry was already created.");
+			} else {
+				throw new RuntimeException("Can't create the root monitoring ZooKeeper entry.", e);
+			}
+
+		} catch (InterruptedException e) {
+			throw new RuntimeException(
+					"Can't create the root monitoring ZooKeeper entry, because the thread was interrupted.", e);
+		}
+		
+		// Currently we write out the results, when we get the signal that the query was completed. This may be changed in future.
+		TerminationMonitor.getInstance(stormConfiguration).addTerminationWatcher(this);
 		
 	}
 
@@ -120,33 +124,52 @@ public final class Recorder {
 		this.monitoringPath = monitoringPath;
 	}
 
+	@Override
+	public void process(WatchedEvent event) {
+		String path = event.getPath();
+		if (event.getType() == Event.EventType.None) {
+			// The state of the connection has changed
+			switch (event.getState()) {
+			case SyncConnected:
+				// Nothing to do, when the file is written, then we are finished.
+				break;
+			case Expired:
+				writeCounts();
+				break;
+			}
+		} else {
+			if (path != null && path.equals(TerminationMonitor.KATTS_TERMINATION_ZK_PATH)) {
+				writeCounts();
+			}
+		}
+	}
 	
-//	
-//	private void writeFinalCounts() {
-//		MapIterator it = messageCounter.mapIterator();
-//		
-//		// The final message count file structure is: sourceTaskId, destinationTaskId, messageCount
-//		
-//		while(it.hasNext()) {
-//			MultiKey next = (MultiKey) it.next();
-//			
-//			String[] line = new String[3];
-//			int i = 0;
-//			for (Object key : next.getKeys()) {
-//				line[i] = ((Integer)key).toString();
-//				i++;
-//			}
-//			line[i] = Long.toString((Long)messageCounter.get(next));
-//			
-//			finalMessageCountWriter.writeNext(line);
-//		}
-//		
-//		try {
-//			finalMessageCountWriter.flush();
-//		} catch (IOException e) {
-//			throw new RuntimeException(e);
-//		}
-//	}
-//	
+	
+	private void writeCounts() {
+		MapIterator it = messageCounter.mapIterator();
+		
+		// The final message count file structure is: sourceTaskId, destinationTaskId, messageCount
+		
+		while(it.hasNext()) {
+			MultiKey next = (MultiKey) it.next();
+			Object[] keys = next.getKeys();
+			
+			String sender = ((Integer)keys[0]).toString();
+			String receiver = ((Integer)keys[1]).toString();
+			String count = Long.toString((Long)messageCounter.get(next));
+			
+			String path = new StringBuilder().append(KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH).append("/").append(sender).append("___").append(receiver).toString();
+			
+			try {
+				zooKeeper.create(path, count.getBytes(),Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+			} catch (KeeperException e) {
+				throw new RuntimeException("Can't write the message count out.", e);
+			} catch (InterruptedException e) {
+				throw new RuntimeException("Can't write the message count out, because the thread was interrupted.", e);
+			}
+			
+		}
+	}
+	
 
 }

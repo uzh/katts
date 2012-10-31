@@ -39,8 +39,6 @@ public class RunXmlQueryLocally {
 		hookClass.add("ch.uzh.ddis.katts.monitoring.TaskMonitor");
 		conf.put(Config.TOPOLOGY_AUTO_TASK_HOOKS, hookClass);
 		
-		conf.put(Recorder.MONITORING_FOLDER_PATH, "data/evaluation");
-		
 		// Log every 15 seconds the Java Virtual Machine properties
 		conf.put(VmMonitor.RECORD_INVERVAL, 30);
 

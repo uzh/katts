@@ -18,17 +18,17 @@ public class StarterMonitor {
 	@SuppressWarnings("rawtypes")
 	private Map stormConfiguration;
 	private ZooKeeper zooKeeper;
-	
+
 	public static final String KATTS_STARTING_TIME_ZK_PATH = "katts_starting_time";
 	private Logger logger = LoggerFactory.getLogger(StarterMonitor.class);
-	
+
 	private StarterMonitor(@SuppressWarnings("rawtypes") Map stormConf) {
 		stormConfiguration = stormConf;
-		
+
 		try {
 			zooKeeper = Cluster.createZooKeeper(stormConfiguration);
 		} catch (IOException e) {
-			throw new RuntimeException("Can't create ZooKeeper instance, during starting of the file reader spout.", e);
+			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the start time.", e);
 		}
 	}
 
@@ -40,7 +40,7 @@ public class StarterMonitor {
 
 		return instance;
 	}
-	
+
 	public void start() {
 		try {
 			zooKeeper.create(KATTS_STARTING_TIME_ZK_PATH, Long.toString(System.currentTimeMillis()).getBytes(),
@@ -48,10 +48,13 @@ public class StarterMonitor {
 		} catch (KeeperException e) {
 			if (e.code().equals("KeeperException.NodeExists")) {
 				logger.info("The starting time entry was set already by another instance.");
+			} else {
+				throw new RuntimeException("Can't create the starting time ZooKeeper entry.", e);
 			}
-			
+
 		} catch (InterruptedException e) {
-			throw new RuntimeException("Can't create the starting time ZooKeeper entry, because the thread was interrupted.", e);
+			throw new RuntimeException(
+					"Can't create the starting time ZooKeeper entry, because the thread was interrupted.", e);
 		}
 	}
 

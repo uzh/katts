@@ -8,6 +8,7 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -69,6 +70,17 @@ public class TerminationMonitor {
 
 		return instance;
 	}
+	
+	public synchronized void addTerminationWatcher(Watcher watcher) {
+		try {
+			zooKeeper.exists(KATTS_TERMINATION_ZK_PATH, watcher);
+		} catch (KeeperException e) {
+			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
+		} catch (InterruptedException e) {
+			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
+		}
+	}
+	
 
 	public synchronized void dataIsSendToOutput() {
 		isDataSendToOutput = true;
