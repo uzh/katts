@@ -27,9 +27,9 @@ public final class Recorder implements Watcher {
 
 	private static Recorder instance;
 
-	public static final String KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH = "katts_message_monitoring";
-	public static final String KATTS_STORM_CONFIGURATION_ZK_PATH = "katts_storm_configuration";
-	public static final String KATTS_MONITORING_FINISHED_ZK_ROOT_PATH = "katts_monitoring_finished";
+	public static final String KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH = "/katts_message_monitoring";
+	public static final String KATTS_STORM_CONFIGURATION_ZK_PATH = "/katts_storm_configuration";
+	public static final String KATTS_MONITORING_FINISHED_ZK_ROOT_PATH = "/katts_monitoring_finished";
 
 	private String monitoringPath;
 	private String topologyName;
@@ -68,7 +68,7 @@ public final class Recorder implements Watcher {
 			zooKeeper.create(KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
 					CreateMode.PERSISTENT);
 		} catch (KeeperException e) {
-			if (e.code().equals("KeeperException.NodeExists")) {
+			if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
 				logger.info("The root monitoring entry was already created.");
 			} else {
 				throw new RuntimeException("Can't create the root monitoring ZooKeeper entry.", e);
@@ -88,7 +88,7 @@ public final class Recorder implements Watcher {
 			zooKeeper.create(KATTS_MONITORING_FINISHED_ZK_ROOT_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
 					CreateMode.PERSISTENT);
 		} catch (KeeperException e) {
-			if (e.code().equals("KeeperException.NodeExists")) {
+			if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
 				logger.info("The root monitoring finish entry was already created.");
 			} else {
 				throw new RuntimeException("Can't create the root monitoring finish ZooKeeper entry.", e);

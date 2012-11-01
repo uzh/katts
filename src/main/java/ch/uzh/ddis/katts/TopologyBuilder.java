@@ -38,6 +38,7 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 
 	public TopologyBuilder setQuery(Query query) {
 		this.query = query;
+		updateConfig();
 		return this;
 	}
 
@@ -103,10 +104,9 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 	 * This method updates the configuration values, depending of the current setup of the TopologyBuilder.
 	 */
 	private void updateConfig() {
-		this.configuration.put(KATTS_FACTOR_OF_THREADS_CONFIG, this.getFactorOfThreadsPerProcessor());
+		this.configuration.put(KATTS_FACTOR_OF_THREADS_CONFIG, (double)this.getFactorOfThreadsPerProcessor());
 		this.configuration.put(KATTS_EXPECTED_NUMBER_OF_EXECUTORS, this.getEstimatedNumberOfExecutors());
 		this.configuration.put(NUMBERS_OF_PROCESSORS, numberOfProcessors);
-
 	}
 
 	/**

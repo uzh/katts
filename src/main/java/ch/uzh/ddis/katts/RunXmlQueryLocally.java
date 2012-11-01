@@ -47,31 +47,6 @@ public class RunXmlQueryLocally {
 		cluster.submitTopology("test", conf, builder.createTopology());
 		
 		
-		while (true) {
-			
-			Thread.sleep(15000);
-			
-			int rs = cluster.getClusterInfo().get_nimbus_uptime_secs();
-			
-			for (TopologySummary topology : cluster.getClusterInfo().get_topologies()) {
-				
-				for (ExecutorSummary executor : cluster.getTopologyInfo(topology.get_id()).get_executors()) {
-					System.out.println(executor.get_component_id() + ": " + executor);
-					
-//					for (Entry<String, Map<String, Long>> entry : executor.get_stats().get_emitted().entrySet()) {
-//
-//						System.out.println(entry.getKey());
-//						
-//						
-//					}
-					
-				}
-				
-			}
-			
-			
-		}
-
 		
 		
 	}

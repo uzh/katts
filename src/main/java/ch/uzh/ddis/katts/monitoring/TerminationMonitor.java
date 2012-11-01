@@ -24,6 +24,7 @@ public class TerminationMonitor {
 	private static TerminationMonitor instance;
 
 	private boolean isDataSendToOutput = false;
+	private boolean isAnyDataSend = false;
 
 	private int terminationCheckInterval = 20000;
 
@@ -31,12 +32,7 @@ public class TerminationMonitor {
 
 	private long messageCount = 0;
 
-	private String pathToWriteFileWhenTerminated = null;
-
-	private String evaluationFolder = null;
-
 	private ZooKeeper zooKeeper;
-	
 
 	public static final String CONF_TERMINATION_CHECK_INTERVAL = "katts.terminationCheckInterval";
 	public static final String KATTS_TERMINATION_ZK_PATH = "/katts_terminated";
@@ -70,7 +66,7 @@ public class TerminationMonitor {
 
 		return instance;
 	}
-	
+
 	public synchronized void addTerminationWatcher(Watcher watcher) {
 		try {
 			zooKeeper.exists(KATTS_TERMINATION_ZK_PATH, watcher);
@@ -80,12 +76,13 @@ public class TerminationMonitor {
 			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
 		}
 	}
-	
 
 	public synchronized void dataIsSendToOutput() {
+		isAnyDataSend = true;
 		isDataSendToOutput = true;
 		lastOutputSendOn = System.currentTimeMillis();
 		messageCount++;
+
 	}
 
 	private class WaitMonitor implements Runnable {
@@ -110,24 +107,25 @@ public class TerminationMonitor {
 				}
 
 				// When the flag is not changed, then we know that in the measured interval
-				// no data is send to output.
-				if (!monitor.isDataSendToOutput) {
+				// no data is send to output. The isAnyDataSend indicates that some data was send. If this flag is not
+				// set this VM does probably do not produce any output and should not send the termination signal.
+				if (!monitor.isDataSendToOutput && isAnyDataSend) {
 					isStopped = true;
 
 					try {
-						monitor.zooKeeper.create(KATTS_TERMINATION_ZK_PATH, Long.toString(monitor.lastOutputSendOn).getBytes(),
-								Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+						monitor.zooKeeper.create(KATTS_TERMINATION_ZK_PATH, Long.toString(monitor.lastOutputSendOn)
+								.getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					} catch (Exception e) {
 						throw new RuntimeException("The termination barrier could not be written.", e);
 					}
 
 					try {
-						monitor.zooKeeper.create(KATTS_TUPLES_OUTPUTTED_ZK_PATH, Long.toString(monitor.messageCount).getBytes(),
-								Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+						monitor.zooKeeper.create(KATTS_TUPLES_OUTPUTTED_ZK_PATH, Long.toString(monitor.messageCount)
+								.getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 					} catch (Exception e) {
 						throw new RuntimeException("The termination barrier could not be written.", e);
 					}
-					
+
 				}
 			}
 		}

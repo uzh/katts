@@ -122,20 +122,7 @@ public class RunXmlQuery {
 		builder.setQuery(query);
 		builder.setFactorOfThreadsPerProcessor(factorOfThreadsPerProcessor);
 		builder.setParallelismByNumberOfProcessors(numberOfProcessors);
-		
-//		// Write out some information about the job for evaluations purposes:
-//		if (evaluationFolder != null) {
-//			
-//			try {
-//				FileUtils.writeStringToFile(new File(evaluationFolder + "/number_of_processors"), Integer.toString(numberOfProcessors));
-//				FileUtils.writeStringToFile(new File(evaluationFolder + "/expected_number_of_tasks"), Long.toString(builder.getEstimatedNumberOfTasks()));
-//				FileUtils.writeStringToFile(new File(evaluationFolder + "/factor_of_threads_per_processor"), Float.toString(builder.getFactorOfThreadsPerProcessor()));
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//				System.exit(0);
-//			}
-//		}
-		
+			
 
 		try {
 			StormTopology topology = builder.createTopology();

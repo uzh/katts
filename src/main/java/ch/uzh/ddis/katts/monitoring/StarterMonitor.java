@@ -19,7 +19,7 @@ public class StarterMonitor {
 	private Map stormConfiguration;
 	private ZooKeeper zooKeeper;
 
-	public static final String KATTS_STARTING_TIME_ZK_PATH = "katts_starting_time";
+	public static final String KATTS_STARTING_TIME_ZK_PATH = "/katts_starting_time";
 	private Logger logger = LoggerFactory.getLogger(StarterMonitor.class);
 
 	private StarterMonitor(@SuppressWarnings("rawtypes") Map stormConf) {
