@@ -51,40 +51,11 @@ public final class Recorder implements Watcher {
 		}
 		
 		createMonitoringRoot();
-		writeStormConfigurationToZooKeeper();
 
 		// Currently we write out the results, when we get the signal that the query was completed. This may be changed
 		// in future.
 		TerminationMonitor.getInstance(stormConfiguration).addTerminationWatcher(this);
 
-	}
-	
-	private void writeStormConfigurationToZooKeeper() {
-
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutput out = null;
-		try {
-			out = new ObjectOutputStream(bos);
-			out.writeObject(stormConfiguration);
-		} catch (IOException e1) {
-			throw new RuntimeException("Can't serialize the storm configuration for later usage.");
-		}
-
-		try {
-			zooKeeper.create(KATTS_STORM_CONFIGURATION_ZK_PATH, bos.toByteArray(), Ids.OPEN_ACL_UNSAFE,
-					CreateMode.PERSISTENT);
-		} catch (KeeperException e) {
-			if (e.code().equals("KeeperException.NodeExists")) {
-				logger.info("The storm configuration znode was already created.");
-			} else {
-				throw new RuntimeException("Can't create the storm configuration ZooKeeper znode.", e);
-			}
-
-		} catch (InterruptedException e) {
-			throw new RuntimeException(
-					"Can't create the storm configuration znode, because the thread was interrupted.", e);
-		}
-		
 	}
 	
 	private void createMonitoringRoot() {
@@ -134,21 +105,7 @@ public final class Recorder implements Watcher {
 
 	public synchronized void recordMemoryStats(long maxMemory, long allocatedMemory, long freeMemory) {
 		// TODO: Find a way to log this data in some other way.
-
-		// String[] line = new String[5];
-		// line[0] = Long.toString(System.currentTimeMillis());
-		// line[1] = this.getHostName();
-		// line[2] = Long.toString(maxMemory);
-		// line[3] = Long.toString(allocatedMemory);
-		// line[4] = Long.toString(freeMemory);
-		//
-		// vmStatsWriter.writeNext(line);
-		// try {
-		// vmStatsWriter.flush();
-		// } catch (IOException e) {
-		// throw new RuntimeException(e);
-		// }
-
+		
 	}
 
 	public String getMonitoringPath() {
@@ -161,24 +118,9 @@ public final class Recorder implements Watcher {
 
 	@Override
 	public void process(WatchedEvent event) {
-		String path = event.getPath();
-		if (event.getType() == Event.EventType.None) {
-			// The state of the connection has changed
-			switch (event.getState()) {
-			case SyncConnected:
-				// Nothing to do, when the file is written, then we are finished.
-				break;
-			case Expired:
-				writeCounts();
-				break;
-			}
-		} else {
-			if (path != null && path.equals(TerminationMonitor.KATTS_TERMINATION_ZK_PATH)) {
-				writeCounts();
-			}
-		}
+		writeCounts();
 	}
-
+	
 	private void writeCounts() {
 		MapIterator it = messageCounter.mapIterator();
 
