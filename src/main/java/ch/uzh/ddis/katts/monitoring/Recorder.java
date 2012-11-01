@@ -4,6 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.Map;
 
 import org.apache.commons.collections.MapIterator;
@@ -26,13 +29,13 @@ public final class Recorder implements Watcher {
 
 	public static final String KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH = "katts_message_monitoring";
 	public static final String KATTS_STORM_CONFIGURATION_ZK_PATH = "katts_storm_configuration";
+	public static final String KATTS_MONITORING_FINISHED_ZK_ROOT_PATH = "katts_monitoring_finished";
 
 	private String monitoringPath;
 	private String topologyName;
 
 	@SuppressWarnings("rawtypes")
 	private Map stormConfiguration;
-
 
 	private MultiKeyMap messageCounter = new MultiKeyMap();
 
@@ -49,15 +52,16 @@ public final class Recorder implements Watcher {
 			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the message sending behaviour.",
 					e);
 		}
-		
+
 		createMonitoringRoot();
+		createFinishMonitorRoot();
 
 		// Currently we write out the results, when we get the signal that the query was completed. This may be changed
 		// in future.
 		TerminationMonitor.getInstance(stormConfiguration).addTerminationWatcher(this);
 
 	}
-	
+
 	private void createMonitoringRoot() {
 
 		try {
@@ -74,7 +78,27 @@ public final class Recorder implements Watcher {
 			throw new RuntimeException(
 					"Can't create the root monitoring ZooKeeper entry, because the thread was interrupted.", e);
 		}
-		
+
+	}
+	
+	private void createFinishMonitorRoot() {
+
+		// Write the root path for the monitoring termination barrier
+		try {
+			zooKeeper.create(KATTS_MONITORING_FINISHED_ZK_ROOT_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
+					CreateMode.PERSISTENT);
+		} catch (KeeperException e) {
+			if (e.code().equals("KeeperException.NodeExists")) {
+				logger.info("The root monitoring finish entry was already created.");
+			} else {
+				throw new RuntimeException("Can't create the root monitoring finish ZooKeeper entry.", e);
+			}
+
+		} catch (InterruptedException e) {
+			throw new RuntimeException(
+					"Can't create the root monitoring finish ZooKeeper entry, because the thread was interrupted.", e);
+		}
+
 	}
 
 	public static synchronized Recorder getInstance(Map stormConf, String topologyName) {
@@ -105,7 +129,7 @@ public final class Recorder implements Watcher {
 
 	public synchronized void recordMemoryStats(long maxMemory, long allocatedMemory, long freeMemory) {
 		// TODO: Find a way to log this data in some other way.
-		
+
 	}
 
 	public String getMonitoringPath() {
@@ -120,11 +144,9 @@ public final class Recorder implements Watcher {
 	public void process(WatchedEvent event) {
 		writeCounts();
 	}
-	
+
 	private void writeCounts() {
 		MapIterator it = messageCounter.mapIterator();
-
-		// The final message count file structure is: sourceTaskId, destinationTaskId, messageCount
 
 		while (it.hasNext()) {
 			MultiKey next = (MultiKey) it.next();
@@ -144,8 +166,38 @@ public final class Recorder implements Watcher {
 			} catch (InterruptedException e) {
 				throw new RuntimeException("Can't write the message count out, because the thread was interrupted.", e);
 			}
-
 		}
+		
+		String identifier = getHostIdentifier();
+		
+		try {
+			zooKeeper.create(KATTS_MONITORING_FINISHED_ZK_ROOT_PATH + "/" + identifier, new byte[0], Ids.OPEN_ACL_UNSAFE,
+					CreateMode.PERSISTENT);
+		} catch (KeeperException e) {
+			throw new RuntimeException(String.format("Can't create the finish ZooKeeper entry for host '%1s'.", identifier), e);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(
+					String.format("Can't create the finish ZooKeeper entry for host '%1s, because the thread was interrupted.'.", identifier), e);
+		}
+		
+	}
+	
+	private String getHostIdentifier() {
+		
+		try {
+			return  InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			logger.info("Can't get hostname. Instead the IP address is used.");
+		}
+		
+		try {
+			return InetAddress.getLocalHost().getHostAddress();
+		} catch (UnknownHostException e) {
+			logger.info("Can't get ip address. Instead a random number is used.");
+		}
+		
+		SecureRandom random = new SecureRandom();
+		return Long.toString(random.nextLong());
 	}
 
 }
