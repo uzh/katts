@@ -93,7 +93,7 @@ public class RunXmlQuery {
 			e.printStackTrace();
 			System.exit(0);
 		}
-		TopologyBuilder builder = new TopologyBuilder();
+		
 
 		Config conf = new Config();
 		conf.setNumWorkers(numberOfWorkers);
@@ -117,9 +117,11 @@ public class RunXmlQuery {
 			conf.put(VmMonitor.RECORD_INVERVAL, monitoringRecordInterval);
 		}
 
+		
+		TopologyBuilder builder = new TopologyBuilder(conf);
 		builder.setQuery(query);
 		builder.setFactorOfThreadsPerProcessor(factorOfThreadsPerProcessor);
-		builder.setParallelismByNumberOfWorkers(numberOfProcessors);
+		builder.setParallelismByNumberOfProcessors(numberOfProcessors);
 		
 //		// Write out some information about the job for evaluations purposes:
 //		if (evaluationFolder != null) {

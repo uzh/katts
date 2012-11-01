@@ -24,15 +24,16 @@ public class RunXmlQueryLocally {
 		
 		String path = args[0];
 		Query query = Query.createFromFile(path).validate().optimize();
-		TopologyBuilder builder = new TopologyBuilder();
-		int numberOfWorkers = 20;
 		
-		builder.setQuery(query);
-		builder.setParallelismByNumberOfWorkers(numberOfWorkers);
+		int numberOfWorkers = 20;
 		
 		Config conf = new Config();
 		conf.setDebug(false);
 		conf.setNumWorkers(numberOfWorkers);
+		
+		TopologyBuilder builder = new TopologyBuilder(conf);
+		builder.setQuery(query);
+		builder.setParallelismByNumberOfProcessors(numberOfWorkers);
 		
 		
 		List<String> hookClass = new ArrayList<String>();

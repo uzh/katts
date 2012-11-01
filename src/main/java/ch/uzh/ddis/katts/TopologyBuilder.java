@@ -2,6 +2,7 @@ package ch.uzh.ddis.katts;
 
 import org.apache.zookeeper.txn.CreateTxn;
 
+import backtype.storm.Config;
 import backtype.storm.generated.StormTopology;
 
 import ch.uzh.ddis.katts.query.Node;
@@ -9,9 +10,21 @@ import ch.uzh.ddis.katts.query.Query;
 
 public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 
+	private Config configuration = null;
+
+	public static final String KATTS_FACTOR_OF_THREADS_CONFIG = "katts_factor_of_threads_config";
+	public static final String KATTS_EXPECTED_NUMBER_OF_EXECUTORS = "katts_expected_number_of_executors_config";
+	public static final String NUMBERS_OF_PROCESSORS = "katts_number_of_processors_config";
+
+	public TopologyBuilder(Config conf) {
+		this.configuration = conf;
+	}
+
 	private Query query = null;
 
 	private int parallelism = 10;
+
+	private int numberOfProcessors = 0;
 
 	/**
 	 * This variable determines how many threads compared to workers are created. A value of 2.5 means that the system
@@ -40,29 +53,30 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 	 * This method sets the parallelism to a optimal value depending on the number of workers. The constant
 	 * factorOfThreadsPerProcessor controls the behavior of this method.
 	 * 
-	 * @param numberOfWorkers
+	 * @param numberOfProcessors
 	 */
-	public void setParallelismByNumberOfWorkers(int numberOfWorkers) {
-
+	public void setParallelismByNumberOfProcessors(int numberOfProcessors) {
+		this.numberOfProcessors = numberOfProcessors;
 		int expectedNumberOfInfiniteParallelNodes = getNumberOfInfiniteParallelizedNodes();
 		int numberOfWorkersPretermined = getFixParallelization();
 
-		float parallelism = (factorOfThreadsPerProcessor * (float) numberOfWorkers - numberOfWorkersPretermined)
+		float parallelism = (factorOfThreadsPerProcessor * (float) numberOfProcessors - numberOfWorkersPretermined)
 				/ expectedNumberOfInfiniteParallelNodes;
 		this.setParallelism(Math.round(Math.max(parallelism, 1)));
+		updateConfig();
 	}
 
 	/**
-	 * This method returns the number of tasks that are expected to be created. This value is based on the estimated for 
+	 * This method returns the number of tasks that are expected to be created. This value is based on the estimated for
 	 * the nodes that has an infinite parallelization defined. This value may differ from the effective value.
 	 * 
 	 * @return
 	 */
-	public long getEstimatedNumberOfTasks() {
+	public long getEstimatedNumberOfExecutors() {
 
 		int expectedNumberOfInfiniteParallelNodes = getNumberOfInfiniteParallelizedNodes();
 		int numberOfWorkersPretermined = getFixParallelization();
-		
+
 		return expectedNumberOfInfiniteParallelNodes * this.getParallelism() + numberOfWorkersPretermined;
 	}
 
@@ -83,6 +97,16 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 		}
 
 		return numberOfWorkersPretermined;
+	}
+
+	/**
+	 * This method updates the configuration values, depending of the current setup of the TopologyBuilder.
+	 */
+	private void updateConfig() {
+		this.configuration.put(KATTS_FACTOR_OF_THREADS_CONFIG, this.getFactorOfThreadsPerProcessor());
+		this.configuration.put(KATTS_EXPECTED_NUMBER_OF_EXECUTORS, this.getEstimatedNumberOfExecutors());
+		this.configuration.put(NUMBERS_OF_PROCESSORS, numberOfProcessors);
+
 	}
 
 	/**
@@ -123,6 +147,7 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 
 	public void setFactorOfThreadsPerProcessor(float factorOfThreadsPerProcessor) {
 		this.factorOfThreadsPerProcessor = factorOfThreadsPerProcessor;
+		updateConfig();
 	}
 
 }
