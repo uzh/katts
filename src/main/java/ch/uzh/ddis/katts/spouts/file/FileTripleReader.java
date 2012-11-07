@@ -24,6 +24,7 @@ import backtype.storm.tuple.Fields;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.query.source.File;
 import ch.uzh.ddis.katts.spouts.file.source.CSVSource;
+import ch.uzh.ddis.katts.spouts.file.source.GzipSourceWrapper;
 import ch.uzh.ddis.katts.spouts.file.source.Source;
 import ch.uzh.ddis.katts.spouts.file.source.ZipSourceWrapper;
 import ch.uzh.ddis.katts.utils.Cluster;
@@ -104,9 +105,17 @@ public class FileTripleReader implements IRichSpout {
 				source = new CSVSource();
 			}
 
-			if (file.isZipped()) {
+//			if (file.isZipped()) {
+//				source = new ZipSourceWrapper(source);
+//			}
+			
+			if (file.getPath().endsWith(".zip")) {
 				source = new ZipSourceWrapper(source);
 			}
+			else if(file.getPath().endsWith(".gz")) {
+				source = new GzipSourceWrapper(source);
+			}
+			
 			try {
 				InputStream inputStream = source.buildInputStream(file);
 				source.setFileInputStream(inputStream);
