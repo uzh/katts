@@ -119,10 +119,10 @@ public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 				VariableBindings bindingsToEmit = getEmitter().createVariableBindings(stream, event);
 
 				for (Variable variable : stream.getVariables()) {
-					if (simpleBindings.get(variable.getName()) == null) {
+					if (simpleBindings.get(variable.getReferencesTo()) == null) {					
 						throw new NullPointerException();
 					}
-					bindingsToEmit.add(variable, simpleBindings.get(variable.getName()));
+					bindingsToEmit.add(variable, simpleBindings.get(variable.getReferencesTo()));
 				}
 				bindingsToEmit.setStartDate((Date) simpleBindings.get("startDate"));
 				bindingsToEmit.setEndDate((Date) simpleBindings.get("endDate"));
