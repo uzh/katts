@@ -86,6 +86,9 @@ public abstract class AbstractBolt extends BaseRichBolt implements Bolt {
 	public void setConsumerStreams(Collection<StreamConsumer> streamConsumers) {
 		streamConsumer = new HashMap<String, StreamConsumer>();
 		for (StreamConsumer stream : streamConsumers) {
+			if (stream.getStream() == null) {
+				throw new NullPointerException("The given consumer stream is not linked back to the producing stream. Check if there is a bolt that consums a stream, which is not defined.");
+			}
 			streamConsumer.put(stream.getStream().getId(), stream);
 		}
 	}
