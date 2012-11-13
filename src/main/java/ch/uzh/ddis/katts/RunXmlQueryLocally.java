@@ -16,6 +16,10 @@ import ch.uzh.ddis.katts.monitoring.VmMonitor;
 import ch.uzh.ddis.katts.query.Query;
 
 public class RunXmlQueryLocally {
+	
+	public static final String RUN_TOPOLOGY_LOCALLY_CONFIG_KEY = "katts_run_topology_locally";
+	
+	
 	public static void main(String[] args) throws Exception {
 		
 		if (args.length == 0 || args[0] == null) {
@@ -39,6 +43,8 @@ public class RunXmlQueryLocally {
 		List<String> hookClass = new ArrayList<String>();
 		hookClass.add("ch.uzh.ddis.katts.monitoring.TaskMonitor");
 		conf.put(Config.TOPOLOGY_AUTO_TASK_HOOKS, hookClass);
+		
+		conf.put(RUN_TOPOLOGY_LOCALLY_CONFIG_KEY, true);
 		
 		// Log every 15 seconds the Java Virtual Machine properties
 		conf.put(VmMonitor.RECORD_INVERVAL, 30);
