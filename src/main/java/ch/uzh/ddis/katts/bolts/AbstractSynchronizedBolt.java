@@ -2,6 +2,7 @@ package ch.uzh.ddis.katts.bolts;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
@@ -34,11 +35,15 @@ public abstract class AbstractSynchronizedBolt extends AbstractBolt {
 	private Storage<StreamConsumer, Date> lastDateProcessed;
 
 	private Logger logger = LoggerFactory.getLogger(AbstractSynchronizedBolt.class);
+	
+	private TopologyContext context;
 
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
+		this.context = context;
+		
 		try {
 			String boltId = this.getId();
 			buffers = StorageFactory.createDefaultStorage(boltId + "_buffers");
@@ -65,19 +70,27 @@ public abstract class AbstractSynchronizedBolt extends AbstractBolt {
 
 	@Override
 	public void execute(Tuple input) {
+		
 		Event event = createEvent(input);
-		PriorityQueue<Event> buffer = buffers.get(event.getEmittedOn());
-		Date lastDate = lastDateProcessed.get(event.getEmittedOn());
-
-		if (lastDate != null && event.getStartDate().before(lastDate)) {
-			// TODO: Log the case, that the event is out of order and can not be processed
-		} else {
-			buffer.add(event);
-			updateBufferDates(event);
-			super.ack(event);
+		
+		String streamId = event.getEmittedOn().getStream().getId().intern();
+		
+		// Synchronize by the incoming stream
+		synchronized(streamId) {
+			PriorityQueue<Event> buffer = buffers.get(event.getEmittedOn());
+			
+			Date lastDate = lastDateProcessed.get(event.getEmittedOn());
+			if (lastDate != null && event.getStartDate().before(lastDate)) {
+				long timeout = event.getEmittedOn().getRealBufferTimout();
+				logger.info(String.format("An event was out of order and it was thrown away. Timeout is set to: %1d", timeout));
+			} else {
+				buffer.add(event);
+				updateBufferDates(event);
+				super.ack(event);
+			}
+			
+			executeNextEventInBuffer(buffer, event.getEmittedOn());
 		}
-
-		executeNextEventInBuffer(buffer, event.getEmittedOn());
 	}
 
 	@Override
@@ -92,23 +105,27 @@ public abstract class AbstractSynchronizedBolt extends AbstractBolt {
 	}
 
 	private void executeNextEventInBuffer(PriorityQueue<Event> buffer, StreamConsumer stream) {
-		// TODO: Check if we need to do some thread synchronization
 
 		Event next = buffer.peek();
+		
+		if (next != null) {
+			boolean bufferTimeout = false;
+			long timeout = stream.getRealBufferTimout();
+			if (timeout > 0) {
+				Date lastDate = lastDateProcessed.get(next.getEmittedOn());
 
-		boolean bufferTimeout = false;
-		long timeout = stream.getRealBufferTimout();
-		if (timeout > 0) {
-			Date lastDate = lastDateProcessed.get(next.getEmittedOn());
-
-			if (Math.abs((lastDate.getTime() - next.getStartDate().getTime())) > timeout) {
-				bufferTimeout = true;
+				if (lastDate != null && Math.abs((lastDate.getTime() - next.getEndDate().getTime())) > timeout) {
+					bufferTimeout = true;
+				}
+				else if (lastDate == null) {
+					bufferTimeout = true;
+				}
 			}
-		}
 
-		if (next != null && (isInSequence(next) || bufferTimeout)) {
-			lastDateProcessed.put(next.getEmittedOn(), next.getStartDate());
-			executeSynchronizedEvent(next);
+			if(isInSequence(next) || bufferTimeout) {
+				lastDateProcessed.put(next.getEmittedOn(), next.getStartDate());
+				executeSynchronizedEvent(next);
+			}
 		}
 	}
 
@@ -124,30 +141,39 @@ public abstract class AbstractSynchronizedBolt extends AbstractBolt {
 
 	private boolean isInSequence(Event event) {
 		event.getEmittedOn();
-		int taskId = event.getTuple().getSourceTask();
+		int currentTaskId = event.getTuple().getSourceTask();
 		HashMap<Integer, Date> streamMap = lastDatePerTask.get(event.getEmittedOn());
 
-		for (Entry<Integer, Date> set : streamMap.entrySet()) {
-			if (set.getKey() != taskId) {
-				if (set.getValue() != null && set.getValue().before(event.getStartDate())) {
-					// If there is a event from another task, which is
-					// before the actual date, then it is not in sequence.
+//		List<Integer> taskList = context.getComponentTasks(event.getTuple().getSourceComponent());
+		// It would be a good approach to check against all tasks, that may send data to this bolt. The
+		// problem is, that it is not clear if all task will send the data to this or to another bolt.
+		// So we need to iterate over all known tasks that send data to this bolt.
+		for (Entry<Integer, Date> entry : streamMap.entrySet()) {
+			Integer taskId = entry.getKey();
+			if (taskId != currentTaskId) {
+				
+				Date lastEventDate = entry.getValue();
+				if (lastEventDate != null && lastEventDate.before(event.getStartDate())) {
 					return false;
 				}
 			}
-		}
+		}	
 
 		return true;
 	}
 
 	private void updateBufferDates(Event event) {
 		HashMap<Integer, Date> streamMap = lastDatePerTask.get(event.getEmittedOn());
+		Integer sourceTaskId = event.getTuple().getSourceTask();
 		if (streamMap == null) {
 			streamMap = new HashMap<Integer, Date>();
-			lastDatePerTask.put(event.getEmittedOn(), streamMap);
 		}
-		Date lastDate = streamMap.get(event.getTuple().getSourceTask());
-		streamMap.put(event.getTuple().getSourceTask(), lastDate);
+		
+		// TODO: Use some expression to determine the synchronization time
+		Date lastDate = event.getEndDate();
+		streamMap.put(sourceTaskId, lastDate);
+		
+		lastDatePerTask.put(event.getEmittedOn(), streamMap);
 	}
 
 }

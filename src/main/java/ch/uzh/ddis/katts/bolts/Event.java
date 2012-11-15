@@ -15,53 +15,53 @@ import ch.uzh.ddis.katts.query.stream.VariableList;
 
 import backtype.storm.tuple.Tuple;
 
-public class Event implements Comparable<Event>{
-	
+public class Event implements Comparable<Event> {
+
 	private Tuple tuple;
 	private Bolt bolt;
 	private StreamConsumer emittedOn;
 	private long sequenceNumber;
 	private Date startDate;
 	private Date endDate;
-	
+
 	public Event() {
-		
+
 	}
-	
+
 	public Event(Tuple tuple, Bolt bolt, StreamConsumer emittedOn) {
 		this.setTuple(tuple);
 		this.setBolt(bolt);
 		this.setEmittedOn(emittedOn);
 		this.setSequenceNumber(tuple.getLongByField("sequenceNumber"));
-		this.setStartDate((Date)tuple.getValueByField("startDate"));
-		this.setEndDate((Date)tuple.getValueByField("endDate"));
+		this.setStartDate((Date) tuple.getValueByField("startDate"));
+		this.setEndDate((Date) tuple.getValueByField("endDate"));
 	}
-	
+
 	public Event(Event event) {
 		this.setTuple(event.getTuple());
 		this.setBolt(event.getBolt());
 		this.setEmittedOn(event.getEmittedOn());
 		this.setSequenceNumber(tuple.getLongByField("sequenceNumber"));
-		this.setStartDate((Date)tuple.getValueByField("startDate"));
-		this.setEndDate((Date)tuple.getValueByField("endDate"));
+		this.setStartDate((Date) tuple.getValueByField("startDate"));
+		this.setEndDate((Date) tuple.getValueByField("endDate"));
 	}
-	
+
 	public void ack() {
 		this.getBolt().ack(this);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public <T> T getVariableValue(Variable variable) {
 		T returnValue = null;
 		Object object = tuple.getValueByField(variable.getName());
-		
+
 		try {
 			returnValue = (T) object;
+		} catch (Exception e) {
+			throw new IllegalStateException("Variable '" + variable.getName() + "' should be of type "
+					+ variable.getType().getName());
 		}
-		catch(Exception e) {
-			throw new IllegalStateException("Variable '" + variable.getName() +"' should be of type " + variable.getType().getName());
-		}
-		
+
 		return returnValue;
 	}
 
@@ -96,15 +96,13 @@ public class Event implements Comparable<Event>{
 	public int compareTo(Event event) {
 		if (getStartDate().after(event.getStartDate())) {
 			return -1;
-		}
-		else if (getStartDate().before(event.getStartDate())) {
+		} else if (getStartDate().before(event.getStartDate())) {
 			return 1;
-		}
-		else {
+		} else {
 			return 0;
 		}
 	}
-	
+
 	public VariableList getVariables() {
 		return this.getEmittedOn().getStream().getAllVariables();
 	}
@@ -131,6 +129,21 @@ public class Event implements Comparable<Event>{
 
 	public void setEndDate(Date endDate) {
 		this.endDate = endDate;
+	}
+
+	public String toString() {
+
+		StringBuilder builder = new StringBuilder();
+
+		builder.append("Event: \n Start:").append(this.getStartDate()).append("\n End: ").append(this.getEndDate())
+				.append("\nVariables:");
+		for (Variable variable : this.getVariables()) {
+			builder.append(" ").append(variable.getName()).append(": ").append(this.getVariableValue(variable))
+					.append("\n");
+		}
+
+		return builder.toString();
+
 	}
 
 }

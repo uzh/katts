@@ -68,8 +68,8 @@ public class FileOutputBolt extends AbstractBolt {
 	@Override
 	public synchronized void execute(Event event) {
 		String[] line = new String[numberOfColumns];
-		line[0] = formatter.format(event.getStartDate());
-		line[1] = formatter.format(event.getEndDate());
+		line[0] = event.getStartDate().toString();
+		line[1] = event.getEndDate().toString();
 
 		int i = 2;
 		for (Variable variable : stream.getStream().getAllVariables()) {
