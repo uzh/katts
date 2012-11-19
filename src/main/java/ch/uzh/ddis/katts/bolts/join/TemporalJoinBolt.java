@@ -54,6 +54,10 @@ public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 	// private Storage<Object, Map<StreamConsumer, PriorityQueue<Event>>>
 	// queues;
 	// private Logger logger = LoggerFactory.getLogger(TemporalJoinBolt.class);
+	
+	private Date lastEventDate;
+	
+	private Boolean monitor = new Boolean(true);
 
 	/**
 	 * Creates a new instance of this bolt type using the configuration provided.
@@ -97,6 +101,17 @@ public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 
 	@Override
 	public void execute(Event event) {
+		
+		// Check the constrain that all event, must be in order for processing.
+		synchronized(monitor) {
+			
+			if (lastEventDate != null && lastEventDate.after(event.getEndDate())) {
+				throw new RuntimeException("An event was out of order.");
+			}
+			
+			lastEventDate = event.getEndDate();
+		}
+		
 		Set<SimpleVariableBindings> joinResults;
 		SimpleVariableBindings newBindings = new SimpleVariableBindings(event.getTuple());
 		String streamId = event.getEmittedOn().getStream().getId();
