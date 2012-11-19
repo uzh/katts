@@ -248,7 +248,7 @@
 				just received. -->
 			<evict from="filteredTickerStream" on="contractStream" if="#from.startDate lt #on.startDate" />
 			<!-- When we receive a contract value, we can remove all contracts that are more than 20 days old. -->
-			<evict from="contractStream" on="contractStream" if="#(from.endDate + 20) lt #on.startDate" />
+			<evict from="contractStream" on="contractStream" if="(#from.endDate + 20 * 24 * 3600 * 1000) lt #on.startDate" />
 		</evictBefore>
 
 		<sameValue onField="company_name" />
