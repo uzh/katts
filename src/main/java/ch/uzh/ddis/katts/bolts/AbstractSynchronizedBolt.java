@@ -82,7 +82,7 @@ public abstract class AbstractSynchronizedBolt extends AbstractBolt {
 			Date lastDate = lastDateProcessed.get(event.getEmittedOn());
 			if (lastDate != null && event.getStartDate().before(lastDate)) {
 				long timeout = event.getEmittedOn().getRealBufferTimout();
-				logger.info(String.format("An event was out of order and it was thrown away. Timeout is set to: %1d", timeout));
+				logger.info(String.format("An event was out of order and it was thrown away. Timeout is set to: %1d. Component ID: %1s", timeout, this.getId()));
 			} else {
 				buffer.add(event);
 				updateBufferDates(event);
