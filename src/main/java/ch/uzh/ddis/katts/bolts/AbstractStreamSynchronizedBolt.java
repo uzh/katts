@@ -35,7 +35,7 @@ public abstract class AbstractStreamSynchronizedBolt extends AbstractSynchronize
 	private Map<StreamConsumer, Date> lastDatePerStream = new HashMap<StreamConsumer, Date>();
 
 	private Logger logger = LoggerFactory.getLogger(AbstractStreamSynchronizedBolt.class);
-
+	
 	private Expression eventSynchronizationExpression;
 
 	@Override
@@ -63,35 +63,47 @@ public abstract class AbstractStreamSynchronizedBolt extends AbstractSynchronize
 	 */
 	@Override
 	protected void executeSynchronizedEvent(Event event) {
-
 		StreamSynchronizedEventWrapper syncEvent = new StreamSynchronizedEventWrapper(event,
 				this.getSynchronizationDate(event));
-		buffer.add(syncEvent);
-		lastDatePerStream.put(event.getEmittedOn(), syncEvent.getSynchronizationDate());
+
+		synchronized (this) {
+			buffer.add(syncEvent);
+			lastDatePerStream.put(event.getEmittedOn(), syncEvent.getSynchronizationDate());
+		}
 		event.ack();
 		executeEventsInBuffer();
-
 	}
 
 	/**
 	 * This method executes all events in the buffer, with the correct temporal order.
 	 */
 	private void executeEventsInBuffer() {
-		StreamSynchronizedEventWrapper next = buffer.peek();
-		if (next != null) {
-			boolean bufferTimeout = false;
-			long timeout = next.getEmittedOn().getRealBufferTimout();
-			if (timeout > 0) {
-				Date lastDate = lastDatePerStream.get(next.getEmittedOn());
 
-				if (Math.abs((lastDate.getTime() - next.getSynchronizationDate().getTime())) > timeout) {
-					bufferTimeout = true;
+		StreamSynchronizedEventWrapper next;
+		boolean inOrder = false;
+
+		synchronized (this) {
+			next = buffer.peek();
+
+			if (next != null) {
+				boolean bufferTimeout = false;
+				long timeout = next.getEmittedOn().getRealBufferTimout();
+				if (timeout > 0) {
+					Date lastDate = lastDatePerStream.get(next.getEmittedOn());
+
+					if (Math.abs((lastDate.getTime() - next.getSynchronizationDate().getTime())) > timeout) {
+						bufferTimeout = true;
+					}
+				}
+
+				if (bufferTimeout || isInTemporalOrder(next)) {
+					inOrder = true;
 				}
 			}
+		}
 
-			if ((isInTemporalOrder(next) || bufferTimeout)) {
-				executeSynchronizedStreamEvent(next);
-			}
+		if (inOrder) {
+			executeSynchronizedStreamEvent(next);
 		}
 	}
 
@@ -99,7 +111,9 @@ public abstract class AbstractStreamSynchronizedBolt extends AbstractSynchronize
 	public void ack(Event event) {
 		super.ack(event);
 
-		buffer.remove(event);
+		synchronized (this) {
+			buffer.remove(event);
+		}
 
 		// Since we found an event with correct temporal order, try to find
 		// other events and execute them.
@@ -115,9 +129,22 @@ public abstract class AbstractStreamSynchronizedBolt extends AbstractSynchronize
 	 * @return True when the event is in Order, False when the event is not in the corresponding order.
 	 */
 	private boolean isInTemporalOrder(StreamSynchronizedEventWrapper event) {
-
-		for (Entry<StreamConsumer, Date> dateEntry : lastDatePerStream.entrySet()) {
-			if (dateEntry.getValue().before(event.getSynchronizationDate())) {
+		
+		Date eventSynchronizationDate = event.getSynchronizationDate();
+		
+		for (StreamConsumer stream : this.getStreamConsumer()) {
+			
+			// When the stream is the same, as the stream of the event, then continue with the next stream.
+			if (stream.getStream().getId().equals(event.getEmittedOn().getStream().getId())) {
+				continue;
+			}
+			
+			Date lastEventOnStream = lastDatePerStream.get(stream);
+			
+			if (lastEventOnStream == null) {
+				return false;
+			}
+			else if (eventSynchronizationDate.after(lastEventOnStream)) {
 				return false;
 			}
 		}
