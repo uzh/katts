@@ -61,10 +61,10 @@ public class StreamSynchronizedEventWrapper extends Event {
 			dateCompareWith = ((StreamSynchronizedEventWrapper)event).getSynchronizationDate();
 		}
 		if (getSynchronizationDate().after((dateCompareWith))) {
-			return -1;
+			return 1;
 		}
 		else if (getSynchronizationDate().before(dateCompareWith)) {
-			return 1;
+			return -1;
 		}
 		else {
 			return 0;
