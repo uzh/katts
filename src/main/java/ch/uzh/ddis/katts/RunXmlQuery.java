@@ -116,7 +116,8 @@ public class RunXmlQuery {
 			// Log every 15 seconds the Java Virtual Machine properties
 			conf.put(VmMonitor.RECORD_INVERVAL, monitoringRecordInterval);
 		}
-
+		
+		conf.put(RunXmlQueryLocally.RUN_TOPOLOGY_LOCALLY_CONFIG_KEY, false);
 		
 		TopologyBuilder builder = new TopologyBuilder(conf);
 		builder.setQuery(query);
