@@ -50,7 +50,7 @@ public class StarterMonitor {
 				zooKeeper.create(KATTS_STARTING_TIME_ZK_PATH, Long.toString(System.currentTimeMillis()).getBytes(),
 						Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 			} catch (KeeperException e) {
-				if (e.code().equals("KeeperException.NodeExists")) {
+				if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
 					logger.info("The starting time entry was set already by another instance.");
 				} else {
 					throw new RuntimeException("Can't create the starting time ZooKeeper entry.", e);
