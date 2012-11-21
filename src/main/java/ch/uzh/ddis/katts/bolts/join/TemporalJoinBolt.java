@@ -9,6 +9,7 @@ import java.util.Set;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import ch.uzh.ddis.katts.bolts.AbstractStreamSynchronizedBolt;
+import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
 import ch.uzh.ddis.katts.query.processor.join.JoinConditionConfiguration;
@@ -30,7 +31,7 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  * 
  * @author lfischer
  */
-public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
+public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 
 	// TODO lorenz: use global storage facility
 
@@ -54,9 +55,9 @@ public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 	// private Storage<Object, Map<StreamConsumer, PriorityQueue<Event>>>
 	// queues;
 	// private Logger logger = LoggerFactory.getLogger(TemporalJoinBolt.class);
-	
+
 	private Date lastEventDate;
-	
+
 	private Boolean monitor = new Boolean(true);
 
 	/**
@@ -101,17 +102,17 @@ public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 
 	@Override
 	public void execute(Event event) {
-		
+
 		// Check the constrain that all event, must be in order for processing.
-		synchronized(monitor) {
-			
+		synchronized (monitor) {
+
 			if (lastEventDate != null && lastEventDate.after(event.getEndDate())) {
 				throw new RuntimeException("An event was out of order.");
 			}
-			
+
 			lastEventDate = event.getEndDate();
 		}
-		
+
 		Set<SimpleVariableBindings> joinResults;
 		SimpleVariableBindings newBindings = new SimpleVariableBindings(event.getTuple());
 		String streamId = event.getEmittedOn().getStream().getId();
@@ -134,7 +135,7 @@ public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 				VariableBindings bindingsToEmit = getEmitter().createVariableBindings(stream, event);
 
 				for (Variable variable : stream.getVariables()) {
-					if (simpleBindings.get(variable.getReferencesTo()) == null) {					
+					if (simpleBindings.get(variable.getReferencesTo()) == null) {
 						throw new NullPointerException();
 					}
 					bindingsToEmit.add(variable, simpleBindings.get(variable.getReferencesTo()));
@@ -156,7 +157,8 @@ public class TemporalJoinBolt extends AbstractStreamSynchronizedBolt {
 
 	@Override
 	public String getSynchronizationDateExpression() {
-		// TODO Make this configurable
+		// TODO Make this configurable (May be it is not a good idea to change this, hence it make no sense to add an
+		// option to configure it.)
 		return "#event.endDate";
 	}
 

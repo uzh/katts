@@ -11,13 +11,13 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import ch.uzh.ddis.katts.bolts.AbstractBolt;
+import ch.uzh.ddis.katts.bolts.AbstractVariableBindingsBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
-public class ExpressionFunctionBolt extends AbstractBolt{
+public class ExpressionFunctionBolt extends AbstractVariableBindingsBolt{
 
 	private static final long serialVersionUID = 1L;
 	private ExpressionFunctionConfiguration configuration;
@@ -64,6 +64,11 @@ public class ExpressionFunctionBolt extends AbstractBolt{
 
 	public void setConfiguration(ExpressionFunctionConfiguration configuration) {
 		this.configuration = configuration;
+	}
+
+	@Override
+	public String getId() {
+		return this.getConfiguration().getId();
 	}
 
 }

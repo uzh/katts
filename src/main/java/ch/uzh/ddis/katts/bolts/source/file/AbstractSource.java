@@ -1,4 +1,4 @@
-package ch.uzh.ddis.katts.spouts.file.source;
+package ch.uzh.ddis.katts.bolts.source.file;
 
 import java.util.List;
 

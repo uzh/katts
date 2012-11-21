@@ -8,13 +8,13 @@ import java.util.List;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 
-import ch.uzh.ddis.katts.bolts.AbstractBolt;
+import ch.uzh.ddis.katts.bolts.AbstractVariableBindingsBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
-public class SystemOutputBolt extends AbstractBolt {
+public class SystemOutputBolt extends AbstractVariableBindingsBolt {
 	
 	private static final long serialVersionUID = 1L;
 	private SystemOutputConfiguration configuration;
@@ -53,5 +53,10 @@ public class SystemOutputBolt extends AbstractBolt {
 	
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {}
+
+	@Override
+	public String getId() {
+		return this.getConfiguration().getId();
+	}
 
 }

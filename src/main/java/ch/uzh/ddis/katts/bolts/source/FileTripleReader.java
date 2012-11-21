@@ -1,46 +1,46 @@
-package ch.uzh.ddis.katts.spouts.file;
+package ch.uzh.ddis.katts.bolts.source;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.ZooKeeper;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.spout.SpoutOutputCollector;
+import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
+import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Tuple;
+import backtype.storm.utils.Utils;
+import ch.uzh.ddis.katts.bolts.source.file.CSVSource;
+import ch.uzh.ddis.katts.bolts.source.file.GzipSourceWrapper;
+import ch.uzh.ddis.katts.bolts.source.file.Source;
+import ch.uzh.ddis.katts.bolts.source.file.ZipSourceWrapper;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.query.source.File;
-import ch.uzh.ddis.katts.spouts.file.source.CSVSource;
-import ch.uzh.ddis.katts.spouts.file.source.GzipSourceWrapper;
-import ch.uzh.ddis.katts.spouts.file.source.Source;
-import ch.uzh.ddis.katts.spouts.file.source.ZipSourceWrapper;
-import ch.uzh.ddis.katts.utils.Cluster;
+import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
-public class FileTripleReader implements IRichSpout {
+public class FileTripleReader implements IRichBolt {
 
 	/** This formatter is used to parse dateTime string values */
 	private transient DateTimeFormatter isoFormat;
 
 	private static final long serialVersionUID = 1L;
-	private SpoutOutputCollector collector;
+	private OutputCollector collector;
 	private FileTripleReaderConfiguration configuration;
 	private List<Source> sources = new ArrayList<Source>();
+	private StarterMonitor starterMonitor;
+	
+	private Thread tripleReaderThread = null;
+	
+	private Date currentRealTimeDate;
 
-	@Override
-	public void nextTuple() {
+	public boolean nextTuple() {
 		final String dateStringValue;
 		final Date date;
 		// TODO Do synchronize the different sources
@@ -54,7 +54,7 @@ public class FileTripleReader implements IRichSpout {
 		}
 
 		if (triple == null) {
-			return;
+			return false;
 		}
 
 		// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
@@ -70,6 +70,9 @@ public class FileTripleReader implements IRichSpout {
 
 		List<Object> tuple = new ArrayList<Object>();
 		tuple.add(date);
+		synchronized (this) {
+			currentRealTimeDate = date;
+		}
 
 		// currently the start and end date are equal
 		tuple.add(date);
@@ -80,23 +83,46 @@ public class FileTripleReader implements IRichSpout {
 		// We emit on the default stream, since we do not want multiple
 		// streams!
 		getCollector().emit(tuple);
+		
+		return true;
 	}
+
+	@Override
+	public void execute(Tuple input) {
+		
+		// This bolt receives only heart beats, hence we do not need to handle here other tuples
+		
+		if (tripleReaderThread == null) {	
+			starterMonitor.start();
+			
+			// Read the first line to ensure that the currentRealTimeDate is set.
+			nextTuple();
+			
+			tripleReaderThread = new Thread(new TripleReaderThread());
+			tripleReaderThread.start();
+		}
+		
+		synchronized (this) {
+			
+			// Ensure that the real time is not null, if so ignore the heart beat
+			if (currentRealTimeDate != null) {
+				
+				List<Object> output = HeartBeatSpout.getOutputTuple(input, currentRealTimeDate);
+				this.getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(this.getConfiguration().getId()), output);
+			}
+			
+		}
+	
+	}
+	
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		Fields fields = new Fields("startDate", "endDate", "subject", "predicate", "object");
 		declarer.declare(fields);
+		declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this.getConfiguration().getId()), HeartBeatSpout.getHeartBeatFields());
 	}
 
-	@Override
-	public void open(Map conf, TopologyContext aContext, SpoutOutputCollector aCollector) {
-		collector = aCollector;
-
-		buildSources();
-
-		StarterMonitor.getInstance(conf).start();
-
-	}
 
 	private void buildSources() {
 		for (File file : configuration.getFiles()) {
@@ -105,10 +131,6 @@ public class FileTripleReader implements IRichSpout {
 				source = new CSVSource();
 			}
 
-//			if (file.isZipped()) {
-//				source = new ZipSourceWrapper(source);
-//			}
-			
 			if (file.getPath().endsWith(".zip")) {
 				source = new ZipSourceWrapper(source);
 			}
@@ -129,36 +151,8 @@ public class FileTripleReader implements IRichSpout {
 	}
 
 	@Override
-	public void close() {
-	}
-
-	@Override
-	public void activate() {
-	}
-
-	@Override
-	public void deactivate() {
-	}
-
-	@Override
-	public void ack(Object msgId) {
-	}
-
-	@Override
-	public void fail(Object msgId) {
-	}
-
-	@Override
 	public Map<String, Object> getComponentConfiguration() {
 		return null;
-	}
-
-	public SpoutOutputCollector getCollector() {
-		return collector;
-	}
-
-	public void setCollector(SpoutOutputCollector collector) {
-		this.collector = collector;
 	}
 
 	public FileTripleReaderConfiguration getConfiguration() {
@@ -167,6 +161,42 @@ public class FileTripleReader implements IRichSpout {
 
 	public void setConfiguration(FileTripleReaderConfiguration configuration) {
 		this.configuration = configuration;
+	}
+
+	@Override
+	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+		this.collector = collector;
+		
+		buildSources();
+		
+		starterMonitor = StarterMonitor.getInstance(stormConf);
+	}
+
+	@Override
+	public void cleanup() {
+	}
+
+	public OutputCollector getCollector() {
+		return collector;
+	}
+
+	public void setCollector(OutputCollector collector) {
+		this.collector = collector;
+	}
+	
+	
+	private class TripleReaderThread implements Runnable {
+
+		@Override
+		public void run() {
+			while (true) {
+				if (!nextTuple()) {
+					// when we got no new result, we sleep to prevent blocking the processor.
+					Utils.sleep(2000);
+				}
+			}
+		}
+		
 	}
 
 }

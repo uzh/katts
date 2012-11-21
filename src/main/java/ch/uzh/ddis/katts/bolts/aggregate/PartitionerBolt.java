@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
+import ch.uzh.ddis.katts.bolts.AbstractStreamInternSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
@@ -135,10 +136,6 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 	public void execute(Event event) {
 
 		String partitionFieldValue = event.getVariableValue(partitionOnField).toString().intern();
-
-		if (event.getTuple().getStringByField("ticker_symbol").equals("WCII")) {
-			// System.out.println(event);
-		}
 
 		synchronized (partitionFieldValue) {
 			// Fix Bucket (initialize or reset)
@@ -376,6 +373,13 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 
 	public List<PartitionerComponent> getComponents() {
 		return components;
+	}
+
+	@Override
+	public String getSynchronizationDateExpression() {
+		// TODO Make this configurable (May be it is not a good idea to change this, hence it make no sense to add an
+		// option to configure it.)
+		return "#event.endDate";
 	}
 
 }

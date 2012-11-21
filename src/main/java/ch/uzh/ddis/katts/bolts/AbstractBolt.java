@@ -1,112 +1,132 @@
 package ch.uzh.ddis.katts.bolts;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
+import backtype.storm.generated.GlobalStreamId;
+import backtype.storm.generated.Grouping;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import ch.uzh.ddis.katts.query.stream.Stream;
-import ch.uzh.ddis.katts.query.stream.StreamConsumer;
-import ch.uzh.ddis.katts.query.stream.Variable;
+import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
-public abstract class AbstractBolt extends BaseRichBolt implements Bolt {
-
-	private static final long serialVersionUID = 1L;
-
-	private Map<String, StreamConsumer> streamConsumer = new LinkedHashMap<String, StreamConsumer>();
-
-	/*
-	 * This map holds a reference to all outgoing streams of this bolt. The key of the map is the id of the
-	 * stream while the stream is the actual object representation of the outgoing stream.
-	 */
-	private Map<String, Stream> streams = new LinkedHashMap<String, Stream>();
+/**
+ * This Bolt implements the basics for a Bolt, that requires a handling for heart beats.
+ * 
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
+public abstract class AbstractBolt implements IRichBolt {
 
 	private OutputCollector collector;
 
-	private Emitter emitter = null;
+	private Map<Integer, HeartBeat> lastHeartBeatPerTask = new HashMap<Integer, HeartBeat>();
+	private Set<Integer> tasksFromIncomingStreams = new HashSet<Integer>();
+	private Date currentStreamTime;
 
 	@Override
-	public void prepare(Map stormConf, TopologyContext context,
-			OutputCollector collector) {
+	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.setCollector(collector);
+
+		// Find all tasks from incoming streams
+		Map<GlobalStreamId, Grouping> sources = context.getThisSources();
+		for (Entry<GlobalStreamId, Grouping> entry : sources.entrySet()) {
+			List<Integer> tasks = context.getComponentTasks(entry.getKey().get_componentId());
+			for (Integer taskId : tasks) {
+				tasksFromIncomingStreams.add(taskId);
+			}
+		}
+
 	}
 
 	@Override
 	public void execute(Tuple input) {
-		execute(createEvent(input));
-	}
 
-	public Event createEvent(Tuple input) {
-		StreamConsumer emittedOn = this.streamConsumer.get(input
-				.getSourceStreamId());
-		return new Event(input, this, emittedOn);
-	}
+		boolean isHeartBeatTuple = true;
 
-	@Override
-	public abstract void execute(Event event);
+		// This synchronization is required, because we should not allow the execution of a heart beat tuple in parallel
+		// with a regular tuple. The reason is that, when the regular tuple processing takes more time than the
+		// processing of the heart beat tuple, we may emit a wrong stream processing time.
+		synchronized (this) {
+			String heartBeatStreamId = HeartBeatSpout.buildHeartBeatStreamId(input.getSourceComponent());
 
-	@Override
-	public void ack(Event event) {
-		this.getCollector().ack(event.getTuple());
-	}
-
-	public Emitter getEmitter() {
-		if (this.emitter == null) {
-			this.emitter = new Emitter(this);
+			if (heartBeatStreamId.equals(input.getSourceStreamId())) {
+				HeartBeat heartBeat = new HeartBeat(input);
+				executeHeartBeat(heartBeat);
+			} else {
+				isHeartBeatTuple = false;
+			}
 		}
-		return this.emitter;
+
+		if (!isHeartBeatTuple) {
+			executeHeartBeatFreeTuple(input);
+		}
+	}
+
+	public abstract void executeHeartBeatFreeTuple(Tuple input);
+
+	public abstract String getId();
+
+	/**
+	 * This method handles the heart beat tuples. This method should not be overridden. Override instead the methods
+	 * {@link AbstractBolt#calculateOutgoingStreamDate()} or {@link AbstractBolt#updateIncomingStreamDate()}.
+	 * 
+	 * @param heartBeat
+	 */
+	public synchronized void executeHeartBeat(HeartBeat heartBeat) {
+
+		// We synchronize the different heart beats from the different tasks. We will emit the heart beat with the
+		// lowest stream real time. We emit the heart beat only when the heart beat comes from the first task in the
+		// set.
+
+		// Add heart beat to our list.
+		lastHeartBeatPerTask.put(heartBeat.getTaskId(), heartBeat);
+
+		// Check if we have the first heart beat got:
+		Integer firstTaskInList = tasksFromIncomingStreams.iterator().next();
+		if (firstTaskInList.equals(heartBeat.getTaskId())) {
+
+			HeartBeat lowestHeartBeat = null;
+
+			// Find the heart beat with the lowest stream time
+			for (Entry<Integer, HeartBeat> entry : lastHeartBeatPerTask.entrySet()) {
+				if (lowestHeartBeat == null || entry.getValue().getStreamDate().before(lowestHeartBeat.getStreamDate())) {
+					lowestHeartBeat = entry.getValue();
+				}
+			}
+
+			currentStreamTime = lowestHeartBeat.getStreamDate();
+			updateIncomingStreamDate(lowestHeartBeat.getStreamDate());
+
+			this.getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
+					HeartBeatSpout.getOutputTuple(lowestHeartBeat.getTuple(), calculateOutgoingStreamDate()));
+
+		}
+
+	}
+
+	public synchronized Date calculateOutgoingStreamDate() {
+		return getCurrentStreamTime();
+	}
+
+	public synchronized void updateIncomingStreamDate(Date streamDate) {
+		
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		for (Stream stream : this.getStreams()) {
-			List<String> fields = new ArrayList<String>();
-			fields.add("sequenceNumber");
-			fields.add("startDate");
-			fields.add("endDate");
-			fields.addAll(Variable.getFieldList(stream.getAllVariables()));
-			declarer.declareStream(stream.getId(), new Fields(fields));
-		}
+		// Define the output fields for the heart beat
+		declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this.getId()), HeartBeatSpout.getHeartBeatFields());
 	}
 
-	@Override
-	public Collection<StreamConsumer> getStreamConsumer() {
-		return streamConsumer.values();
-	}
-
-	@Override
-	public void setConsumerStreams(Collection<StreamConsumer> streamConsumers) {
-		streamConsumer = new HashMap<String, StreamConsumer>();
-		for (StreamConsumer stream : streamConsumers) {
-			if (stream.getStream() == null) {
-				throw new NullPointerException("The given consumer stream is not linked back to the producing stream. Check if there is a bolt that consums a stream, which is not defined.");
-			}
-			streamConsumer.put(stream.getStream().getId(), stream);
-		}
-	}
-
-	@Override
-	public Collection<Stream> getStreams() {
-		return streams.values();
-	}
-
-	@Override
-	public void setStreams(Collection<Stream> streams) {
-		this.streams = new HashMap<String, Stream>();
-		for (Stream stream : streams) {
-			this.streams.put(stream.getId(), stream);
-		}
-	}
-
-	@Override
 	public OutputCollector getCollector() {
 		return collector;
 	}
@@ -115,4 +135,25 @@ public abstract class AbstractBolt extends BaseRichBolt implements Bolt {
 		this.collector = collector;
 	}
 
+	public Map<String, Object> getComponentConfiguration() {
+		return null;
+	}
+
+	@Override
+	public void cleanup() {
+
+	}
+
+	public synchronized final Date getCurrentStreamTime() {
+		return currentStreamTime;
+	}
+	
+	public Set<Integer> getAllSourceTasksFromIncomingStreams() {
+		return tasksFromIncomingStreams;
+	}
+	
+	public synchronized HeartBeat getLastHeartBeatPerTask(Integer taskId) {
+		return this.lastHeartBeatPerTask.get(taskId);
+	}
+	
 }

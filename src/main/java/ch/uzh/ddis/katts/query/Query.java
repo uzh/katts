@@ -53,6 +53,7 @@ public class Query implements Serializable {
 		@XmlElementRef(type=TripleFilter.class),
 		@XmlElementRef(type=ExpressionFilter.class),
 		@XmlElementRef(type=FileOutput.class),
+		@XmlElementRef(type=HeartBeat.class),
 	}) 
 	private List<Node> nodes = new ArrayList<Node>();
 	

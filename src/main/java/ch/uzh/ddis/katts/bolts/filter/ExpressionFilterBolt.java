@@ -9,13 +9,13 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import ch.uzh.ddis.katts.bolts.AbstractBolt;
+import ch.uzh.ddis.katts.bolts.AbstractVariableBindingsBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
-public class ExpressionFilterBolt extends AbstractBolt{
+public class ExpressionFilterBolt extends AbstractVariableBindingsBolt{
 
 	private static final long serialVersionUID = 1L;
 	private ExpressionFilterConfiguration configuration;
@@ -69,6 +69,11 @@ public class ExpressionFilterBolt extends AbstractBolt{
 
 	public void setConfiguration(ExpressionFilterConfiguration configuration) {
 		this.configuration = configuration;
+	}
+
+	@Override
+	public String getId() {
+		return this.getConfiguration().getId();
 	}
 
 }

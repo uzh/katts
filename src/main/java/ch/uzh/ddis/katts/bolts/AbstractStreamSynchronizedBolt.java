@@ -24,7 +24,7 @@ import ch.uzh.ddis.katts.query.stream.StreamConsumer;
  * @author Thomas Hunziker
  * 
  */
-public abstract class AbstractStreamSynchronizedBolt extends AbstractSynchronizedBolt {
+public abstract class AbstractStreamSynchronizedBolt extends AbstractStreamInternSynchronizedBolt {
 
 	private static final long serialVersionUID = 1L;
 

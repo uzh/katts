@@ -10,9 +10,11 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import ch.uzh.ddis.katts.bolts.AbstractBolt;
 import ch.uzh.ddis.katts.query.processor.filter.TripleCondition;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.Variable;
+import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 import ch.uzh.ddis.katts.utils.XmlTypeMapping;
 
 /**
@@ -27,22 +29,16 @@ import ch.uzh.ddis.katts.utils.XmlTypeMapping;
  * @author Thomas Hunziker
  * 
  */
-public class TripleFilterBolt implements IRichBolt {
+public class TripleFilterBolt extends AbstractBolt implements IRichBolt {
 
 	private static final long serialVersionUID = 1L;
-	private OutputCollector collector;
 	private TripleFilterConfiguration configuration;
 	private long counter = 0;
 
-	@Override
-	public void prepare(Map stormConf, TopologyContext context,
-			OutputCollector collector) {
-		setCollector(collector);
-	}
-
 	@SuppressWarnings("unchecked")
 	@Override
-	public void execute(Tuple tuple) {
+	public void executeHeartBeatFreeTuple(Tuple tuple) {
+		
 		if (tupleMatchConditions(tuple)) {
 			for (Stream stream : configuration.getProducers()) {
 				List<Object> output = new ArrayList<Object>();
@@ -92,6 +88,8 @@ public class TripleFilterBolt implements IRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		super.declareOutputFields(declarer);
+		
 		for (Stream stream : this.getStreams()) {
 			List<String> fields = new ArrayList<String>();
 			fields.add("sequenceNumber");
@@ -110,20 +108,18 @@ public class TripleFilterBolt implements IRichBolt {
 		return null;
 	}
 
-	public OutputCollector getCollector() {
-		return collector;
-	}
-
-	public void setCollector(OutputCollector collector) {
-		this.collector = collector;
-	}
-
 	public List<Stream> getStreams() {
 		return configuration.getProducers();
 	}
 
 	public void setConfiguration(TripleFilterConfiguration configuration) {
 		this.configuration = configuration;
+	}
+
+
+	@Override
+	public String getId() {
+		return this.configuration.getId();
 	}
 
 }

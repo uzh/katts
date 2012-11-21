@@ -10,9 +10,10 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.IRichSpout;
-import ch.uzh.ddis.katts.spouts.file.FileTripleReader;
-import ch.uzh.ddis.katts.spouts.file.FileTripleReaderConfiguration;
+import ch.uzh.ddis.katts.bolts.source.FileTripleReader;
+import ch.uzh.ddis.katts.bolts.source.FileTripleReaderConfiguration;
 
 /**
  * The file source node is a source node which constructs from files data streams.
@@ -41,7 +42,7 @@ public class FileSource extends AbstractSource implements FileTripleReaderConfig
 	}
 
 	@Override
-	public IRichSpout getSpout() {
+	public IRichBolt getBolt() {
 		FileTripleReader reader = new FileTripleReader();
 		reader.setConfiguration(this);
 		return reader;

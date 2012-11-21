@@ -21,6 +21,7 @@ import ch.uzh.ddis.katts.query.source.Source;
 import ch.uzh.ddis.katts.query.stream.Producers;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
+import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
  * A triple filter does build the variable bindings from a triple stream (output
@@ -59,13 +60,9 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 
 	public void setProducers(List<Stream> producers) {
 		this.producers = producers;
-//		for (Stream p : this.producers) {
-//			p.setNode(this);
-//		}
 	}
 
 	public void appendProducer(Stream producer) {
-//		producer.setNode(this);
 		this.getProducers().add(producer);
 	}
 
@@ -75,6 +72,9 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		bolt.setConfiguration(this);
 		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt, getDeclaredParallelism(builder));
 		declarer.fieldsGrouping(applyOnSource, new Fields(groupOn));
+		
+		// Attach the heart beat to the bolt
+		declarer.allGrouping(applyOnSource, HeartBeatSpout.buildHeartBeatStreamId(applyOnSource));
 	}
 
 	@Override

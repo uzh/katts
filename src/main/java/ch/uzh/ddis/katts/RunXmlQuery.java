@@ -11,11 +11,11 @@ import javax.xml.bind.JAXBException;
 
 import org.apache.commons.io.FileUtils;
 
+import ch.uzh.ddis.katts.bolts.source.FileTripleReader;
 import ch.uzh.ddis.katts.monitoring.Recorder;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.monitoring.VmMonitor;
 import ch.uzh.ddis.katts.query.Query;
-import ch.uzh.ddis.katts.spouts.file.FileTripleReader;
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;

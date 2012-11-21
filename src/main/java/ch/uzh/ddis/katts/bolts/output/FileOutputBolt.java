@@ -15,14 +15,14 @@ import au.com.bytecode.opencsv.CSVWriter;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import ch.uzh.ddis.katts.bolts.AbstractBolt;
+import ch.uzh.ddis.katts.bolts.AbstractVariableBindingsBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerBolt;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
-public class FileOutputBolt extends AbstractBolt {
+public class FileOutputBolt extends AbstractVariableBindingsBolt {
 
 	private static final long serialVersionUID = 1L;
 	private FileOutputConfiguration configuration;
@@ -103,6 +103,11 @@ public class FileOutputBolt extends AbstractBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+	}
+
+	@Override
+	public String getId() {
+		return this.getConfiguration().getId();
 	}
 
 }

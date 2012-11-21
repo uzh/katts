@@ -10,4 +10,6 @@ public interface TripleFilterConfiguration extends ProducerConfiguration{
 	public String getApplyOnSource();
 	public String getGroupOn();
 	public List<TripleCondition> getConditions();
+	public String getId();
+	
 }

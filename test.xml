@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <query xmlns="http://uzh.ch/ddis/katts/query">
 
+	<!-- Send every three second a heart beat. -->
+	<heartBeat interval="PT3S" />
+
+
 	<!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
 	<fileSource id="tickerSource">
 		<files>
@@ -49,7 +53,6 @@
 			</stream>
 		</produces>
 	</tripleFilter>
-
 
 	<!-- Pre-Filters for contract data -->
 	<tripleFilter groupOn="subject" applyOnSource="contractSource" id="TripleFilter_ContractAgency">
@@ -209,7 +212,7 @@
 
 
 
-	<expressionFilter expression="#ticker_fct > 4" id="expressionFilter">
+	<expressionFilter expression="#ticker_fct > 2" id="expressionFilter">
 		<consumes>
 			<stream maxBufferSize="5" streamId="tickerStreamfct">
 				<variableGrouping>
@@ -271,4 +274,5 @@
 			</stream>
 		</consumes>
 	</fileOutput>
+
 </query>

@@ -7,8 +7,10 @@ import backtype.storm.topology.BoltDeclarer;
 import backtype.storm.utils.Utils;
 import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.bolts.Bolt;
+import ch.uzh.ddis.katts.query.source.Source;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
+import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
  * The AbstractNode implements some convenient methods for nodes.
@@ -51,8 +53,11 @@ public abstract class AbstractNode implements Node{
 			BoltDeclarer boltDeclarer = builder.setBolt(this.getId(), bolt, parallelism);
 			this.attachStreams((ConsumerNode)this, boltDeclarer);
 		}
-		else if (this instanceof SpoutNode) {
-			builder.setSpout(this.getId(), ((SpoutNode)this).getSpout(), parallelism);
+		else if (this instanceof Source) {
+			BoltDeclarer boltDeclarer = builder.setBolt(this.getId(), ((Source)this).getBolt(), parallelism);
+			
+			// Since this is a source, we need only to attach the heart beat stream to it.
+			boltDeclarer.allGrouping(HeartBeat.HEARTBEAT_COMPONENT_ID, HeartBeatSpout.HEARTBEAT_STREAMID);
 		}
 	}
 	
@@ -86,7 +91,13 @@ public abstract class AbstractNode implements Node{
 	public void attachStreams(ConsumerNode node, BoltDeclarer bolt) {
 		for (StreamConsumer stream : node.getConsumers()) {
 			stream.getGrouping().attachToBolt(bolt, stream);
+			
+			// Attach the heart beat to the bolt
+			String sourceComponentId = stream.getStream().getNode().getId();
+			bolt.allGrouping(sourceComponentId, HeartBeatSpout.buildHeartBeatStreamId(sourceComponentId));
 		}
+		
+		
 		
 	}
 
