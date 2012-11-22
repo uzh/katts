@@ -319,7 +319,7 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 				Double aggregate = component.calculateAggregate(componentBuckets);
 				
 				if (aggregate == null) {
-					logger.info("An aggreate could not be built, because all buckets seems to be empty.");
+					logger.info("An aggreate could not be built, because all buckets seem to be empty resp. null.");
 					aggreationMissed = true;
 					break;
 				}
