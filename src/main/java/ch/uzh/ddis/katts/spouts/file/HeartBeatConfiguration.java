@@ -4,5 +4,5 @@ import javax.xml.datatype.Duration;
 
 public interface HeartBeatConfiguration {
 	
-	public Duration getHeartBeatInterval();
+	public long getHeartBeatInterval();
 }

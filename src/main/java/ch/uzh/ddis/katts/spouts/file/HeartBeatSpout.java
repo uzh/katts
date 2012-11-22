@@ -43,11 +43,11 @@ public class HeartBeatSpout implements IRichSpout {
 	@Override
 	public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
 		this.collector = collector;
-		if (this.getConfiguration().getHeartBeatInterval() != null) {
-			waitTime = this.getConfiguration().getHeartBeatInterval().getTimeInMillis(new Date());
+		if (this.getConfiguration() != null && this.getConfiguration().getHeartBeatInterval() > 0) {
+			waitTime = this.getConfiguration().getHeartBeatInterval();
 		}
 		else {
-			// Set the waitTime to 3000 miliseconds
+			// Set the waitTime to 3000 miliseconds, when nothing was defined.
 			waitTime = 3000;
 		}
 		
@@ -67,7 +67,7 @@ public class HeartBeatSpout implements IRichSpout {
 
 	@Override
 	public synchronized void nextTuple() {
-		collector.emit(HEARTBEAT_STREAMID, getOutputTuple(new Date(), null, new Date()));
+		collector.emit(HEARTBEAT_STREAMID, getOutputTuple(new Date(), new Date(0), new Date()));
 		Utils.sleep(waitTime);
 	}
 

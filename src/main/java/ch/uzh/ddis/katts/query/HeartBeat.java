@@ -21,7 +21,7 @@ public class HeartBeat implements Node, HeartBeatConfiguration {
 	public static final String HEARTBEAT_COMPONENT_ID = "heartbeat";
 
 	@XmlTransient
-	private Duration duration;
+	private long duration;
 	
 	@XmlTransient
 	private Query query;
@@ -64,11 +64,11 @@ public class HeartBeat implements Node, HeartBeatConfiguration {
 
 	@Override
 	@XmlAttribute(name="interval", required=true)
-	public Duration getHeartBeatInterval() {
+	public long getHeartBeatInterval() {
 		return this.duration;
 	}
 
-	public void setHeartBeatInverval(Duration duration) {
+	public void setHeartBeatInverval(long duration) {
 		this.duration = duration;
 	}
 	
