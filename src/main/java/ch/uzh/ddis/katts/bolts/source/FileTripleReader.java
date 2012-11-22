@@ -58,7 +58,7 @@ public class FileTripleReader implements IRichBolt {
 		}
 
 		if (triple == null) {
-			logger.info(String.format("Probably the end of file is reached. Component ID: %1s", this.getConfiguration().getId()));
+//			logger.info(String.format("Probably the end of file is reached. Component ID: %1s", this.getConfiguration().getId()));
 			return false;
 		}
 

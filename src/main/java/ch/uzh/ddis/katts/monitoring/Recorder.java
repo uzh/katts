@@ -16,6 +16,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -142,7 +143,17 @@ public final class Recorder implements Watcher {
 
 	@Override
 	public void process(WatchedEvent event) {
-		writeCounts();
+		if (event.getType() == Event.EventType.None) {
+			switch (event.getState()) {
+			
+			case Expired:
+				// We need to reconnect
+				TerminationMonitor.getInstance(stormConfiguration).addTerminationWatcher(this);
+				break;
+			}
+		} else {
+			writeCounts();
+		}
 	}
 
 	private void writeCounts() {

@@ -334,8 +334,11 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 				long endTime = eventToJoinWith.getEndDate().getTime();
 				bindings.setStartDate(new Date(startTime));
 				bindings.setEndDate(new Date(endTime));
-
 				bindings.emit();
+				
+				setLastDateProcessed(bindings.getEndDate());
+				
+				
 			}
 		}
 	}

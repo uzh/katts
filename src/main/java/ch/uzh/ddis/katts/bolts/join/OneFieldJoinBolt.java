@@ -159,7 +159,9 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 			bindings.setEndDate(events.get(0).getEndDate());
 
 			bindings.emit();
-
+			
+			setLastDateProcessed(bindings.getEndDate());
+			
 		}
 	}
 

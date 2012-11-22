@@ -52,10 +52,17 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	}
 
 	private synchronized void executeEventsInBuffer() {
-		StreamSynchronizedEventWrapper next = buffer.peek();
-		if (next != null && isEventInTemporalOrder(next)) {
-			setLastDateProcessed(next.getSynchronizationDate());
-			executeSynchronizedEvent(next);
+		boolean stop = false;
+		while (!stop) {
+			StreamSynchronizedEventWrapper next = buffer.peek();
+			if (next != null && isEventInTemporalOrder(next)) {
+//				setLastDateProcessed(next.getSynchronizationDate());
+				executeSynchronizedEvent(next);
+				buffer.remove(next);
+			}
+			else {
+				stop = true;
+			}
 		}
 	}
 
@@ -90,12 +97,12 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 
 	@Override
 	public void ack(Event event) {
-		// we do not need to call the super method because we ack the event already when we write it to the buffer.
-		synchronized (this) {
-			buffer.remove(event);
-		}
-
-		executeEventsInBuffer();
+//		// we do not need to call the super method because we ack the event already when we write it to the buffer.
+//		synchronized (this) {
+//			buffer.remove(event);
+//		}
+//
+//		executeEventsInBuffer();
 	}
 
 	@Override
@@ -129,12 +136,16 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	 * @return The date on which the synchronization should be done
 	 */
 	protected Date getSynchronizationDate(Event event) {
-		setupSynchronizationDateExpression();
-
-		StandardEvaluationContext context = new StandardEvaluationContext();
-		context.setVariable("event", event);
-
-		return (Date) eventSynchronizationExpression.getValue(context);
+		
+		// Since currently all subclasses uses anyway the end date, we can code here this directly.
+		return event.getEndDate();
+		
+//		setupSynchronizationDateExpression();
+//
+//		StandardEvaluationContext context = new StandardEvaluationContext();
+//		context.setVariable("event", event);
+//
+//		return (Date) eventSynchronizationExpression.getValue(context);
 	}
 
 	/**

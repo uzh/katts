@@ -26,7 +26,7 @@ public class TerminationMonitor {
 	private boolean isDataSendToOutput = false;
 	private boolean isAnyDataSend = false;
 
-	private int terminationCheckInterval = 20000;
+	private int terminationCheckInterval = 150000;
 
 	private long lastOutputSendOn = 0;
 

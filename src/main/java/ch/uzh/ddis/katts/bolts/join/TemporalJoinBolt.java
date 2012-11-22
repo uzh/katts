@@ -6,9 +6,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import ch.uzh.ddis.katts.bolts.AbstractStreamSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
@@ -60,6 +62,8 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 
 	private Boolean monitor = new Boolean(true);
 
+	private Logger logger = LoggerFactory.getLogger(TemporalJoinBolt.class);
+
 	/**
 	 * Creates a new instance of this bolt type using the configuration provided.
 	 * 
@@ -107,7 +111,8 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		synchronized (monitor) {
 
 			if (lastEventDate != null && lastEventDate.after(event.getEndDate())) {
-				throw new RuntimeException("An event was out of order.");
+//				throw new RuntimeException("An event was out of order.");
+				logger.error(String.format("An event was out of order. Component Id: %1s -- Source Stream ID: %2s", this.getId(), event.getTuple().getSourceStreamId()));
 			}
 
 			lastEventDate = event.getEndDate();
@@ -144,6 +149,9 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 				bindingsToEmit.setEndDate((Date) simpleBindings.get("endDate"));
 
 				bindingsToEmit.emit();
+				
+				// TODO: Is this really the last possible occurring date of join?
+				setLastDateProcessed(bindingsToEmit.getEndDate());
 			}
 		}
 
