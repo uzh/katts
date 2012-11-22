@@ -32,7 +32,7 @@ public class MaxPartitionerComponent implements PartitionerComponent {
 	}
 
 	@Override
-	public double calculateAggregate(List<Object> componentBuckets) {
+	public Double calculateAggregate(List<Object> componentBuckets) {
 		Double max = null;
 		for (Object bucketValue : componentBuckets) {
 			if (bucketValue == null || bucketValue instanceof NullObject) {

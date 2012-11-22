@@ -40,7 +40,7 @@ public interface PartitionerComponent {
 	 *            The list of storage objects for this component.
 	 * @return The aggregate from this list.
 	 */
-	public double calculateAggregate(List<Object> componentBuckets);
+	public Double calculateAggregate(List<Object> componentBuckets);
 
 	/**
 	 * This method returns the name of the the component. In case of a min

@@ -305,7 +305,9 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 					bindings.add(variable, eventToJoinWith.getVariableValue(variable));
 				}
 			}
-
+			
+			
+			boolean aggreationMissed = false;
 			for (PartitionerComponent component : this.getComponents()) {
 
 				// Build component specific bucket list:
@@ -314,18 +316,27 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 					componentBuckets.add(storage.get(component.getName()));
 				}
 
-				double aggregate = component.calculateAggregate(componentBuckets);
-				bindings.add(component.getName(), new Double(aggregate));
+				Double aggregate = component.calculateAggregate(componentBuckets);
+				
+				if (aggregate == null) {
+					logger.info("An aggreate could not be built, because all buckets seems to be empty.");
+					aggreationMissed = true;
+					break;
+				}
+				
+				bindings.add(component.getName(), aggregate);
 
 			}
 
-			long startTime = (bucketNumber - bucketsPerWindow + 1) * slideSizeInMilliSeconds;
-			// long endTime = bucketNumber * slideSizeInMilliSeconds;
-			long endTime = eventToJoinWith.getEndDate().getTime();
-			bindings.setStartDate(new Date(startTime));
-			bindings.setEndDate(new Date(endTime));
+			if (!aggreationMissed) {
+				long startTime = (bucketNumber - bucketsPerWindow + 1) * slideSizeInMilliSeconds;
+				// long endTime = bucketNumber * slideSizeInMilliSeconds;
+				long endTime = eventToJoinWith.getEndDate().getTime();
+				bindings.setStartDate(new Date(startTime));
+				bindings.setEndDate(new Date(endTime));
 
-			bindings.emit();
+				bindings.emit();
+			}
 		}
 	}
 

@@ -29,7 +29,7 @@ public class AvgPartitionerComponent implements PartitionerComponent{
 	}
 
 	@Override
-	public double calculateAggregate(List<Object> componentBuckets) {
+	public Double calculateAggregate(List<Object> componentBuckets) {
 		double totalSum = 0;
 		double totalCount = 0;
 		for (Object bucketValue : componentBuckets) {
