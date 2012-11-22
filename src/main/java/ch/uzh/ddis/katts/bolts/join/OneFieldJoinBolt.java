@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import ch.uzh.ddis.katts.bolts.AbstractStreamInternSynchronizedBolt;
+import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
 import ch.uzh.ddis.katts.persistence.Storage;
@@ -29,7 +30,7 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  * @author Thomas Hunziker
  * 
  */
-public class OneFieldJoinBolt extends AbstractStreamInternSynchronizedBolt {
+public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 
 	private static final long serialVersionUID = 1L;
 	private OneFieldJoinConfiguration configuration;
@@ -223,6 +224,12 @@ public class OneFieldJoinBolt extends AbstractStreamInternSynchronizedBolt {
 
 	public void setConfiguration(OneFieldJoinConfiguration configuration) {
 		this.configuration = configuration;
+	}
+
+	@Override
+	public String getSynchronizationDateExpression() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
