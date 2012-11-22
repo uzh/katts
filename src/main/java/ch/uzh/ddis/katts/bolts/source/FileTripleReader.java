@@ -8,15 +8,15 @@ import java.util.Map;
 
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import backtype.storm.utils.Utils;
 import ch.uzh.ddis.katts.bolts.source.file.CSVSource;
 import ch.uzh.ddis.katts.bolts.source.file.GzipSourceWrapper;
 import ch.uzh.ddis.katts.bolts.source.file.Source;
@@ -36,11 +36,15 @@ public class FileTripleReader implements IRichBolt {
 	private List<Source> sources = new ArrayList<Source>();
 	private StarterMonitor starterMonitor;
 	
-	private Thread tripleReaderThread = null;
+	private Thread thread = null;
+	
+	private TripleReaderThread thripleReaderThread;
 	
 	private Date currentRealTimeDate;
+	
+	private Logger logger = LoggerFactory.getLogger(FileTripleReader.class);
 
-	public boolean nextTuple() {
+	public synchronized boolean nextTuple() {
 		final String dateStringValue;
 		final Date date;
 		// TODO Do synchronize the different sources
@@ -54,6 +58,7 @@ public class FileTripleReader implements IRichBolt {
 		}
 
 		if (triple == null) {
+			logger.info(String.format("Probably the file is finished read. Component ID: %1s", this.getConfiguration().getId()));
 			return false;
 		}
 
@@ -74,16 +79,21 @@ public class FileTripleReader implements IRichBolt {
 			currentRealTimeDate = date;
 		}
 
-		// currently the start and end date are equal
-		tuple.add(date);
-		tuple.add(triple.get(1));
-		tuple.add(triple.get(2));
-		tuple.add(triple.get(3));
+		if (date != null & triple.get(1) != null && triple.get(2) != null && triple.get(3) != null) {
+			// currently the start and end date are equal
+			tuple.add(date);
+			tuple.add(triple.get(1));
+			tuple.add(triple.get(2));
+			tuple.add(triple.get(3));
+			
+			// We emit on the default stream, since we do not want multiple
+			// streams!
+			getCollector().emit(tuple);
+		}
+		else {
+			logger.info(String.format("A triple could not be read and it was ignored. Component ID: %1s", this.getConfiguration().getId()));
+		}
 
-		// We emit on the default stream, since we do not want multiple
-		// streams!
-		getCollector().emit(tuple);
-		
 		return true;
 	}
 
@@ -92,23 +102,22 @@ public class FileTripleReader implements IRichBolt {
 		
 		// This bolt receives only heart beats, hence we do not need to handle here other tuples
 		
-		if (tripleReaderThread == null) {	
+		if (thread == null) {	
 			starterMonitor.start();
 			
 			// Read the first line to ensure that the currentRealTimeDate is set.
 			nextTuple();
 			
-			tripleReaderThread = new Thread(new TripleReaderThread());
-			tripleReaderThread.start();
+			thread = new Thread(new TripleReaderThread(this));
+			thread.start();
 		}
 		
 		synchronized (this) {
 			
 			// Ensure that the real time is not null, if so ignore the heart beat
 			if (currentRealTimeDate != null) {
-				
 				List<Object> output = HeartBeatSpout.getOutputTuple(input, currentRealTimeDate);
-				this.getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(this.getConfiguration().getId()), output);
+				getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(getConfiguration().getId()), output);
 			}
 			
 		}
@@ -176,27 +185,13 @@ public class FileTripleReader implements IRichBolt {
 	public void cleanup() {
 	}
 
-	public OutputCollector getCollector() {
+	public synchronized OutputCollector getCollector() {
 		return collector;
 	}
 
-	public void setCollector(OutputCollector collector) {
+	public synchronized void setCollector(OutputCollector collector) {
 		this.collector = collector;
 	}
 	
 	
-	private class TripleReaderThread implements Runnable {
-
-		@Override
-		public void run() {
-			while (true) {
-				if (!nextTuple()) {
-					// when we got no new result, we sleep to prevent blocking the processor.
-					Utils.sleep(2000);
-				}
-			}
-		}
-		
-	}
-
 }
