@@ -16,12 +16,6 @@ public abstract class AbstractSource extends AbstractNode implements Source{
 
 	private static final long serialVersionUID = 1L;
 
-	@Override
-	@XmlTransient
-	public int getParallelism() {
-		// We assume that a regular source is not parallelizable  
-		return 1;
-	}
 
 
 }

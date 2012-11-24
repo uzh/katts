@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import au.com.bytecode.opencsv.CSVParser;
 import au.com.bytecode.opencsv.CSVReader;
 
 import ch.uzh.ddis.katts.query.source.File;
@@ -37,7 +38,7 @@ public class CSVSource extends AbstractSource{
 	@Override
 	public void setFileInputStream(InputStream inputStream) {
 		Reader inputStreamReader = new InputStreamReader(inputStream);
-		csvReader = new CSVReader(inputStreamReader, getDelimiter());
+		csvReader = new CSVReader(inputStreamReader, getDelimiter(), CSVParser.DEFAULT_QUOTE_CHARACTER, CSVParser.DEFAULT_ESCAPE_CHARACTER, 0, true);
 	}
 	
 	public char getDelimiter() {

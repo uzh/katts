@@ -60,5 +60,11 @@ public class FileSource extends AbstractSource implements FileTripleReaderConfig
 	public void appendFile(File file) {
 		this.getFiles().add(file);
 	}
-
+	
+	@Override
+	@XmlTransient
+	public int getParallelism() {
+		// We need as many bolts, as we have files in our list.
+		return this.files.size();
+	}
 }

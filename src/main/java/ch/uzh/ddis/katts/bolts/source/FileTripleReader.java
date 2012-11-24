@@ -3,14 +3,19 @@ package ch.uzh.ddis.katts.bolts.source;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import backtype.storm.generated.GlobalStreamId;
+import backtype.storm.generated.Grouping;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
@@ -29,11 +34,11 @@ public class FileTripleReader implements IRichBolt {
 
 	/** This formatter is used to parse dateTime string values */
 	private transient DateTimeFormatter isoFormat;
-
+	
 	private static final long serialVersionUID = 1L;
 	private OutputCollector collector;
 	private FileTripleReaderConfiguration configuration;
-	private List<Source> sources = new ArrayList<Source>();
+	private Source source = null;
 	private StarterMonitor starterMonitor;
 	
 	private Thread thread = null;
@@ -43,8 +48,10 @@ public class FileTripleReader implements IRichBolt {
 	private Date currentRealTimeDate;
 	
 	private Logger logger = LoggerFactory.getLogger(FileTripleReader.class);
+	
+	private long numberRead = 0;
 
-	public synchronized boolean nextTuple() {
+	public boolean nextTuple() {
 		final String dateStringValue;
 		final Date date;
 		// TODO Do synchronize the different sources
@@ -52,13 +59,13 @@ public class FileTripleReader implements IRichBolt {
 
 		List<String> triple = null;
 		try {
-			triple = sources.iterator().next().getNextTriple();
+			triple = source.getNextTriple();
 		} catch (Exception e) {
 			throw new RuntimeException(String.format("Unable to read next triple because: %1s", e.getMessage()), e);
 		}
 
 		if (triple == null) {
-//			logger.info(String.format("Probably the end of file is reached. Component ID: %1s", this.getConfiguration().getId()));
+			logger.info(String.format("End of file is reached in component %1s at date %2s. Line: %3s", this.getConfiguration().getId(), currentRealTimeDate.toString(), numberRead));
 			return false;
 		}
 
@@ -88,17 +95,25 @@ public class FileTripleReader implements IRichBolt {
 			
 			// We emit on the default stream, since we do not want multiple
 			// streams!
-			getCollector().emit(tuple);
+			synchronized (this) {
+				getCollector().emit(tuple);
+			}
 		}
 		else {
 			logger.info(String.format("A triple could not be read and it was ignored. Component ID: %1s", this.getConfiguration().getId()));
 		}
+		
+		if (numberRead % 10000 == 0) {
+			logger.info(String.format("Read time of component %1s is %2s. Line: %3s", this.getConfiguration().getId(), currentRealTimeDate.toString(), numberRead));
+		}
+		
+		numberRead++;
 
 		return true;
 	}
 
 	@Override
-	public void execute(Tuple input) {
+	public synchronized void execute(Tuple input) {
 		
 		// This bolt receives only heart beats, hence we do not need to handle here other tuples
 		
@@ -112,16 +127,11 @@ public class FileTripleReader implements IRichBolt {
 			thread.start();
 		}
 		
-		synchronized (this) {
-			
-			// Ensure that the real time is not null, if so ignore the heart beat
-			if (currentRealTimeDate != null) {
-				List<Object> output = HeartBeatSpout.getOutputTuple(input, currentRealTimeDate);
-				getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(getConfiguration().getId()), output);
-			}
-			
+		// Ensure that the real time is not null, if so ignore the heart beat
+		if (currentRealTimeDate != null) {
+			List<Object> output = HeartBeatSpout.getOutputTuple(input, currentRealTimeDate);
+			getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(getConfiguration().getId()), output);
 		}
-	
 	}
 	
 
@@ -133,30 +143,26 @@ public class FileTripleReader implements IRichBolt {
 	}
 
 
-	private void buildSources() {
-		for (File file : configuration.getFiles()) {
-			Source source = null;
-			if (file.getMimeType().equals("text/comma-separated-values")) {
-				source = new CSVSource();
-			}
-
-			if (file.getPath().endsWith(".zip")) {
-				source = new ZipSourceWrapper(source);
-			}
-			else if(file.getPath().endsWith(".gz")) {
-				source = new GzipSourceWrapper(source);
-			}
-			
-			try {
-				InputStream inputStream = source.buildInputStream(file);
-				source.setFileInputStream(inputStream);
-			} catch (Exception e) {
-				throw new RuntimeException(String.format("Unable to read input file '%1s' because: %2s",
-						file.getPath(), e.getMessage()), e);
-			}
-			this.sources.add(source);
+	private void buildSources(int sourceIndex) {
+		File file = configuration.getFiles().get(sourceIndex);
+		if (file.getMimeType().equals("text/comma-separated-values")) {
+			source = new CSVSource();
 		}
 
+		if (file.getPath().endsWith(".zip")) {
+			source = new ZipSourceWrapper(source);
+		}
+		else if(file.getPath().endsWith(".gz")) {
+			source = new GzipSourceWrapper(source);
+		}
+		
+		try {
+			InputStream inputStream = source.buildInputStream(file);
+			source.setFileInputStream(inputStream);
+		} catch (Exception e) {
+			throw new RuntimeException(String.format("Unable to read input file '%1s' because: %2s",
+					file.getPath(), e.getMessage()), e);
+		}
 	}
 
 	@Override
@@ -175,8 +181,9 @@ public class FileTripleReader implements IRichBolt {
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
-		
-		buildSources();
+
+		int sourceIndex = context.getThisTaskIndex();
+		buildSources(sourceIndex);
 		
 		starterMonitor = StarterMonitor.getInstance(stormConf);
 	}
