@@ -1,5 +1,6 @@
 package ch.uzh.ddis.katts.bolts;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,7 +30,7 @@ public abstract class AbstractBolt implements IRichBolt {
 	private OutputCollector collector;
 
 	private Map<Integer, HeartBeat> lastHeartBeatPerTask = new HashMap<Integer, HeartBeat>();
-	private Set<Integer> tasksFromIncomingStreams = new HashSet<Integer>();
+	private List<Integer> tasksFromIncomingStreams = new ArrayList<Integer>();
 	private Date currentStreamTime;
 
 	@Override
@@ -148,7 +149,7 @@ public abstract class AbstractBolt implements IRichBolt {
 		return currentStreamTime;
 	}
 	
-	public Set<Integer> getAllSourceTasksFromIncomingStreams() {
+	public List<Integer> getAllSourceTasksFromIncomingStreams() {
 		return tasksFromIncomingStreams;
 	}
 	

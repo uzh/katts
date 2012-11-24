@@ -56,7 +56,6 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 		while (!stop) {
 			StreamSynchronizedEventWrapper next = buffer.peek();
 			if (next != null && isEventInTemporalOrder(next)) {
-//				setLastDateProcessed(next.getSynchronizationDate());
 				executeSynchronizedEvent(next);
 				buffer.remove(next);
 			}
@@ -97,12 +96,7 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 
 	@Override
 	public void ack(Event event) {
-//		// we do not need to call the super method because we ack the event already when we write it to the buffer.
-//		synchronized (this) {
-//			buffer.remove(event);
-//		}
-//
-//		executeEventsInBuffer();
+
 	}
 
 	@Override
