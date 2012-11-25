@@ -34,7 +34,7 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 
 	private static final long serialVersionUID = 1L;
 	private OneFieldJoinConfiguration configuration;
-	private Map<Object, Map<String, Event>> buffers = new ConcurrentHashMap<Object, Map<String, Event>>();
+	private Map<Object, Map<StreamConsumer, Event>> buffers = new ConcurrentHashMap<Object, Map<StreamConsumer, Event>>();
 	private Collection<StreamConsumer> streamList;
 
 	private Logger logger = LoggerFactory.getLogger(OneFieldJoinBolt.class);
@@ -66,39 +66,39 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 		
 		synchronized(joinOn.toString().intern()) {
 			
-			Map<String, Event> joinBuffer = buffers.get(joinOn);
+			Map<StreamConsumer, Event> joinBuffer = buffers.get(joinOn);
 
 			if (joinBuffer == null) {
-				joinBuffer = new ConcurrentHashMap<String, Event>();
+				joinBuffer = new ConcurrentHashMap<StreamConsumer, Event>();
 				this.buffers.put(joinOn, joinBuffer);
 			}
 			
 			// Remove all events from join buffer, that are before the current event.
-			List<String> toRemove = new ArrayList<String>();
-			for (Entry<String, Event> entry : joinBuffer.entrySet()) {
+			List<StreamConsumer> toRemove = new ArrayList<StreamConsumer>();
+			for (Entry<StreamConsumer, Event> entry : joinBuffer.entrySet()) {
 				if (entry.getValue().getEndDate().getTime() < (currentEndDate - precision)) {
 					toRemove.add(entry.getKey());
 				}
 			}
 			
-			for (String stream : toRemove) {
+			for (StreamConsumer stream : toRemove) {
 				joinBuffer.remove(stream);
 			}
 
-			joinBuffer.put(event.getEmittedOn().getStream().getId(), event);
-	//
-//			// Check if we can emit a joined tuple
-//			for (StreamConsumer consumer : streamList) {
-//				Event streamEvent = joinBuffer.get(consumer);
-	//
-//				if (streamEvent == null) {
-//					joinable = false;
-//					break;
-//				}
-//			}
+			joinBuffer.put(event.getEmittedOn(), event);
+			
+			// Check if we can emit a joined tuple
+			for (StreamConsumer consumer : streamList) {
+				Event streamEvent = joinBuffer.get(consumer);
+
+				if (streamEvent == null) {
+					joinable = false;
+					break;
+				}
+			}
 
 			if (joinable) {
-//				emitJoinEvents(joinBuffer, event);
+				emitJoinEvents(joinBuffer, event);
 			}
 			
 			
