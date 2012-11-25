@@ -162,12 +162,4 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	public String getId() {
 		return this.configuration.getId();
 	}
-
-	@Override
-	public String getSynchronizationDateExpression() {
-		// TODO Make this configurable (May be it is not a good idea to change this, hence it make no sense to add an
-		// option to configure it.)
-		return "#event.endDate";
-	}
-
 }

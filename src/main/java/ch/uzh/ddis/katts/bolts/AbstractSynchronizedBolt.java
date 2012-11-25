@@ -36,7 +36,7 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 			lastDatePerTask.put(syncEvent.getTuple().getSourceTask(), syncEvent.getSynchronizationDate());
 		}
 
-		getCollector().ack(input);
+//		this.ack(input);
 
 		executeEventsInBuffer();
 	}
@@ -133,32 +133,8 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 		
 		// Since currently all subclasses uses anyway the end date, we can code here this directly.
 		return event.getEndDate();
-		
-//		setupSynchronizationDateExpression();
-//
-//		StandardEvaluationContext context = new StandardEvaluationContext();
-//		context.setVariable("event", event);
-//
-//		return (Date) eventSynchronizationExpression.getValue(context);
 	}
 
-	/**
-	 * This method setups the SpEL expression for determine the synchronization date.
-	 */
-	private void setupSynchronizationDateExpression() {
-		if (eventSynchronizationExpression == null) {
-			ExpressionParser parser = new SpelExpressionParser();
-			eventSynchronizationExpression = parser.parseExpression(this.getSynchronizationDateExpression());
-		}
-	}
-
-	/**
-	 * This method should return an expression which determines the date on which the event synchronization is done. The
-	 * one and only variable available is "event". It has the type {@link Event}.
-	 * 
-	 * @return The expression for determine the synchronization date.
-	 */
-	public abstract String getSynchronizationDateExpression();
 
 	public synchronized Date getLastDateProcessed() {
 		return lastDateProcessed;

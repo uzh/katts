@@ -62,12 +62,12 @@ public class TripleFilterBolt extends AbstractBolt implements IRichBolt {
 					}
 				}
 
-				getCollector().emit(stream.getId(), output);
+				this.emit(stream.getId(), tuple, output);
 				counter++;
 			}
 		}
 
-		getCollector().ack(tuple);
+//		this.ack(tuple);
 	}
 
 	private boolean tupleMatchConditions(Tuple tuple) {

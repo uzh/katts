@@ -31,7 +31,6 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 	private StreamConsumer stream;
 	private CSVWriter writer;
 	private int numberOfColumns;
-	private TerminationMonitor terminationMonitor;
 
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
@@ -60,9 +59,6 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 		}
 
 		writer.writeNext(headerLine);
-		
-		terminationMonitor = TerminationMonitor.getInstance(stormConf);
-
 	}
 
 	@Override
@@ -89,8 +85,6 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 		}
 
 		ack(event);
-		
-		terminationMonitor.dataIsSendToOutput();
 	}
 
 	public FileOutputConfiguration getConfiguration() {

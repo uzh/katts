@@ -2,7 +2,6 @@ package ch.uzh.ddis.katts.bolts.aggregate;
 
 import java.sql.Date;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import ch.uzh.ddis.katts.bolts.AbstractStreamInternSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
@@ -40,13 +38,13 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 	 * Map which contains for each partitioned by value a bucket list. Each bucket contains a Map of storages objects
 	 * for each component.
 	 */
-	private Storage<Object, List<Map<String, Object>>> bucketsStorage;
+	private Map<Object, List<Map<String, Object>>> bucketsStorage = new HashMap<Object, List<Map<String, Object>>>();
 
 	/**
 	 * The last used bucket index is used to determine, if a bucket is finished and therefore the elements need to be
 	 * emitted and the new bucket has to be reset.
 	 */
-	private Storage<Object, Long> lastUsedBucketIndexStorage;
+	private Map<Object, Long> lastUsedBucketIndexStorage = new HashMap<Object, Long>();
 
 	/**
 	 * When we emit the bucket value as the aggregation value, we join the event to this bucket. But we emit the bucket,
@@ -54,7 +52,7 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 	 * to join. This implies that we join the buckets with a total wrong event. Additionally, we emit the wrong start
 	 * date, when we have hole in the time.
 	 */
-	private Storage<Object, Event> lastBucketEventStorage;
+	private Map<Object, Event> lastBucketEventStorage = new HashMap<Object, Event>();
 
 	private List<PartitionerComponent> components = new ArrayList<PartitionerComponent>();
 
@@ -84,28 +82,31 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
-		try {
-			/*
-			 * TODO: Lorenz - this.getConfiguration().getId() wird wohl nicht über alle machinen unique sein. das
-			 * heisst, dass dies nur funktioniert, solange wir kein storage sharing über machinengrenzen hinaushaben.
-			 * kann das sein? warum hast du hier nicht get() verwendet?
-			 * 
-			 * Thomas: this.getConfiguration().getId() muss nicht unique sein, da wir ja genau wollen, dass wenn der
-			 * Bolt an andere Stelle hoch fährt, dann wieder den gleichen Speicher hat. Das was wir hier zurück bekommen
-			 * ist eine Art HashMap. D.h. das partitionFieldValue muss unique sein. Das ist zutreffend da ja
-			 * partitionFieldValue = Wert des Ticker Symbols (also z.B. CSGN) ist.
-			 */
-			bucketsStorage = StorageFactory.createDefaultStorage(this.getConfiguration().getId() + "_buckets");
-			lastUsedBucketIndexStorage = StorageFactory.createDefaultStorage(this.getId() + "_last_buckets");
-			lastBucketEventStorage = StorageFactory.createDefaultStorage(this.getId() + "_last_events");
-
-		} catch (InstantiationException e) {
-			logger.error("Could not load storage object.", e);
-			System.exit(0);
-		} catch (IllegalAccessException e) {
-			logger.error("Could not load storage object.", e);
-			System.exit(0);
-		}
+//		try {
+//			/*
+//			 * TODO: Lorenz - this.getConfiguration().getId() wird wohl nicht über alle machinen unique sein. das
+//			 * heisst, dass dies nur funktioniert, solange wir kein storage sharing über machinengrenzen hinaushaben.
+//			 * kann das sein? warum hast du hier nicht get() verwendet?
+//			 * 
+//			 * Thomas: this.getConfiguration().getId() muss nicht unique sein, da wir ja genau wollen, dass wenn der
+//			 * Bolt an andere Stelle hoch fährt, dann wieder den gleichen Speicher hat. Das was wir hier zurück bekommen
+//			 * ist eine Art HashMap. D.h. das partitionFieldValue muss unique sein. Das ist zutreffend da ja
+//			 * partitionFieldValue = Wert des Ticker Symbols (also z.B. CSGN) ist.
+//			 */
+//			bucketsStorage = StorageFactory.createDefaultStorage(this.getConfiguration().getId() + "_buckets");
+//			lastUsedBucketIndexStorage = StorageFactory.createDefaultStorage(this.getId() + "_last_buckets");
+//			lastBucketEventStorage = StorageFactory.createDefaultStorage(this.getId() + "_last_events");
+			
+		
+			
+//
+//		} catch (InstantiationException e) {
+//			logger.error("Could not load storage object.", e);
+//			System.exit(0);
+//		} catch (IllegalAccessException e) {
+//			logger.error("Could not load storage object.", e);
+//			System.exit(0);
+//		}
 
 		components = this.getConfiguration().getComponents();
 
@@ -388,12 +389,4 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 	public List<PartitionerComponent> getComponents() {
 		return components;
 	}
-
-	@Override
-	public String getSynchronizationDateExpression() {
-		// TODO Make this configurable (May be it is not a good idea to change this, hence it make no sense to add an
-		// option to configure it.)
-		return "#event.endDate";
-	}
-
 }

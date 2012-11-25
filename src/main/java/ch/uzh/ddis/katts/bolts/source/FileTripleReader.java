@@ -3,19 +3,14 @@ package ch.uzh.ddis.katts.bolts.source;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.generated.GlobalStreamId;
-import backtype.storm.generated.Grouping;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
@@ -54,7 +49,6 @@ public class FileTripleReader implements IRichBolt {
 	public boolean nextTuple() {
 		final String dateStringValue;
 		final Date date;
-		// TODO Do synchronize the different sources
 		// TODO Add support for end date
 
 		List<String> triple = null;
@@ -103,7 +97,7 @@ public class FileTripleReader implements IRichBolt {
 			logger.info(String.format("A triple could not be read and it was ignored. Component ID: %1s", this.getConfiguration().getId()));
 		}
 		
-		if (numberRead % 10000 == 0) {
+		if (numberRead % 30000 == 0) {
 			logger.info(String.format("Read time of component %1s is %2s. Line: %3s", this.getConfiguration().getId(), currentRealTimeDate.toString(), numberRead));
 		}
 		

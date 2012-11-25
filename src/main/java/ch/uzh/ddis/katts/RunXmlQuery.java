@@ -117,6 +117,9 @@ public class RunXmlQuery {
 			conf.put(VmMonitor.RECORD_INVERVAL, monitoringRecordInterval);
 		}
 		
+		// Disable reliability
+		conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 0);
+		
 		conf.put(RunXmlQueryLocally.RUN_TOPOLOGY_LOCALLY_CONFIG_KEY, false);
 		
 		TopologyBuilder builder = new TopologyBuilder(conf);

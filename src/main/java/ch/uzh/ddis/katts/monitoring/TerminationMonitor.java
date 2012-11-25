@@ -1,62 +1,62 @@
 package ch.uzh.ddis.katts.monitoring;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-
-import ch.uzh.ddis.katts.RunXmlQuery;
+import ch.uzh.ddis.katts.bolts.source.FileTripleReader;
 import ch.uzh.ddis.katts.utils.Cluster;
 
-public class TerminationMonitor {
-
-	private Thread runner;
+public class TerminationMonitor implements Watcher {
 
 	private static TerminationMonitor instance;
 
-	private boolean isDataSendToOutput = false;
-	private boolean isAnyDataSend = false;
-
-	private int terminationCheckInterval = 150000;
-
-	private long lastOutputSendOn = 0;
-
-	private long messageCount = 0;
-
 	private ZooKeeper zooKeeper;
+
+	private Map stormConf;
+	
+	private boolean isTerminated = false;
 
 	public static final String CONF_TERMINATION_CHECK_INTERVAL = "katts.terminationCheckInterval";
 	public static final String KATTS_TERMINATION_ZK_PATH = "/katts_terminated";
 	public static final String KATTS_TUPLES_OUTPUTTED_ZK_PATH = "/katts_number_of_tuples_outputed";
 
+	private List<TerminationWatcher> watchers = new ArrayList<TerminationWatcher>();
+	
+	private Logger logger = LoggerFactory.getLogger(TerminationMonitor.class);
+
 	private TerminationMonitor(Map stormConf) {
 
-		if (stormConf.containsKey(CONF_TERMINATION_CHECK_INTERVAL)) {
-			terminationCheckInterval = Integer.valueOf((String) stormConf.get(CONF_TERMINATION_CHECK_INTERVAL));
+		this.stormConf = stormConf;
+		
+		this.connect();
+
+	}
+
+	private synchronized void connect() {
+		try {
+			zooKeeper = Cluster.createZooKeeper(stormConf);
+		} catch (IOException e1) {
+			throw new RuntimeException("Could not create ZooKeeper instance.", e1);
 		}
-
-		if (terminationCheckInterval > 0) {
-			try {
-				zooKeeper = Cluster.createZooKeeper(stormConf);
-			} catch (Exception e) {
-				throw new RuntimeException("Can't create termination ZooKeeper watcher.", e);
-			}
-
-			WaitMonitor waiter = new WaitMonitor(this);
-
-			runner = new Thread(waiter);
-			runner.start();
+		try {
+			zooKeeper.exists(KATTS_TERMINATION_ZK_PATH, this);
+		} catch (KeeperException e) {
+			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
+		} catch (InterruptedException e) {
+			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
 		}
-
 	}
 
 	public static TerminationMonitor getInstance(Map stormConf) {
@@ -67,68 +67,50 @@ public class TerminationMonitor {
 		return instance;
 	}
 
-	public synchronized void addTerminationWatcher(Watcher watcher) {
-		try {
-			zooKeeper.exists(KATTS_TERMINATION_ZK_PATH, watcher);
-		} catch (KeeperException e) {
-			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
-		} catch (InterruptedException e) {
-			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
-		}
-	}
-
-	public synchronized void dataIsSendToOutput() {
-		isAnyDataSend = true;
-		isDataSendToOutput = true;
-		lastOutputSendOn = System.currentTimeMillis();
-		messageCount++;
+	public synchronized void addTerminationWatcher(TerminationWatcher watcher) {
+		watchers.add(watcher);
 
 	}
 
-	private class WaitMonitor implements Runnable {
+	public synchronized void terminate(Date terminatedOn) {
+		// If this method is invoked multiple times, we need to make sure, that the barrier is only written the first time.
+		if (!isTerminated) {
+			logger.info("End of file reached.");
+			
+			ZooKeeper zooKeeper;
+			try {
+				zooKeeper = Cluster.createZooKeeper(stormConf);
+			} catch (IOException e1) {
+				throw new RuntimeException("Could not create ZooKeeper instance.", e1);
+			}
 
-		TerminationMonitor monitor;
-		boolean isStopped = false;
-
-		WaitMonitor(TerminationMonitor monitor) {
-			this.monitor = monitor;
+			try {
+				zooKeeper.create(KATTS_TERMINATION_ZK_PATH, Long.toString(terminatedOn.getTime()).getBytes(),
+						Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+			} catch (Exception e) {
+				throw new RuntimeException("The termination barrier could not be written.", e);
+			}
 		}
+		isTerminated = true;
+	
+	}
 
-		@Override
-		public void run() {
+	@Override
+	public synchronized void process(WatchedEvent event) {
 
-			while (!isStopped) {
-				monitor.isDataSendToOutput = false;
-				try {
-					Thread.sleep(monitor.terminationCheckInterval);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(
-							"The termination monitor could not send the monitor thread to background.", e);
-				}
+		if (event.getType() == Event.EventType.None) {
+			switch (event.getState()) {
 
-				// When the flag is not changed, then we know that in the measured interval
-				// no data is send to output. The isAnyDataSend indicates that some data was send. If this flag is not
-				// set this VM does probably do not produce any output and should not send the termination signal.
-				if (!monitor.isDataSendToOutput && isAnyDataSend) {
-					isStopped = true;
+			case Expired:
+				// We need to reconnect
+				this.connect();
+				break;
+			}
+		} else {
 
-					try {
-						monitor.zooKeeper.create(KATTS_TERMINATION_ZK_PATH, Long.toString(monitor.lastOutputSendOn)
-								.getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					} catch (Exception e) {
-						throw new RuntimeException("The termination barrier could not be written.", e);
-					}
-
-					try {
-						monitor.zooKeeper.create(KATTS_TUPLES_OUTPUTTED_ZK_PATH, Long.toString(monitor.messageCount)
-								.getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					} catch (Exception e) {
-						throw new RuntimeException("The termination barrier could not be written.", e);
-					}
-
-				}
+			for (TerminationWatcher watcher : this.watchers) {
+				watcher.terminated();
 			}
 		}
 	}
-
 }

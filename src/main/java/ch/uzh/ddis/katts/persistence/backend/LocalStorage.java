@@ -1,19 +1,20 @@
 package ch.uzh.ddis.katts.persistence.backend;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.infinispan.Cache;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 
-import ch.uzh.ddis.katts.persistence.eviction.strategy.Strategy;
-
 public class LocalStorage<K, V> extends AbstractStorage<K, V> {
 
-	private Cache<K, V> cache;
+	
+	private Map<K, V> cache;
 
 	@Override
 	public void initStorage(String storageKey) {
-		EmbeddedCacheManager manager = new DefaultCacheManager();
-		cache = manager.getCache(storageKey);
+		cache = new HashMap<K, V>();
 	}
 
 	@Override
@@ -33,15 +34,6 @@ public class LocalStorage<K, V> extends AbstractStorage<K, V> {
 
 	@Override
 	public void evict(K key) {
-		cache.evict(key);
-	}
-
-	@Override
-	public void runEviction(Strategy strategy) {
-		for (K key : cache.keySet()) {
-			if (strategy.evict(key, this.get(key))) {
-				this.evict(key);
-			}
-		}
+		
 	}
 }

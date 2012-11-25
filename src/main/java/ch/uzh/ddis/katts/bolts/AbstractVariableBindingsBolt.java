@@ -54,7 +54,7 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 
 	@Override
 	public void ack(Event event) {
-		this.getCollector().ack(event.getTuple());
+//		this.ack(event.getTuple());
 	}
 
 	public Emitter getEmitter() {

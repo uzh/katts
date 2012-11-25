@@ -35,7 +35,7 @@ public abstract class AbstractBolt implements IRichBolt {
 
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-		this.setCollector(collector);
+		this.collector = collector;
 
 		// Find all tasks from incoming streams
 		Map<GlobalStreamId, Grouping> sources = context.getThisSources();
@@ -49,7 +49,9 @@ public abstract class AbstractBolt implements IRichBolt {
 	}
 
 	@Override
-	public void execute(Tuple input) {
+	public final void execute(Tuple input) {
+		
+//		this.ack(input);
 
 		boolean isHeartBeatTuple = true;
 
@@ -107,8 +109,11 @@ public abstract class AbstractBolt implements IRichBolt {
 			currentStreamTime = lowestHeartBeat.getStreamDate();
 			updateIncomingStreamDate(lowestHeartBeat.getStreamDate());
 
-			this.getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
+			this.collector.emit(HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
 					HeartBeatSpout.getOutputTuple(lowestHeartBeat.getTuple(), calculateOutgoingStreamDate()));
+			
+			
+//			System.out.println(String.format("Componet %1s with Heart Beat at: %2s", this.getId(), currentStreamTime.toString()));
 
 		}
 
@@ -126,14 +131,6 @@ public abstract class AbstractBolt implements IRichBolt {
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		// Define the output fields for the heart beat
 		declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this.getId()), HeartBeatSpout.getHeartBeatFields());
-	}
-
-	public OutputCollector getCollector() {
-		return collector;
-	}
-
-	public void setCollector(OutputCollector collector) {
-		this.collector = collector;
 	}
 
 	public Map<String, Object> getComponentConfiguration() {
@@ -155,6 +152,15 @@ public abstract class AbstractBolt implements IRichBolt {
 	
 	public synchronized HeartBeat getLastHeartBeatPerTask(Integer taskId) {
 		return this.lastHeartBeatPerTask.get(taskId);
+	}
+	
+	public synchronized void emit(String streamId, Tuple anchor, List<Object> tuple) {
+		// We do not emit the anchor, to prevent the tracking of the tuples
+		this.collector.emit(streamId, tuple);
+	}
+	
+	private synchronized void ack(Tuple tuple) {
+		this.collector.ack(tuple);
 	}
 	
 }
