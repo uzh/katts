@@ -168,8 +168,6 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	@Override
 	public synchronized void updateIncomingStreamDate(Date streamDate) {
 		
-		System.out.println(streamDate);
-		
 		super.updateIncomingStreamDate(streamDate);
 		
 		// TODO: Remove this workaround. This is required to ensure the proper termination of the system.
