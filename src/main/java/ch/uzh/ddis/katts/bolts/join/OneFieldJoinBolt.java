@@ -34,10 +34,12 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 
 	private static final long serialVersionUID = 1L;
 	private OneFieldJoinConfiguration configuration;
-	private Map<Object, Map<StreamConsumer, Event>> buffers = new ConcurrentHashMap<Object, Map<StreamConsumer, Event>>();
+	private Map<Object, Map<StreamConsumer, Event>> buffers;
 	private Collection<StreamConsumer> streamList;
 
 	private Logger logger = LoggerFactory.getLogger(OneFieldJoinBolt.class);
+	
+	private Date lastProcessedDate;
 
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
@@ -56,16 +58,18 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 	}
 
 	@Override
-	public void execute(Event event) {
+	public synchronized void execute(Event event) {
 
 		long precision = this.getConfiguration().getJoinPrecision();
 		long currentEndDate = event.getEndDate().getTime();
 		boolean joinable = true;
 		
+		if (lastProcessedDate == null || lastProcessedDate.before(event.getEndDate())) {
+			buffers = new HashMap<Object, Map<StreamConsumer, Event>>();
+		}
+		
 		Object joinOn = event.getVariableValue(this.getConfiguration().getJoinOn());
 		
-		synchronized(joinOn.toString().intern()) {
-			
 			Map<StreamConsumer, Event> joinBuffer = buffers.get(joinOn);
 
 			if (joinBuffer == null) {
@@ -99,11 +103,11 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 
 			if (joinable) {
 				emitJoinEvents(joinBuffer, event);
+				buffers.remove(joinOn);
 			}
-			
-			
-		}
 		
+		lastProcessedDate = event.getEndDate();
+			
 		// Since we join on the end date and a certain precision, we can be sure that never an earlier date, as the one
 		// from the input will be emitted.
 		setLastDateProcessed(new Date(event.getEndDate().getTime()));
