@@ -3,6 +3,7 @@ package ch.uzh.ddis.katts.query.processor;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
@@ -27,6 +28,10 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 
 	@XmlTransient
 	private List<StreamConsumer> consumers = new ArrayList<StreamConsumer>();
+	
+	// We assume that a regular processor is fully parallelizable 
+	@XmlTransient
+	private int parallelism = 0;
 	
 	@XmlTransient
 	private List<Stream> producers = new Producers(this);
@@ -70,10 +75,12 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 	}
 	
 	@Override
-	@XmlTransient
+	@XmlAttribute()
 	public int getParallelism() {
-		// We assume that a regular processor is fully parallelizable  
-		return 0;
+		return this.parallelism;
 	}
 	
+	public void setParallelism(int paralleism) {
+		this.parallelism = paralleism;
+	}
 }
