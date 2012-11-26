@@ -117,6 +117,13 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 
 			lastEventDate = event.getEndDate();
 		}
+		
+		// TODO: Workaround to send the shutdown signal to depending tasks:
+		if (event.getEndDate().after(new Date())) {
+			setLastDateProcessed(event.getEndDate());
+			return;
+		}
+		
 
 		Set<SimpleVariableBindings> joinResults;
 		SimpleVariableBindings newBindings = new SimpleVariableBindings(event.getTuple());
