@@ -118,11 +118,11 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 			lastEventDate = event.getEndDate();
 		}
 		
-		// TODO: Workaround to send the shutdown signal to depending tasks:
-		if (event.getEndDate().after(new Date())) {
-			setLastDateProcessed(event.getEndDate());
-			return;
-		}
+//		// TODO: Workaround to send the shutdown signal to depending tasks:
+//		if (event.getEndDate().after(new Date())) {
+//			setLastDateProcessed(event.getEndDate());
+//			return;
+//		}
 		
 
 		Set<SimpleVariableBindings> joinResults;
@@ -163,6 +163,19 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		}
 
 		ack(event);
+	}
+	
+	@Override
+	public synchronized void updateIncomingStreamDate(Date streamDate) {
+		
+		System.out.println(streamDate);
+		
+		super.updateIncomingStreamDate(streamDate);
+		
+		// TODO: Remove this workaround. This is required to ensure the proper termination of the system.
+		if (streamDate.after(new Date())) {
+			setLastDateProcessed(streamDate);
+		}
 	}
 
 	@Override
