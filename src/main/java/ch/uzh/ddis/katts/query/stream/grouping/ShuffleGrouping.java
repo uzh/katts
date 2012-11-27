@@ -27,7 +27,7 @@ public class ShuffleGrouping implements Grouping{
 
 	@Override
 	public void attachToBolt(BoltDeclarer bolt, StreamConsumer stream) {
-		bolt.shuffleGrouping(stream.getStream().getNode().getId(), stream.getStream().getId());
+		bolt.localOrShuffleGrouping(stream.getStream().getNode().getId(), stream.getStream().getId());
 	}
 
 }
