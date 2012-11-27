@@ -9,6 +9,7 @@ import backtype.storm.topology.BoltDeclarer;
 import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.bolts.TerminationBolt;
 import ch.uzh.ddis.katts.query.output.FileOutput;
+import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
@@ -40,11 +41,21 @@ public class Termination implements Node {
 	public void createTopology(TopologyBuilder topology) {
 		TerminationBolt bolt = new TerminationBolt();
 		BoltDeclarer boltDeclarer = topology.setBolt(this.getId(), bolt, this.getParallelism());
+//		
+//		for (Node node : this.getQuery().getNodes()) {
+//			
+//			// Subscribe to all bolts in the cluster for the heart beat, to track the termination date.
+//			if (!node.getId().equals(HeartBeat.HEARTBEAT_COMPONENT_ID) && !node.getId().equals(this.getId()) && !(node instanceof FileOutput)) {
+//				
+//				// Since this is a source, we need only to attach the heart beat stream to it.
+//				boltDeclarer.allGrouping(node.getId(), HeartBeatSpout.buildHeartBeatStreamId(node.getId()));
+//			}
+//		}
 		
 		for (Node node : this.getQuery().getNodes()) {
 			
-			// Subscribe to all bolts in the cluster for the heart beat, to track the termination date.
-			if (!node.getId().equals(HeartBeat.HEARTBEAT_COMPONENT_ID) && !node.getId().equals(this.getId()) && !(node instanceof FileOutput)) {
+			// TODO: Workaround to allow termination based on the output of the temporal join
+			if (node instanceof TemporalJoinConfiguration) {
 				
 				// Since this is a source, we need only to attach the heart beat stream to it.
 				boltDeclarer.allGrouping(node.getId(), HeartBeatSpout.buildHeartBeatStreamId(node.getId()));

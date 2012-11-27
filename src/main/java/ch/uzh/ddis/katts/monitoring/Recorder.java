@@ -151,6 +151,17 @@ public final class Recorder implements TerminationWatcher {
 	private void writeCounts() {
 		MapIterator it = messageCounter.mapIterator();
 
+		ZooKeeper zooKeeper;
+		
+		try {
+			zooKeeper = Cluster.createZooKeeper(stormConfiguration);
+		} catch (IOException e) {
+			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the message sending behaviour.",
+					e);
+		}
+
+		
+		
 		while (it.hasNext()) {
 			MultiKey next = (MultiKey) it.next();
 			Object[] keys = next.getKeys();

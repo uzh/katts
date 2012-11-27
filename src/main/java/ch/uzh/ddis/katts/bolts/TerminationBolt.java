@@ -3,11 +3,13 @@ package ch.uzh.ddis.katts.bolts;
 import java.util.Date;
 import java.util.Map;
 
-import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
+import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 
 public class TerminationBolt extends AbstractBolt {
 
@@ -15,6 +17,7 @@ public class TerminationBolt extends AbstractBolt {
 	
 	private TerminationMonitor monitor;
 	private Date lastProcessedDate = new Date();
+	private Logger logger = LoggerFactory.getLogger(TerminationBolt.class);
 	
 	@Override
 	public void executeHeartBeatFreeTuple(Tuple input) {
@@ -36,6 +39,8 @@ public class TerminationBolt extends AbstractBolt {
 		else {
 			lastProcessedDate = new Date();
 		}
+		
+		logger.info(String.format("Current Termination bolt heart beat time: %1s", streamDate.toString()));
 	}
 	
 	@Override
