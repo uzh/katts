@@ -26,7 +26,7 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 
 	private static final long serialVersionUID = 1L;
 	private FileOutputConfiguration configuration;
-	private DateFormat formatter = new SimpleDateFormat("dd.MM.yyyy H:m:s");
+	private DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 	private Logger logger = LoggerFactory.getLogger(FileOutputBolt.class);
 	private StreamConsumer stream;
 	private CSVWriter writer;
@@ -64,8 +64,8 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 	@Override
 	public synchronized void execute(Event event) {
 		String[] line = new String[numberOfColumns];
-		line[0] = event.getStartDate().toString();
-		line[1] = event.getEndDate().toString();
+		line[0] = formatter.format(event.getStartDate());
+		line[1] = formatter.format(event.getEndDate());
 
 		int i = 2;
 		for (Variable variable : stream.getStream().getAllVariables()) {
