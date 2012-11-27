@@ -34,6 +34,9 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 	private int parallelism = 0;
 	
 	@XmlTransient
+	private float parallelismWeight = 1;
+	
+	@XmlTransient
 	private List<Stream> producers = new Producers(this);
 	
 	@XmlElementWrapper(name="consumes")
@@ -82,5 +85,15 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 	
 	public void setParallelism(int paralleism) {
 		this.parallelism = paralleism;
+	}
+
+	@Override
+	@XmlAttribute()
+	public float getParallelismWeight() {
+		return parallelismWeight;
+	}
+
+	public void setParallelismWeight(float parallelismWeight) {
+		this.parallelismWeight = parallelismWeight;
 	}
 }

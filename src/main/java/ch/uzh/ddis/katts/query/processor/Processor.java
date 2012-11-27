@@ -12,4 +12,6 @@ import ch.uzh.ddis.katts.query.ProducerNode;
  *
  */
 public interface Processor extends ConsumerNode, ProducerNode {
+
+	float getParallelismWeight();
 }

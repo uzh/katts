@@ -69,7 +69,7 @@ public abstract class AbstractNode implements Node{
 	 * @return
 	 */
 	public int getDeclaredParallelism(TopologyBuilder builder) {
-		return this.getParallelism() > 0 ? this.getParallelism() : builder.getParallelism();
+		return this.getParallelism() > 0 ? this.getParallelism() : Math.round((float)builder.getParallelism() * builder.getParallelizationWeightByNode(this));
 	}
 
 	@Override

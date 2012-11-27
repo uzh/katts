@@ -1,5 +1,10 @@
 package ch.uzh.ddis.katts;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import javax.management.RuntimeErrorException;
+
 import org.apache.zookeeper.txn.CreateTxn;
 
 import backtype.storm.Config;
@@ -58,11 +63,12 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 	 */
 	public void setParallelismByNumberOfProcessors(int numberOfProcessors) {
 		this.numberOfProcessors = numberOfProcessors;
-		int expectedNumberOfInfiniteParallelNodes = getNumberOfInfiniteParallelizedNodes();
+//		int expectedNumberOfInfiniteParallelNodes = getNumberOfInfiniteParallelizedNodes();
+		float sumOverAllWeightsOfNonFixedParallelizedNodes = getSumOfAllParallelizationWeights();
 		int numberOfWorkersPretermined = getFixParallelization();
 
 		float parallelism = (factorOfThreadsPerProcessor * (float) numberOfProcessors - numberOfWorkersPretermined)
-				/ expectedNumberOfInfiniteParallelNodes;
+				/ sumOverAllWeightsOfNonFixedParallelizedNodes;
 		this.setParallelism(Math.round(Math.max(parallelism, 1)));
 		updateConfig();
 	}
@@ -75,10 +81,7 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 	 */
 	public long getEstimatedNumberOfExecutors() {
 
-		int expectedNumberOfInfiniteParallelNodes = getNumberOfInfiniteParallelizedNodes();
-		int numberOfWorkersPretermined = getFixParallelization();
-
-		return expectedNumberOfInfiniteParallelNodes * this.getParallelism() + numberOfWorkersPretermined;
+		return (long)(this.numberOfProcessors * this.factorOfThreadsPerProcessor);
 	}
 
 	/**
@@ -126,6 +129,40 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 		}
 
 		return expectedNumberOfInfiniteParallelNodes;
+	}
+	
+	private float getSumOfAllParallelizationWeights() {
+		
+		float sum = 0;
+		
+		for (Node node : query.getNodes()) {
+			int nodeParallelism = node.getParallelism();
+			if (nodeParallelism < 1) {
+				sum += getParallelizationWeightByNode(node);
+			}
+		}
+		
+		return sum;
+	}
+	
+	public float getParallelizationWeightByNode(Node node) {
+		try {
+			Method method = node.getClass().getDeclaredMethod("getParallelismWeight");
+			try {
+				return (Float)method.invoke(node);
+			} catch (IllegalArgumentException e) {
+				throw new RuntimeException("The Method getParallelismWeight should not require any argument.", e);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException("The Method getParallelismWeight should be public.", e);
+			} catch (InvocationTargetException e) {
+				throw new RuntimeException("Can't invoke the method getParallelismWeight.", e);
+			}
+		} catch (SecurityException e) {
+			throw new RuntimeException(String.format("Could not access the method getParallelismWeight on class %1s.", node.getClass().getCanonicalName()), e);
+		} catch (NoSuchMethodException e) {
+			// Ignore, we set here the weight by default to 1
+			return 1;
+		}
 	}
 
 	public StormTopology createTopology() {
