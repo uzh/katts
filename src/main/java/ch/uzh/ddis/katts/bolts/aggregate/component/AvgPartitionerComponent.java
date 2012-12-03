@@ -6,15 +6,14 @@ import ch.uzh.ddis.katts.bolts.aggregate.PartitionerBolt;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerComponent;
 
 /**
- * The average partition component builds the average of a 
- * partition. 
+ * The average partition component builds the average of a partition.
  * 
  * @see PartitionerBolt
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
-public class AvgPartitionerComponent implements PartitionerComponent{
+public class AvgPartitionerComponent implements PartitionerComponent {
 
 	@Override
 	public Object resetBucket() {
@@ -23,7 +22,7 @@ public class AvgPartitionerComponent implements PartitionerComponent{
 
 	@Override
 	public Object updateBucket(Object storage, double number) {
-		AvgStorageItem internalStorage = (AvgStorageItem)storage;
+		AvgStorageItem internalStorage = (AvgStorageItem) storage;
 		internalStorage.addItem(number);
 		return internalStorage;
 	}
@@ -40,7 +39,7 @@ public class AvgPartitionerComponent implements PartitionerComponent{
 			totalSum = internalBucketValue.getSum();
 			totalCount = internalBucketValue.getCount();
 		}
-		
+
 		return totalSum / totalCount;
 	}
 

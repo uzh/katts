@@ -1,26 +1,23 @@
 package ch.uzh.ddis.katts.bolts.aggregate.component;
 
 /**
- * This class is used for the storage items for 
- * the average partition component. 
+ * This class is used for the storage items for the average partition component.
  * 
- * It is a tuple storage for the count and the sum
- * of a bucket.
+ * It is a tuple storage for the count and the sum of a bucket.
  * 
  * @see AvgPartitionerComponent
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 public class AvgStorageItem {
 
 	private long count = 0;
-	
+
 	private double sum = 0;
-	
+
 	/**
-	 * This method updates the inner state with
-	 * an additional number.
+	 * This method updates the inner state with an additional number.
 	 * 
 	 * @param number
 	 */
@@ -44,5 +41,5 @@ public class AvgStorageItem {
 	public void setSum(double sum) {
 		this.sum = sum;
 	}
-	
+
 }
