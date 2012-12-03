@@ -82,45 +82,12 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
-//		try {
-//			/*
-//			 * TODO: Lorenz - this.getConfiguration().getId() wird wohl nicht über alle machinen unique sein. das
-//			 * heisst, dass dies nur funktioniert, solange wir kein storage sharing über machinengrenzen hinaushaben.
-//			 * kann das sein? warum hast du hier nicht get() verwendet?
-//			 * 
-//			 * Thomas: this.getConfiguration().getId() muss nicht unique sein, da wir ja genau wollen, dass wenn der
-//			 * Bolt an andere Stelle hoch fährt, dann wieder den gleichen Speicher hat. Das was wir hier zurück bekommen
-//			 * ist eine Art HashMap. D.h. das partitionFieldValue muss unique sein. Das ist zutreffend da ja
-//			 * partitionFieldValue = Wert des Ticker Symbols (also z.B. CSGN) ist.
-//			 */
-//			bucketsStorage = StorageFactory.createDefaultStorage(this.getConfiguration().getId() + "_buckets");
-//			lastUsedBucketIndexStorage = StorageFactory.createDefaultStorage(this.getId() + "_last_buckets");
-//			lastBucketEventStorage = StorageFactory.createDefaultStorage(this.getId() + "_last_events");
-			
-		
-			
-//
-//		} catch (InstantiationException e) {
-//			logger.error("Could not load storage object.", e);
-//			System.exit(0);
-//		} catch (IllegalAccessException e) {
-//			logger.error("Could not load storage object.", e);
-//			System.exit(0);
-//		}
+		// TODO: Move the state to the shared storage engine.
 
 		components = this.getConfiguration().getComponents();
 
 		slideSizeInMilliSeconds = this.getConfiguration().getSlideSize().getTimeInMillis(new Date(0));
 		windowSizeInMilliSeconds = this.getConfiguration().getWindowSize().getTimeInMillis(new Date(0));
-		/*
-		 * TODO: Lorenz - Bei einer Division von longs werden alle Nachkommastellen abgeschnitten. Du musst mindestens
-		 * eine der beiden Zahlen in einen double konvertieren bevor Du die Division durchführst. Bei der Division wird
-		 * der "kleinere" Typ in den "grösseren" umgewandelt. Siehe auch
-		 * http://mathbits.com/MathBits/Java/DataBasics/Mathoperators.htm
-		 * 
-		 * Da hast du natürlich Recht. Allerdings ist eigentlich dies so oder so überflüssig, da eine Voraussetzung ist,
-		 * dass windowSizeInMilliSeconds % slideSizeInMilliSeconds == 0 ist. Daher eigentlich alles überflüssig...
-		 */
 		bucketsPerWindow = (int) Math.ceil((double) windowSizeInMilliSeconds / slideSizeInMilliSeconds);
 
 		partitionOnField = this.getConfiguration().getPartitionOn();
@@ -306,8 +273,7 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 					bindings.add(variable, eventToJoinWith.getVariableValue(variable));
 				}
 			}
-			
-			
+
 			boolean aggreationMissed = false;
 			for (PartitionerComponent component : this.getComponents()) {
 
@@ -318,13 +284,13 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 				}
 
 				Double aggregate = component.calculateAggregate(componentBuckets);
-				
+
 				if (aggregate == null) {
 					logger.info("An aggreate could not be built, because all buckets seem to be empty resp. null.");
 					aggreationMissed = true;
 					break;
 				}
-				
+
 				bindings.add(component.getName(), aggregate);
 
 			}
@@ -336,10 +302,9 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 				bindings.setStartDate(new Date(startTime));
 				bindings.setEndDate(new Date(endTime));
 				bindings.emit();
-				
+
 				setLastDateProcessed(bindings.getEndDate());
-				
-				
+
 			}
 		}
 	}
