@@ -87,6 +87,12 @@ public class TerminationMonitor implements Watcher {
 			try {
 				zooKeeper.create(KATTS_TERMINATION_ZK_PATH, Long.toString(terminatedOn.getTime()).getBytes(),
 						Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+			} catch (KeeperException e) {
+				if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
+					throw new RuntimeException("Can't create the termination barrier in ZooKeeper, because there was already one.", e);
+				} else {
+					throw new RuntimeException("Can't create the termination ZooKeeper entry.", e);
+				}
 			} catch (Exception e) {
 				throw new RuntimeException("The termination barrier could not be written.", e);
 			}
