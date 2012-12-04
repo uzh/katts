@@ -147,7 +147,19 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 	
 	public float getParallelizationWeightByNode(Node node) {
 		try {
-			Method method = node.getClass().getDeclaredMethod("getParallelismWeight");
+			
+			Method method = null;
+			for (Method m : node.getClass().getMethods()) {
+				if (m.getName().equals("getParallelismWeight")) {
+					method = m;
+					break;
+				}
+			}
+			
+			if (method == null) {
+				return 1;
+			}
+			
 			try {
 				return (Float)method.invoke(node);
 			} catch (IllegalArgumentException e) {
@@ -159,10 +171,7 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 			}
 		} catch (SecurityException e) {
 			throw new RuntimeException(String.format("Could not access the method getParallelismWeight on class %1s.", node.getClass().getCanonicalName()), e);
-		} catch (NoSuchMethodException e) {
-			// Ignore, we set here the weight by default to 1
-			return 1;
-		}
+		} 
 	}
 
 	public StormTopology createTopology() {
