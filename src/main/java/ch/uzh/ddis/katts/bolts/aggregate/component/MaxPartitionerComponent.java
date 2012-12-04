@@ -20,6 +20,10 @@ public class MaxPartitionerComponent implements PartitionerComponent {
 	@Override
 	public Object updateBucket(Object storage, double number) {
 		Double internalStorage;
+		if (storage == null) {
+			storage = new NullObject();
+		}
+		
 		if (storage instanceof NullObject) {
 			internalStorage = number;
 		} else {

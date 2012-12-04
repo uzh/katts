@@ -20,9 +20,14 @@ public class MinPartitionerComponent implements PartitionerComponent {
 	@Override
 	public Object updateBucket(Object storage, double number) {
 		Double internalStorage;
+		if (storage == null) {
+			storage = new NullObject();
+		}
+		
 		if (storage instanceof NullObject) {
 			internalStorage = number;
-		} else {
+		} 
+		else {
 			internalStorage = (Double) storage;
 			if (internalStorage > number) {
 				internalStorage = number;
