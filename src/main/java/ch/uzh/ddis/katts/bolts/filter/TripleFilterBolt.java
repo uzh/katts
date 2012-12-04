@@ -37,7 +37,7 @@ public class TripleFilterBolt extends AbstractBolt implements IRichBolt {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void executeHeartBeatFreeTuple(Tuple tuple) {
+	public void executeRegularTuple(Tuple tuple) {
 		
 		if (tupleMatchConditions(tuple)) {
 			for (Stream stream : configuration.getProducers()) {

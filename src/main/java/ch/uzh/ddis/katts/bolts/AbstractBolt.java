@@ -32,6 +32,8 @@ public abstract class AbstractBolt implements IRichBolt {
 	private Map<Integer, HeartBeat> lastHeartBeatPerTask = new HashMap<Integer, HeartBeat>();
 	private List<Integer> tasksFromIncomingStreams = new ArrayList<Integer>();
 	private Date currentStreamTime;
+	
+	private Boolean heartBeatMonitor = new Boolean(true);
 
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
@@ -51,30 +53,22 @@ public abstract class AbstractBolt implements IRichBolt {
 	@Override
 	public final void execute(Tuple input) {
 		
-//		this.ack(input);
-
-		boolean isHeartBeatTuple = true;
-
 		// This synchronization is required, because we should not allow the execution of a heart beat tuple in parallel
 		// with a regular tuple. The reason is that, when the regular tuple processing takes more time than the
 		// processing of the heart beat tuple, we may emit a wrong stream processing time.
-		synchronized (this) {
+		synchronized (heartBeatMonitor) {
 			String heartBeatStreamId = HeartBeatSpout.buildHeartBeatStreamId(input.getSourceComponent());
 
 			if (heartBeatStreamId.equals(input.getSourceStreamId())) {
 				HeartBeat heartBeat = new HeartBeat(input);
 				executeHeartBeat(heartBeat);
 			} else {
-				isHeartBeatTuple = false;
+				executeRegularTuple(input);
 			}
-		}
-
-		if (!isHeartBeatTuple) {
-			executeHeartBeatFreeTuple(input);
 		}
 	}
 
-	public abstract void executeHeartBeatFreeTuple(Tuple input);
+	public abstract void executeRegularTuple(Tuple input);
 
 	public abstract String getId();
 
@@ -84,7 +78,7 @@ public abstract class AbstractBolt implements IRichBolt {
 	 * 
 	 * @param heartBeat
 	 */
-	public synchronized void executeHeartBeat(HeartBeat heartBeat) {
+	protected void executeHeartBeat(HeartBeat heartBeat) {
 
 		// We synchronize the different heart beats from the different tasks. We will emit the heart beat with the
 		// lowest stream real time. We emit the heart beat only when the heart beat comes from the first task in the
@@ -109,21 +103,17 @@ public abstract class AbstractBolt implements IRichBolt {
 			currentStreamTime = lowestHeartBeat.getStreamDate();
 			updateIncomingStreamDate(lowestHeartBeat.getStreamDate());
 
-			this.collector.emit(HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
+			this.emit(HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
 					HeartBeatSpout.getOutputTuple(lowestHeartBeat.getTuple(), calculateOutgoingStreamDate()));
-			
-			
-//			System.out.println(String.format("Componet %1s with Heart Beat at: %2s", this.getId(), currentStreamTime.toString()));
-
 		}
 
 	}
 
-	public synchronized Date calculateOutgoingStreamDate() {
+	public Date calculateOutgoingStreamDate() {
 		return getCurrentStreamTime();
 	}
 
-	public synchronized void updateIncomingStreamDate(Date streamDate) {
+	public void updateIncomingStreamDate(Date streamDate) {
 		
 	}
 
@@ -142,25 +132,37 @@ public abstract class AbstractBolt implements IRichBolt {
 
 	}
 
-	public synchronized final Date getCurrentStreamTime() {
-		return currentStreamTime;
+	public final Date getCurrentStreamTime() {
+		synchronized (heartBeatMonitor) {
+			return currentStreamTime;
+		}
 	}
 	
 	public List<Integer> getAllSourceTasksFromIncomingStreams() {
 		return tasksFromIncomingStreams;
 	}
 	
-	public synchronized HeartBeat getLastHeartBeatPerTask(Integer taskId) {
-		return this.lastHeartBeatPerTask.get(taskId);
+	public HeartBeat getLastHeartBeatPerTask(Integer taskId) {
+		synchronized (heartBeatMonitor) {
+			return this.lastHeartBeatPerTask.get(taskId);
+		}
 	}
 	
-	public synchronized void emit(String streamId, Tuple anchor, List<Object> tuple) {
+	public void emit(String streamId, Tuple anchor, List<Object> tuple) {
 		// We do not emit the anchor, to prevent the tracking of the tuples
-		this.collector.emit(streamId, tuple);
+		this.emit(streamId, tuple);
 	}
 	
-	private synchronized void ack(Tuple tuple) {
-		this.collector.ack(tuple);
+	public void emit(String streamId, List<Object> tuple) {
+		synchronized(this.collector) {
+			this.collector.emit(streamId, tuple);
+		}
+	}
+	
+	public synchronized void ack(Tuple tuple) {
+		synchronized(this.collector) {
+			this.collector.ack(tuple);
+		}
 	}
 	
 }

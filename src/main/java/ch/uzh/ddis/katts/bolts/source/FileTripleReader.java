@@ -38,8 +38,6 @@ public class FileTripleReader implements IRichBolt {
 	
 	private Thread thread = null;
 	
-	private TripleReaderThread thripleReaderThread;
-	
 	private Date currentRealTimeDate;
 	
 	private Logger logger = LoggerFactory.getLogger(FileTripleReader.class);
@@ -90,7 +88,7 @@ public class FileTripleReader implements IRichBolt {
 			// We emit on the default stream, since we do not want multiple
 			// streams!
 			synchronized (this) {
-				getCollector().emit(tuple);
+				this.collector.emit(tuple);
 			}
 		}
 		else {
@@ -124,7 +122,7 @@ public class FileTripleReader implements IRichBolt {
 		// Ensure that the real time is not null, if so ignore the heart beat
 		if (currentRealTimeDate != null) {
 			List<Object> output = HeartBeatSpout.getOutputTuple(input, currentRealTimeDate);
-			getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(getConfiguration().getId()), output);
+			this.collector.emit(HeartBeatSpout.buildHeartBeatStreamId(getConfiguration().getId()), output);
 		}
 	}
 	
@@ -185,14 +183,5 @@ public class FileTripleReader implements IRichBolt {
 	@Override
 	public void cleanup() {
 	}
-
-	public synchronized OutputCollector getCollector() {
-		return collector;
-	}
-
-	public synchronized void setCollector(OutputCollector collector) {
-		this.collector = collector;
-	}
-	
 	
 }

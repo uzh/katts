@@ -18,20 +18,18 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	private PriorityQueue<StreamSynchronizedEventWrapper> buffer = new PriorityQueue<StreamSynchronizedEventWrapper>();
 	private HashMap<Integer, Date> lastDatePerTask = new HashMap<Integer, Date>();
 
-	private Expression eventSynchronizationExpression;
-
 	private Date lastDateProcessed;
-
+	
 	@Override
 	public abstract void execute(Event event);
 
 	@Override
-	public void executeHeartBeatFreeTuple(Tuple input) {
+	public void executeRegularTuple(Tuple input) {
 		Event event = createEvent(input);
 		StreamSynchronizedEventWrapper syncEvent = new StreamSynchronizedEventWrapper(event,
 				this.getSynchronizationDate(event));
 		
-		synchronized (this) {
+		synchronized (buffer) {
 			buffer.add(syncEvent);
 			lastDatePerTask.put(syncEvent.getTuple().getSourceTask(), syncEvent.getSynchronizationDate());
 		}
@@ -51,18 +49,22 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 		execute(event);
 	}
 
-	private synchronized void executeEventsInBuffer() {
-		boolean stop = false;
-		while (!stop) {
-			StreamSynchronizedEventWrapper next = buffer.peek();
-			if (next != null && isEventInTemporalOrder(next)) {
-				executeSynchronizedEvent(next);
-				buffer.remove(next);
-			}
-			else {
-				stop = true;
+	private void executeEventsInBuffer() {
+		
+		synchronized (buffer) {
+			boolean stop = false;
+			while (!stop) {
+				StreamSynchronizedEventWrapper next = buffer.peek();
+				if (next != null && isEventInTemporalOrder(next)) {
+					executeSynchronizedEvent(next);
+					buffer.remove(next);
+				}
+				else {
+					stop = true;
+				}
 			}
 		}
+		
 	}
 
 	private boolean isEventInTemporalOrder(StreamSynchronizedEventWrapper event) {
@@ -100,23 +102,25 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	}
 
 	@Override
-	public synchronized Date calculateOutgoingStreamDate() {
+	public Date calculateOutgoingStreamDate() {
+		
+		synchronized (buffer) {
+			// In case the buffer is empty, we can return the default value for the heart beat stream.
+			if (this.buffer.size() <= 0) {
+				return getCurrentStreamTime();
+			}
 
-		// In case the buffer is empty, we can return the default value for the heart beat stream.
-		if (this.buffer.size() <= 0) {
-			return getCurrentStreamTime();
+			// In case we have something in the buffer, but we have nothing processed so far, we return a date long a go.
+			if (lastDateProcessed == null) {
+				return new Date(0);
+			}
+			
+			return lastDateProcessed;
 		}
-
-		// In case we have something in the buffer, but we have nothing processed so far, we return a date long a go.
-		if (lastDateProcessed == null) {
-			return new Date(0);
-		}
-
-		return lastDateProcessed;
 	}
 
 	@Override
-	public synchronized void updateIncomingStreamDate(Date streamDate) {
+	public void updateIncomingStreamDate(Date streamDate) {
 		executeEventsInBuffer();
 	}
 
@@ -136,12 +140,16 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	}
 
 
-	public synchronized Date getLastDateProcessed() {
-		return lastDateProcessed;
+	public Date getLastDateProcessed() {
+		synchronized (buffer) {
+			return lastDateProcessed;
+		}
 	}
 
-	public synchronized void setLastDateProcessed(Date lastDateProcessed) {
-		this.lastDateProcessed = lastDateProcessed;
+	public void setLastDateProcessed(Date lastDateProcessed) {
+		synchronized (buffer) {
+			this.lastDateProcessed = lastDateProcessed;
+		}
 	}
 
 }

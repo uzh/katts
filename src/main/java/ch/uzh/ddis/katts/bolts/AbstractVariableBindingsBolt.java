@@ -39,7 +39,7 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 	private Emitter emitter = null;
 
 	@Override
-	public void executeHeartBeatFreeTuple(Tuple input) {
+	public void executeRegularTuple(Tuple input) {
 		execute(createEvent(input));
 	}
 
