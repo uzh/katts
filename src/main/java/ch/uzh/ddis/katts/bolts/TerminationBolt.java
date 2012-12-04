@@ -20,7 +20,7 @@ public class TerminationBolt extends AbstractBolt {
 	private Logger logger = LoggerFactory.getLogger(TerminationBolt.class);
 	
 	@Override
-	public void executeHeartBeatFreeTuple(Tuple input) {
+	public void executeRegularTuple(Tuple input) {
 		// We do not register this bolt for any input stream except the heart beat stream.
 	}
 
