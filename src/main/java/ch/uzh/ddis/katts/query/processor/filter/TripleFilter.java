@@ -71,9 +71,13 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		TripleFilterBolt bolt = new TripleFilterBolt();
 		bolt.setConfiguration(this);
 		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt, getDeclaredParallelism(builder));
-		//declarer.fieldsGrouping(applyOnSource, new Fields(groupOn));
-		declarer.localOrShuffleGrouping(applyOnSource);
-		
+		if (groupOn == null || groupOn.isEmpty()) {
+			declarer.localOrShuffleGrouping(applyOnSource);
+			System.out.println("-----------------------------> good");
+		}
+		else {
+			declarer.fieldsGrouping(applyOnSource, new Fields(groupOn));
+		}
 		
 		// Attach the heart beat to the bolt
 		declarer.allGrouping(applyOnSource, HeartBeatSpout.buildHeartBeatStreamId(applyOnSource));
