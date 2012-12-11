@@ -13,6 +13,12 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
 
+/**
+ * The heartbeat spout sends in a regular interval a heartbeat to all triple sources. 
+ * 
+ * @author Thomas Hunziker
+ *
+ */
 public class HeartBeatSpout implements IRichSpout {
 
 	private static final long serialVersionUID = 1L;
@@ -41,7 +47,7 @@ public class HeartBeatSpout implements IRichSpout {
 	public static final String HEARTBEAT_STREAMID = "heartbeat";
 
 	@Override
-	public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+	public void open(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, SpoutOutputCollector collector) {
 		this.collector = collector;
 		if (this.getConfiguration() != null && this.getConfiguration().getHeartBeatInterval() > 0) {
 			waitTime = this.getConfiguration().getHeartBeatInterval();

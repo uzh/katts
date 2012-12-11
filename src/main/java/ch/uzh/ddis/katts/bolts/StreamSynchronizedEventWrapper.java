@@ -7,22 +7,28 @@ import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 import ch.uzh.ddis.katts.query.stream.VariableList;
 
+/**
+ * This Event wrapper allows to set a sorting date. This is useful, when it comes to synchronization, where each even
+ * must be stored in a priority queue.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class StreamSynchronizedEventWrapper extends Event {
 
 	private Event event;
-	
+
 	private Date synchronizationDate;
-	
+
 	public StreamSynchronizedEventWrapper(Event event, Date synchronizationDate) {
 		this.event = event;
 		this.setSynchronizationDate(synchronizationDate);
 	}
-	
+
 	public void ack() {
 		this.getBolt().ack(this);
 	}
-	
-	@SuppressWarnings("unchecked")
+
 	public <T> T getVariableValue(Variable variable) {
 		return this.event.getVariableValue(variable);
 	}
@@ -58,19 +64,17 @@ public class StreamSynchronizedEventWrapper extends Event {
 	public int compareTo(Event event) {
 		Date dateCompareWith = event.getStartDate();
 		if (event instanceof StreamSynchronizedEventWrapper) {
-			dateCompareWith = ((StreamSynchronizedEventWrapper)event).getSynchronizationDate();
+			dateCompareWith = ((StreamSynchronizedEventWrapper) event).getSynchronizationDate();
 		}
 		if (getSynchronizationDate().after((dateCompareWith))) {
 			return 1;
-		}
-		else if (getSynchronizationDate().before(dateCompareWith)) {
+		} else if (getSynchronizationDate().before(dateCompareWith)) {
 			return -1;
-		}
-		else {
+		} else {
 			return 0;
 		}
 	}
-	
+
 	public VariableList getVariables() {
 		return this.event.getVariables();
 	}

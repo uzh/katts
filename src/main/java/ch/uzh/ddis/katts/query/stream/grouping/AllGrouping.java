@@ -11,7 +11,7 @@ import ch.uzh.ddis.katts.query.stream.StreamConsumer;
  * This {@link Grouping} sends all variable bindings to all linked nodes.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -26,7 +26,7 @@ public class AllGrouping implements Grouping {
 
 	@Override
 	public void attachToBolt(BoltDeclarer bolt, StreamConsumer stream) {
-		bolt.allGrouping(stream.getStream().getNode().getId(), stream.getStream().getId());		
+		bolt.allGrouping(stream.getStream().getNode().getId(), stream.getStream().getId());
 	}
 
 }

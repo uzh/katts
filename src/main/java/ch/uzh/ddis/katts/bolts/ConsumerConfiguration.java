@@ -1,5 +1,11 @@
 package ch.uzh.ddis.katts.bolts;
 
-public interface ConsumerConfiguration extends Configuration{
+/**
+ * Configuration interface for consumer bolts.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
+public interface ConsumerConfiguration extends Configuration {
 
 }

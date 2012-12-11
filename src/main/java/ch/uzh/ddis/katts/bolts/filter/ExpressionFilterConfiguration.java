@@ -11,6 +11,11 @@ import ch.uzh.ddis.katts.bolts.Configuration;
  */
 public interface ExpressionFilterConfiguration extends Configuration {
 
+	/**
+	 * This method returns the expression used to filter the stream.
+	 * 
+	 * @return The filter expression formulated in SpEL.
+	 */
 	public String getExpression();
 
 }

@@ -6,8 +6,15 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+/**
+ * 
+ * @author Lorenz Fischer
+ *
+ */
 @XmlRootElement(name = "evict")
 public class EvictionRuleConfiguration implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	@XmlTransient
 	private String from;

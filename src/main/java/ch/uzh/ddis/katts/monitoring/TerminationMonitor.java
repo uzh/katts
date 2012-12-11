@@ -18,6 +18,14 @@ import org.slf4j.LoggerFactory;
 import ch.uzh.ddis.katts.bolts.source.FileTripleReader;
 import ch.uzh.ddis.katts.utils.Cluster;
 
+/**
+ * This monitor checks when the query is terminated.
+ * 
+ * @see Termination
+ * 
+ * @author Thomas Hunziker
+ *
+ */
 public class TerminationMonitor implements Watcher {
 
 	private static TerminationMonitor instance;

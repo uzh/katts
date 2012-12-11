@@ -7,9 +7,17 @@ import org.infinispan.Cache;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 
+/**
+ * This class provides a local storage implementation of a storage backend. It stores the data in a simple hashmap. The
+ * data is not backed up in the cluster.
+ * 
+ * @author Thomas Hunziker
+ * 
+ * @param <K>
+ * @param <V>
+ */
 public class LocalStorage<K, V> extends AbstractStorage<K, V> {
 
-	
 	private Map<K, V> cache;
 
 	@Override
@@ -30,10 +38,5 @@ public class LocalStorage<K, V> extends AbstractStorage<K, V> {
 	@Override
 	public void remove(K key) {
 		cache.remove(key);
-	}
-
-	@Override
-	public void evict(K key) {
-		
 	}
 }

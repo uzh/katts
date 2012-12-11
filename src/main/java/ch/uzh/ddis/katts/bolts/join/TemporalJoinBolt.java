@@ -31,7 +31,8 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  * emit all variable bindings that satisfy all join conditions. Lastly, there is a second set of eviction rules that can
  * be configured to be executed <i>after</i> the join has been executed.
  * 
- * @author lfischer
+ * @author Lorenz Fischer
+ * @author Thomas Hunziker
  */
 public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 
@@ -111,19 +112,11 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		synchronized (monitor) {
 
 			if (lastEventDate != null && lastEventDate.after(event.getEndDate())) {
-//				throw new RuntimeException("An event was out of order.");
 				logger.error(String.format("An event was out of order. Component Id: %1s -- Source Stream ID: %2s", this.getId(), event.getTuple().getSourceStreamId()));
 			}
 
 			lastEventDate = event.getEndDate();
 		}
-		
-//		// TODO: Workaround to send the shutdown signal to depending tasks:
-//		if (event.getEndDate().after(new Date())) {
-//			setLastDateProcessed(event.getEndDate());
-//			return;
-//		}
-		
 
 		Set<SimpleVariableBindings> joinResults;
 		SimpleVariableBindings newBindings = new SimpleVariableBindings(event.getTuple());
@@ -166,14 +159,16 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	}
 	
 	@Override
-	public synchronized void updateIncomingStreamDate(Date streamDate) {
+	public synchronized Date getOutgoingStreamDate(Date streamDate) {
 		
-		super.updateIncomingStreamDate(streamDate);
+		Date result = super.getOutgoingStreamDate(streamDate);
 		
 		// TODO: Remove this workaround. This is required to ensure the proper termination of the system.
 		if (streamDate.after(new Date())) {
 			setLastDateProcessed(streamDate);
 		}
+		
+		return result;
 	}
 
 	@Override

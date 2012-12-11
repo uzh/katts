@@ -11,15 +11,22 @@ import ch.uzh.ddis.katts.bolts.filter.ExpressionFilterBolt;
 import ch.uzh.ddis.katts.bolts.filter.ExpressionFilterConfiguration;
 import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
 
+/**
+ * This class handles the XML configuration of the {@link ExpressionFilterBolt}. The expression function configuration
+ * node does only provides a expression in SpEL.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ExpressionFilter extends AbstractProcessor implements ExpressionFilterConfiguration{
+public class ExpressionFilter extends AbstractProcessor implements ExpressionFilterConfiguration {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	@XmlTransient
 	private String expression;
-	
+
 	@Override
 	public Bolt getBolt() {
 		ExpressionFilterBolt bolt = new ExpressionFilterBolt();
@@ -27,7 +34,7 @@ public class ExpressionFilter extends AbstractProcessor implements ExpressionFil
 		return bolt;
 	}
 
-	@XmlAttribute(name="expression", required=true)
+	@XmlAttribute(name = "expression", required = true)
 	public String getExpression() {
 		return expression;
 	}

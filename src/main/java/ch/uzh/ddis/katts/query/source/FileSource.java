@@ -16,25 +16,22 @@ import ch.uzh.ddis.katts.bolts.source.FileTripleReader;
 import ch.uzh.ddis.katts.bolts.source.FileTripleReaderConfiguration;
 
 /**
- * The file source node is a source node which constructs from files data streams.
- * Where the data is emitted as triples.
+ * The file source node is a source node which constructs from files data streams. Where the data is emitted as triples.
  * 
- * A file source can handle multiple files and synchronize them depending on the
- * triple time.
+ * A file source can handle multiple files and synchronize them depending on the triple time.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class FileSource extends AbstractSource implements FileTripleReaderConfiguration{
-	
+public class FileSource extends AbstractSource implements FileTripleReaderConfiguration {
+
 	private static final long serialVersionUID = 1L;
-	
-	@XmlElementWrapper(name="files")
-	@XmlElement(name="file")
+
+	@XmlElementWrapper(name = "files")
+	@XmlElement(name = "file")
 	private List<File> files = new ArrayList<File>();
-	
 
 	@Override
 	public boolean validate() {
@@ -56,11 +53,11 @@ public class FileSource extends AbstractSource implements FileTripleReaderConfig
 	public void setFiles(List<File> files) {
 		this.files = files;
 	}
-	
+
 	public void appendFile(File file) {
 		this.getFiles().add(file);
 	}
-	
+
 	@Override
 	@XmlTransient
 	public int getParallelism() {

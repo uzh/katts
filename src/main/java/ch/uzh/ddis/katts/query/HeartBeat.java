@@ -5,24 +5,32 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.datatype.Duration;
 
 import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatConfiguration;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
+/**
+ * The heartbeat is used to push the processing progress through the topology. This is the XML configuration of the
+ * heartbeat spout.
+ * 
+ * @see HeartBeatSpout
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class HeartBeat implements Node, HeartBeatConfiguration {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	public static final String HEARTBEAT_COMPONENT_ID = "heartbeat";
 
 	@XmlTransient
 	private long duration;
-	
+
 	@XmlTransient
 	private Query query;
 
@@ -43,12 +51,12 @@ public class HeartBeat implements Node, HeartBeatConfiguration {
 
 	@Override
 	public void createTopology(TopologyBuilder topology) {
-		
+
 		HeartBeatSpout spout = new HeartBeatSpout();
 		spout.setConfiguration(this);
-		
+
 		topology.setSpout(this.getId(), spout);
-		
+
 	}
 
 	@Override
@@ -63,7 +71,7 @@ public class HeartBeat implements Node, HeartBeatConfiguration {
 	}
 
 	@Override
-	@XmlAttribute(name="interval", required=true)
+	@XmlAttribute(name = "interval", required = true)
 	public long getHeartBeatInterval() {
 		return this.duration;
 	}
@@ -71,7 +79,5 @@ public class HeartBeat implements Node, HeartBeatConfiguration {
 	public void setHeartBeatInverval(long duration) {
 		this.duration = duration;
 	}
-	
-	
-	
+
 }

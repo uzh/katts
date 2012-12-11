@@ -41,7 +41,7 @@ public interface PartitionerComponent {
 	 * This method returns the name of the the component. In case of a min component this should return "min". This
 	 * value is used to access the bucket storage and it is used to emit to the corresponding variable.
 	 * 
-	 * @return
+	 * @return Returns the name of the component.
 	 */
 	public String getName();
 

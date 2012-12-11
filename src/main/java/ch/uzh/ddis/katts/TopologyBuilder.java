@@ -1,18 +1,20 @@
 package ch.uzh.ddis.katts;
 
 import java.lang.reflect.InvocationTargetException;
+
 import java.lang.reflect.Method;
-
-import javax.management.RuntimeErrorException;
-
-import org.apache.zookeeper.txn.CreateTxn;
 
 import backtype.storm.Config;
 import backtype.storm.generated.StormTopology;
-
 import ch.uzh.ddis.katts.query.Node;
 import ch.uzh.ddis.katts.query.Query;
 
+/**
+ * This class extends the default Storm TopologyBuilder. It provides automated setup of the parallelization.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 
 	private Config configuration = null;
@@ -63,7 +65,6 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 	 */
 	public void setParallelismByNumberOfProcessors(int numberOfProcessors) {
 		this.numberOfProcessors = numberOfProcessors;
-//		int expectedNumberOfInfiniteParallelNodes = getNumberOfInfiniteParallelizedNodes();
 		float sumOverAllWeightsOfNonFixedParallelizedNodes = getSumOfAllParallelizationWeights();
 		int numberOfWorkersPretermined = getFixParallelization();
 
@@ -81,7 +82,7 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 	 */
 	public long getEstimatedNumberOfExecutors() {
 
-		return (long)(this.numberOfProcessors * this.factorOfThreadsPerProcessor);
+		return (long) (this.numberOfProcessors * this.factorOfThreadsPerProcessor);
 	}
 
 	/**
@@ -107,47 +108,35 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 	 * This method updates the configuration values, depending of the current setup of the TopologyBuilder.
 	 */
 	private void updateConfig() {
-		this.configuration.put(KATTS_FACTOR_OF_THREADS_CONFIG, (double)this.getFactorOfThreadsPerProcessor());
+		this.configuration.put(KATTS_FACTOR_OF_THREADS_CONFIG, (double) this.getFactorOfThreadsPerProcessor());
 		this.configuration.put(KATTS_EXPECTED_NUMBER_OF_EXECUTORS, this.getEstimatedNumberOfExecutors());
 		this.configuration.put(NUMBERS_OF_PROCESSORS, numberOfProcessors);
 	}
 
-	/**
-	 * This method returns the number of nodes, that has not specified a parallelization. This means that this nodes has
-	 * at least a parallelization of one and at most infinite parallelization.
-	 * 
-	 * @return
-	 */
-	private int getNumberOfInfiniteParallelizedNodes() {
-		int expectedNumberOfInfiniteParallelNodes = 0;
-
-		for (Node node : query.getNodes()) {
-			int nodeParallelism = node.getParallelism();
-			if (nodeParallelism < 1) {
-				expectedNumberOfInfiniteParallelNodes++;
-			}
-		}
-
-		return expectedNumberOfInfiniteParallelNodes;
-	}
-	
 	private float getSumOfAllParallelizationWeights() {
-		
+
 		float sum = 0;
-		
+
 		for (Node node : query.getNodes()) {
 			int nodeParallelism = node.getParallelism();
 			if (nodeParallelism < 1) {
 				sum += getParallelizationWeightByNode(node);
 			}
 		}
-		
+
 		return sum;
 	}
-	
+
+	/**
+	 * This method returns the parallelization weight for the given node. If no method is defined to retrieve the weight
+	 * one is returned.
+	 * 
+	 * @param node
+	 * @return
+	 */
 	public float getParallelizationWeightByNode(Node node) {
 		try {
-			
+
 			Method method = null;
 			for (Method m : node.getClass().getMethods()) {
 				if (m.getName().equals("getParallelismWeight")) {
@@ -155,13 +144,13 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 					break;
 				}
 			}
-			
+
 			if (method == null) {
 				return 1;
 			}
-			
+
 			try {
-				return (Float)method.invoke(node);
+				return (Float) method.invoke(node);
 			} catch (IllegalArgumentException e) {
 				throw new RuntimeException("The Method getParallelismWeight should not require any argument.", e);
 			} catch (IllegalAccessException e) {
@@ -170,10 +159,12 @@ public class TopologyBuilder extends backtype.storm.topology.TopologyBuilder {
 				throw new RuntimeException("Can't invoke the method getParallelismWeight.", e);
 			}
 		} catch (SecurityException e) {
-			throw new RuntimeException(String.format("Could not access the method getParallelismWeight on class %1s.", node.getClass().getCanonicalName()), e);
-		} 
+			throw new RuntimeException(String.format("Could not access the method getParallelismWeight on class %1s.",
+					node.getClass().getCanonicalName()), e);
+		}
 	}
 
+	@Override
 	public StormTopology createTopology() {
 
 		for (Node node : query.getNodes()) {

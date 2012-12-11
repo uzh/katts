@@ -27,44 +27,39 @@ import ch.uzh.ddis.katts.query.processor.aggregate.component.MinPartitioner;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
- * This class handles the configuration for an {@link PartitionerBolt}, that
- * builds the different PartitionerComponents. 
+ * This class handles the configuration for an {@link PartitionerBolt}, that builds the different PartitionerComponents.
  * 
- * The aggregation is done over a sliding window. The window has a 
- * set of slides. The configuration requires to specify the size of the window 
- * and the size of each slide as time durations. Also the {@link Variable} on which
- * the aggregation should be processed must be specified. 
+ * The aggregation is done over a sliding window. The window has a set of slides. The configuration requires to specify
+ * the size of the window and the size of each slide as time durations. Also the {@link Variable} on which the
+ * aggregation should be processed must be specified.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Partitioner extends AbstractProcessor implements PartitionerConfiguration{
-	
+public class Partitioner extends AbstractProcessor implements PartitionerConfiguration {
+
 	private static final long serialVersionUID = 1L;
 
 	@XmlIDREF
-	@XmlAttribute(required=true)
+	@XmlAttribute(required = true)
 	private Variable aggregateOn;
 
 	@XmlIDREF
-	@XmlAttribute(required=true)
+	@XmlAttribute(required = true)
 	private Variable partitionOn;
-	
-	@XmlAttribute(required=true)
+
+	@XmlAttribute(required = true)
 	private Duration windowSize;
-	
-	@XmlAttribute(required=true)
+
+	@XmlAttribute(required = true)
 	private Duration slideSize;
-	
-	@XmlElementRefs({ 
-		@XmlElementRef(type=MaxPartitioner.class),
-		@XmlElementRef(type=MinPartitioner.class),
-	})
-	@XmlElementWrapper(name="components")
+
+	@XmlElementRefs({ @XmlElementRef(type = MaxPartitioner.class), @XmlElementRef(type = MinPartitioner.class), })
+	@XmlElementWrapper(name = "components")
 	private List<PartitionerComponent> components = new ArrayList<PartitionerComponent>();
-	
+
 	@Override
 	public boolean validate() {
 		return true;
@@ -104,7 +99,7 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 	@XmlTransient
 	public Bolt getBolt() {
 		PartitionerBolt bolt = new PartitionerBolt();
-		bolt.setConfiguration(this);		
+		bolt.setConfiguration(this);
 		return bolt;
 	}
 

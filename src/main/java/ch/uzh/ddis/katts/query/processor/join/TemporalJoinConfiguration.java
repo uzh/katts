@@ -14,9 +14,16 @@ import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.join.TemporalJoinBolt;
 import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
 
+/**
+ * 
+ * @author Lorenz Fischer
+ *
+ */
 @XmlRootElement(name = "temporalJoin")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class TemporalJoinConfiguration extends AbstractProcessor {
+
+	private static final long serialVersionUID = 1L;
 
 	@XmlElementWrapper(name = "evictBefore")
 	@XmlElementRefs({ @XmlElementRef(type = EvictionRuleConfiguration.class) })

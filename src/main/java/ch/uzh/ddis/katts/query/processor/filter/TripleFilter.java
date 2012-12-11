@@ -24,11 +24,9 @@ import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
- * A triple filter does build the variable bindings from a triple stream (output
- * of an {@link Source} {@link Node}.
+ * A triple filter does build the variable bindings from a triple stream (output of an {@link Source} {@link Node}.
  * 
- * The filtering can be done based on some conditions (see
- * {@link TripleFilterBolt#setConditions(List)}).
+ * The filtering can be done based on some conditions (see {@link TripleFilterBolt#setConditions(List)}).
  * 
  * @author Thomas Hunziker
  * 
@@ -73,12 +71,10 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt, getDeclaredParallelism(builder));
 		if (groupOn == null || groupOn.isEmpty()) {
 			declarer.localOrShuffleGrouping(applyOnSource);
-			System.out.println("-----------------------------> good");
-		}
-		else {
+		} else {
 			declarer.fieldsGrouping(applyOnSource, new Fields(groupOn));
 		}
-		
+
 		// Attach the heart beat to the bolt
 		declarer.allGrouping(applyOnSource, HeartBeatSpout.buildHeartBeatStreamId(applyOnSource));
 	}
@@ -106,6 +102,12 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		this.applyOnSource = applyOnSource;
 	}
 
+	/**
+	 * The group on is optional. If no group on is defined a local or shuffle grouping is used to distribute the
+	 * triples. The group on indicates how to group the incoming stream from the triple source.
+	 * 
+	 * @return
+	 */
 	@XmlTransient
 	public String getGroupOn() {
 		return groupOn;

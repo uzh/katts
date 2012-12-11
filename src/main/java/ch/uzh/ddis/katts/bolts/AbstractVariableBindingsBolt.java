@@ -19,10 +19,13 @@ import ch.uzh.ddis.katts.query.stream.Variable;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
- * This class defines the basic structure of a bolt, that handles VariableBindings. 
+ * This class defines the basic structure of a bolt, that handles VariableBindings. It provides facilities to wrap and
+ * unwrap events with VariableBindings.
+ * 
+ * This bolt maintains no state.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 public abstract class AbstractVariableBindingsBolt extends AbstractBolt implements Bolt {
 
@@ -31,8 +34,8 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 	private Map<String, StreamConsumer> streamConsumer = new LinkedHashMap<String, StreamConsumer>();
 
 	/*
-	 * This map holds a reference to all outgoing streams of this bolt. The key of the map is the id of the
-	 * stream while the stream is the actual object representation of the outgoing stream.
+	 * This map holds a reference to all outgoing streams of this bolt. The key of the map is the id of the stream while
+	 * the stream is the actual object representation of the outgoing stream.
 	 */
 	private Map<String, Stream> streams = new LinkedHashMap<String, Stream>();
 
@@ -43,9 +46,15 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 		execute(createEvent(input));
 	}
 
+	/**
+	 * This method creates an event from a given input tuple.
+	 * 
+	 * @param input
+	 *            The input tuple to wrap with the event.
+	 * @return The event wrapped the input tuple
+	 */
 	public Event createEvent(Tuple input) {
-		StreamConsumer emittedOn = this.streamConsumer.get(input
-				.getSourceStreamId());
+		StreamConsumer emittedOn = this.streamConsumer.get(input.getSourceStreamId());
 		return new Event(input, this, emittedOn);
 	}
 
@@ -54,9 +63,14 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 
 	@Override
 	public void ack(Event event) {
-//		this.ack(event.getTuple());
+		// this.ack(event.getTuple());
 	}
 
+	/**
+	 * This method returns an {@link Emitter}. The emitter is used to emit events to corresponding streams.
+	 * 
+	 * @return The {@link Emitter} instance for this Bolt.
+	 */
 	public Emitter getEmitter() {
 		if (this.emitter == null) {
 			this.emitter = new Emitter(this);
@@ -67,7 +81,7 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		super.declareOutputFields(declarer);
-		
+
 		for (Stream stream : this.getStreams()) {
 			List<String> fields = new ArrayList<String>();
 			fields.add("sequenceNumber");
@@ -88,7 +102,8 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 		streamConsumer = new HashMap<String, StreamConsumer>();
 		for (StreamConsumer stream : streamConsumers) {
 			if (stream.getStream() == null) {
-				throw new NullPointerException("The given consumer stream is not linked back to the producing stream. Check if there is a bolt that consums a stream, which is not defined.");
+				throw new NullPointerException(
+						"The given consumer stream is not linked back to the producing stream. Check if there is a bolt that consums a stream, which is not defined.");
 			}
 			streamConsumer.put(stream.getStream().getId(), stream);
 		}

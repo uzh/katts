@@ -9,20 +9,20 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * This class represents a list of variable. It implements a {@link List} of {@link Variable}.
- * It is implemented as a wrapper around an {@link ArrayList} and a {@link HashMap}.
- * The nodes need to have a fast access (Map like access) to the reference value of a variable
- *  and on the other hand the variables must be sorted, this combined implementation is required. 
+ * This class represents a list of variable. It implements a {@link List} of {@link Variable}. It is implemented as a
+ * wrapper around an {@link ArrayList} and a {@link HashMap}. The nodes need to have a fast access (Map like access) to
+ * the reference value of a variable and on the other hand the variables must be sorted, this combined implementation is
+ * required.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 public class VariableList implements List<Variable>, Serializable {
-	
+
 	private static final long serialVersionUID = 1L;
 	private HashMap<String, Variable> map = new HashMap<String, Variable>();
 	private ArrayList<Variable> list = new ArrayList<Variable>();
-	
+
 	public Variable getVariableReferencesTo(String referencesTo) {
 		return map.get(referencesTo);
 	}
@@ -74,7 +74,7 @@ public class VariableList implements List<Variable>, Serializable {
 	public boolean remove(Object o) {
 		if (o instanceof Variable) {
 			int removeIndex = -1;
-			Variable varToRemove = (Variable)o;
+			Variable varToRemove = (Variable) o;
 			for (int i = 0; i < list.size(); i++) {
 				Variable var = list.get(i);
 				if (var.getReferencesTo().equals(varToRemove.getReferencesTo())) {
@@ -85,11 +85,11 @@ public class VariableList implements List<Variable>, Serializable {
 			if (removeIndex >= 0) {
 				list.remove(removeIndex);
 			}
-			map.remove(((Variable)o).getReferencesTo());
+			map.remove(((Variable) o).getReferencesTo());
 			return true;
-		}
-		else {
-			throw new IllegalArgumentException("The variable list can handle only objects of type " + Variable.class.getCanonicalName());
+		} else {
+			throw new IllegalArgumentException("The variable list can handle only objects of type "
+					+ Variable.class.getCanonicalName());
 		}
 	}
 
@@ -118,7 +118,7 @@ public class VariableList implements List<Variable>, Serializable {
 
 	@Override
 	public boolean removeAll(Collection<?> c) {
-		for (Object var: c) {
+		for (Object var : c) {
 			this.remove(var);
 		}
 		return true;
@@ -190,11 +190,11 @@ public class VariableList implements List<Variable>, Serializable {
 	@Override
 	public List<Variable> subList(int fromIndex, int toIndex) {
 		VariableList list = new VariableList();
-		
+
 		for (Variable var : this.list.subList(fromIndex, toIndex)) {
 			list.add(var);
 		}
-		
+
 		return list;
 	}
 

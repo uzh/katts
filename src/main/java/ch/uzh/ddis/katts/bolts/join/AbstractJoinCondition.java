@@ -7,6 +7,13 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
 
+/**
+ * This class implements an abstract implementation of the {@link JoinCondition} with convenient methods for processing
+ * join conditions.
+ * 
+ * @author Lorenz Fischer
+ * 
+ */
 public abstract class AbstractJoinCondition implements JoinCondition {
 
 	/**

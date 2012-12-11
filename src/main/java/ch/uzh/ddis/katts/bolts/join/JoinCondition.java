@@ -7,7 +7,7 @@ import ch.uzh.ddis.katts.query.processor.join.JoinConditionConfiguration;
 /**
  * This is the general contract that all join conditions have to fulfill.
  * 
- * @author fischer
+ * @author Lorenz Fischer
  * 
  */
 public interface JoinCondition {

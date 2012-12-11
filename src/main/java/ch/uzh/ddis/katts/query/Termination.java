@@ -8,11 +8,18 @@ import javax.xml.bind.annotation.XmlTransient;
 import backtype.storm.topology.BoltDeclarer;
 import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.bolts.TerminationBolt;
-import ch.uzh.ddis.katts.query.output.FileOutput;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
+/**
+ * This is the XML configuration class for the {@link TerminationBolt}. 
+ * 
+ * @see TerminationBolt
+ * 
+ * @author Thomas Hunziker
+ *
+ */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Termination implements Node {
@@ -41,7 +48,10 @@ public class Termination implements Node {
 	public void createTopology(TopologyBuilder topology) {
 		TerminationBolt bolt = new TerminationBolt();
 		BoltDeclarer boltDeclarer = topology.setBolt(this.getId(), bolt, this.getParallelism());
-//		
+		
+		// TODO: The attaching to each node makes no sense, because the overhead is to big. Eventually the listening node
+		// should be added by configuration.
+
 //		for (Node node : this.getQuery().getNodes()) {
 //			
 //			// Subscribe to all bolts in the cluster for the heart beat, to track the termination date.

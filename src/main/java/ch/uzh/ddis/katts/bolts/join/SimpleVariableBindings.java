@@ -9,17 +9,18 @@ import java.util.List;
 import backtype.storm.tuple.Tuple;
 
 /**
- * @Thomas: This is a temporary class. It will most likely be removed as soon as I
- * understand the differences between Event, Tuple and VariableBindings. Most
- * probably I should be using one of these instead of this class.
  * 
- * Instances of this class hold key value pairs. All keys are required to be of
- * type string, while the values can be of any type.
+ * Instances of this class hold key value pairs. All keys are required to be of type string, while the values can be of
+ * any type.
  * 
- * @author fischer
+ * @author Lorenz Fischer
+ * 
+ *         TODO: Replace this class with {@link ch.uzh.ddis.katts.bolts.Event}.
  * 
  */
 public class SimpleVariableBindings extends HashMap<String, Object> {
+
+	private static final long serialVersionUID = 1L;
 
 	public SimpleVariableBindings() {
 	}
@@ -37,23 +38,23 @@ public class SimpleVariableBindings extends HashMap<String, Object> {
 	public Long getEndDate() {
 		return ((Date) get("endDate")).getTime();
 	}
-	
+
 	@Override
 	public String toString() {
 		// create the string in ascending order of of the keys
-		
+
 		StringBuilder result = new StringBuilder();
 		List<String> sortedKeys = new ArrayList<String>(keySet());
-		
+
 		Collections.sort(sortedKeys);
-		
+
 		for (String key : sortedKeys) {
 			if (result.length() > 0) {
 				result.append(",");
 			}
 			result.append(key).append("=").append(get(key).toString());
 		}
-		
+
 		return result.toString();
 	}
 

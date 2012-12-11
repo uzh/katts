@@ -13,6 +13,14 @@ import ch.uzh.ddis.katts.query.processor.join.RegularJoinConditionConfiguration;
 
 import com.google.common.collect.HashMultimap;
 
+/**
+ * The regular join joins two streams on a set of variables. This is the same as the @{link
+ * {@link SameValueJoinCondition} join except that the variables can have different names in the joining streams.
+ * 
+ * 
+ * @author Lorenz Fischer
+ * 
+ */
 public class RegularJoinCondition extends AbstractJoinCondition {
 
 	/** The name of the field to join for each stream. */

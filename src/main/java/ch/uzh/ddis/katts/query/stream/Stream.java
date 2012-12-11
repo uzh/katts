@@ -15,43 +15,40 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
 import backtype.storm.utils.Utils;
 import ch.uzh.ddis.katts.query.Node;
 
 /**
- * The single nodes in the topology are connected with streams. This class
- * represents the configuration of such a stream. A stream consists always
- * of a set of variables and a source. The consuming part of the 
- * stream is configured in {@link StreamConsumer}.
+ * The single nodes in the topology are connected with streams. This class represents the configuration of such a
+ * stream. A stream consists always of a set of variables and a source. The consuming part of the stream is configured
+ * in {@link StreamConsumer}.
  * 
  * @see Variable
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Stream implements Serializable {
-	
+
 	private static final long serialVersionUID = 1L;
 
 	@XmlTransient
 	private String id = String.valueOf(Math.abs(Utils.secureRandomLong()));
-	
+
 	@XmlTransient
 	private VariableList variables = new VariableList();
-	
+
 	@XmlTransient
-	private Stream inheritFrom = null; 
-	
+	private Stream inheritFrom = null;
+
 	@XmlTransient
 	private Node node;
-	
+
 	@XmlTransient
 	private Duration eventTimeOverlapping = null;
-	
+
 	public Stream() throws DatatypeConfigurationException {
 		if (getEventTimeOverlapping() == null) {
 			setEventTimeOverlapping(DatatypeFactory.newInstance().newDuration(0));
@@ -59,7 +56,7 @@ public class Stream implements Serializable {
 	}
 
 	@XmlID
-	@XmlAttribute(required=true)
+	@XmlAttribute(required = true)
 	public String getId() {
 		return id;
 	}
@@ -68,14 +65,13 @@ public class Stream implements Serializable {
 		this.id = id;
 	}
 
-	@XmlElement(name="variable")
+	@XmlElement(name = "variable")
 	public VariableList getVariables() {
 		return variables;
 	}
 
 	/**
-	 * This method returns all variables including the 
-	 * inherit ones.
+	 * This method returns all variables including the inherit ones.
 	 * 
 	 * @return
 	 */
@@ -87,8 +83,7 @@ public class Stream implements Serializable {
 			vars.addAll(this.getInheritFrom().getAllVariables());
 			vars.addAll(this.variables);
 			return vars;
-		}
-		else {
+		} else {
 			return variables;
 		}
 	}
@@ -97,17 +92,17 @@ public class Stream implements Serializable {
 		this.variables.clear();
 		this.variables.addAll(variables);
 	}
-	
+
 	public void appendVariable(Variable variable) {
 		this.variables.add(variable);
 	}
-	
+
 	public Variable getVariableByReferenceName(String referenceName) {
 		return this.variables.getVariableReferencesTo(referenceName);
 	}
 
 	@XmlIDREF
-	@XmlAttribute(name="inheritFrom")
+	@XmlAttribute(name = "inheritFrom")
 	public Stream getInheritFrom() {
 		return inheritFrom;
 	}
@@ -124,12 +119,13 @@ public class Stream implements Serializable {
 	public void setNode(Node node) {
 		this.node = node;
 	}
-//	
-//	public boolean hasVariable(Variable variable) {
-//		return this.getAllVariables().contains(variable);
-//	}
 
-//	@XmlAttribute(name="eventTimeOverlapping", required=false)
+	//
+	// public boolean hasVariable(Variable variable) {
+	// return this.getAllVariables().contains(variable);
+	// }
+
+	// @XmlAttribute(name="eventTimeOverlapping", required=false)
 	@XmlTransient
 	public Duration getEventTimeOverlapping() {
 		return eventTimeOverlapping;
@@ -138,7 +134,7 @@ public class Stream implements Serializable {
 	public void setEventTimeOverlapping(Duration eventTimeOverlapping) {
 		this.eventTimeOverlapping = eventTimeOverlapping;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return this.getId().hashCode();

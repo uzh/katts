@@ -11,15 +11,28 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import backtype.storm.tuple.Tuple;
 
+/**
+ * This abstract bolt implementation provides synchronization of incoming events to the subclasses. The implementation
+ * employs the heartbeat and the Storm context knowledge for synchronization. This class maintains a buffer with all
+ * events that should be synchronized. Hence this implementation enforce a inner state, that should be transferred in
+ * case of a rebalancing.
+ * 
+ * The synchronization is achieved by listening on all task that may send data to this task. If its clear that for a
+ * certain event no previous event can occur the event is forwarded to the subclass.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsBolt {
 
 	private static final long serialVersionUID = 1L;
 
+	// TODO: Move this storage to the central storage facilties.
 	private PriorityQueue<StreamSynchronizedEventWrapper> buffer = new PriorityQueue<StreamSynchronizedEventWrapper>();
 	private HashMap<Integer, Date> lastDatePerTask = new HashMap<Integer, Date>();
 
 	private Date lastDateProcessed;
-	
+
 	@Override
 	public abstract void execute(Event event);
 
@@ -28,13 +41,11 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 		Event event = createEvent(input);
 		StreamSynchronizedEventWrapper syncEvent = new StreamSynchronizedEventWrapper(event,
 				this.getSynchronizationDate(event));
-		
+
 		synchronized (buffer) {
 			buffer.add(syncEvent);
 			lastDatePerTask.put(syncEvent.getTuple().getSourceTask(), syncEvent.getSynchronizationDate());
 		}
-
-//		this.ack(input);
 
 		executeEventsInBuffer();
 	}
@@ -49,8 +60,12 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 		execute(event);
 	}
 
+	/**
+	 * This method finds all events that can be processed regard to the processing state of previous tasks in the
+	 * buffer.
+	 */
 	private void executeEventsInBuffer() {
-		
+
 		synchronized (buffer) {
 			boolean stop = false;
 			while (!stop) {
@@ -58,17 +73,23 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 				if (next != null && isEventInTemporalOrder(next)) {
 					executeSynchronizedEvent(next);
 					buffer.remove(next);
-				}
-				else {
+				} else {
 					stop = true;
 				}
 			}
 		}
-		
+
 	}
 
+	/**
+	 * This method determines if a given event is the possible next event to forward to the subclass. The determination
+	 * is done the events in the buffer and the heartbeats, which indicates the processing state of previous bolts.
+	 * 
+	 * @param event
+	 * @return
+	 */
 	private boolean isEventInTemporalOrder(StreamSynchronizedEventWrapper event) {
-		
+
 		// We iterate over all possible tasks, that can send us events. If one of the task can send us a event, which
 		// may have a event date before the event in question, then return false.
 		for (Integer taskId : this.getAllSourceTasksFromIncomingStreams()) {
@@ -102,26 +123,24 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	}
 
 	@Override
-	public Date calculateOutgoingStreamDate() {
-		
+	public Date getOutgoingStreamDate(Date streamDate) {
+
+		executeEventsInBuffer();
+
 		synchronized (buffer) {
 			// In case the buffer is empty, we can return the default value for the heart beat stream.
 			if (this.buffer.size() <= 0) {
 				return getCurrentStreamTime();
 			}
 
-			// In case we have something in the buffer, but we have nothing processed so far, we return a date long a go.
+			// In case we have something in the buffer, but we have nothing processed so far, we return a date long a
+			// go.
 			if (lastDateProcessed == null) {
 				return new Date(0);
 			}
-			
+
 			return lastDateProcessed;
 		}
-	}
-
-	@Override
-	public void updateIncomingStreamDate(Date streamDate) {
-		executeEventsInBuffer();
 	}
 
 	/**
@@ -134,18 +153,20 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	 * @return The date on which the synchronization should be done
 	 */
 	protected Date getSynchronizationDate(Event event) {
-		
+
 		// Since currently all subclasses uses anyway the end date, we can code here this directly.
 		return event.getEndDate();
 	}
 
-
-	public Date getLastDateProcessed() {
-		synchronized (buffer) {
-			return lastDateProcessed;
-		}
-	}
-
+	/**
+	 * This method sets the processing state of this bolt. Subclasses may override this method to update the processing
+	 * state depending on their task. The processing state is expressed as the date, which guarantees that no event is
+	 * emitted in the subclass before the here set date. This date is used for the heartbeat to communicate the
+	 * processing state to subsequent bolts.
+	 * 
+	 * @param lastDateProcessed
+	 *            The last date possible date, which guarantees that no event is emitted before this date.
+	 */
 	public void setLastDateProcessed(Date lastDateProcessed) {
 		synchronized (buffer) {
 			this.lastDateProcessed = lastDateProcessed;

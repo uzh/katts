@@ -10,24 +10,23 @@ import java.util.ListIterator;
 import ch.uzh.ddis.katts.query.Node;
 
 /**
- * This class represents a list of producing streams ({@link Stream}.
- * It is a wrapper around a ArrayList. This is required because
- * on loading from an XML the nodes must be linked back to 
- * the source. This is required to setup the topology. 
+ * This class represents a list of producing streams ({@link Stream}. It is a wrapper around a ArrayList. This is
+ * required because on loading from an XML the nodes must be linked back to the source. This is required to setup the
+ * topology.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
-public class Producers implements List<Stream>, Serializable{
+public class Producers implements List<Stream>, Serializable {
 
 	private static final long serialVersionUID = 1L;
 	private ArrayList<Stream> list = new ArrayList<Stream>();
 	private final Node node;
-	
+
 	public Producers(Node node) {
 		this.node = node;
 	}
-	
+
 	@Override
 	public int size() {
 		return list.size();
@@ -102,7 +101,7 @@ public class Producers implements List<Stream>, Serializable{
 
 	@Override
 	public void clear() {
-		list.clear();	
+		list.clear();
 	}
 
 	@Override

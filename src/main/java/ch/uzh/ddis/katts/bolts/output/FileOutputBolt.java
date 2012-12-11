@@ -1,9 +1,7 @@
 package ch.uzh.ddis.katts.bolts.output;
 
-import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Map;
@@ -17,11 +15,15 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import ch.uzh.ddis.katts.bolts.AbstractVariableBindingsBolt;
 import ch.uzh.ddis.katts.bolts.Event;
-import ch.uzh.ddis.katts.bolts.aggregate.PartitionerBolt;
-import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
+/**
+ * This Bolt writes all the input streams into a file. This is convenient way to store the output data of a query.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class FileOutputBolt extends AbstractVariableBindingsBolt {
 
 	private static final long serialVersionUID = 1L;
@@ -33,7 +35,7 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 	private int numberOfColumns;
 
 	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
 		FileWriter fstream;
@@ -45,7 +47,7 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 		}
 
 		// TODO: Currently the output stream can only consume one
-		// stream. This should be changed to multiple streams
+		// stream. This should be changed to multiple streams. 
 		stream = this.getStreamConsumer().iterator().next();
 		numberOfColumns = stream.getStream().getAllVariables().size() + 2;
 		String[] headerLine = new String[numberOfColumns];

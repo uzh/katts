@@ -33,7 +33,7 @@ public class ExpressionFilterBolt extends AbstractVariableBindingsBolt {
 	private Expression expression;
 
 	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 		ExpressionParser parser = new SpelExpressionParser();
 		expression = parser.parseExpression(this.getConfiguration().getExpression());

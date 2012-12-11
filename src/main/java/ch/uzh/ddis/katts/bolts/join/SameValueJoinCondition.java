@@ -15,7 +15,7 @@ import com.google.common.collect.HashMultimap;
 /**
  * This condition joins the variable bindings of each stream if they share the same value on a given field.
  * 
- * @author fischer
+ * @author Lorenz Fischer
  * 
  */
 public class SameValueJoinCondition extends AbstractJoinCondition {

@@ -25,6 +25,12 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.ddis.katts.utils.Cluster;
 
+/**
+ * This class records the data and stored it to the ZooKeeper.
+ * 
+ * @author Thomas Hunziker
+ *
+ */
 public final class Recorder implements TerminationWatcher {
 
 	private static Recorder instance;
@@ -196,6 +202,11 @@ public final class Recorder implements TerminationWatcher {
 		
 	}
 	
+	/**
+	 * This method returns the nodes host on which this code is executed on.
+	 * 
+	 * @return
+	 */
 	private String getHostIdentifier() {
 		
 		try {

@@ -10,9 +10,15 @@ import org.apache.zookeeper.ZooKeeper;
 
 import backtype.storm.Config;
 
+/**
+ * This util class helps to create a ZooKeeper instance direclty from a storm configuration.
+ * 
+ * @author Thomas Hunziker
+ *
+ */
 public final class Cluster {
 
-	public static ZooKeeper createZooKeeper(Map conf) throws IOException {
+	public static ZooKeeper createZooKeeper(@SuppressWarnings("rawtypes") Map conf) throws IOException {
 
 		@SuppressWarnings("unchecked")
 		List<String> zooKeeperServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);

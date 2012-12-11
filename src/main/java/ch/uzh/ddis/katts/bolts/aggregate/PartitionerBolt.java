@@ -14,8 +14,6 @@ import backtype.storm.task.TopologyContext;
 import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
-import ch.uzh.ddis.katts.persistence.Storage;
-import ch.uzh.ddis.katts.persistence.StorageFactory;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
@@ -76,10 +74,8 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 	 */
 	private Variable aggregateOnField;
 
-	private int counter = 0;
-
 	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
 		// TODO: Move the state to the shared storage engine.

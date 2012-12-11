@@ -2,24 +2,28 @@ package ch.uzh.ddis.katts;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
-import backtype.storm.StormSubmitter;
-import backtype.storm.generated.ExecutorSummary;
-import backtype.storm.generated.TopologySummary;
-import backtype.storm.utils.Utils;
-import ch.uzh.ddis.katts.monitoring.Recorder;
 import ch.uzh.ddis.katts.monitoring.VmMonitor;
 import ch.uzh.ddis.katts.query.Query;
 
+/**
+ * This class runs the given query locally. The query must be serialized as XML.
+ * 
+ * @author Thomas Hunziker
+ *
+ */
 public class RunXmlQueryLocally {
 	
 	public static final String RUN_TOPOLOGY_LOCALLY_CONFIG_KEY = "katts_run_topology_locally";
 	
-	
+	/**
+	 * This method builds the topology from the XML file. This method expected a XML file which contains the query
+	 * serialized in XML.
+	 * 
+	 * @param args
+	 */
 	public static void main(String[] args) throws Exception {
 		
 		if (args.length == 0 || args[0] == null) {
@@ -51,8 +55,6 @@ public class RunXmlQueryLocally {
 
 		LocalCluster cluster = new LocalCluster();
 		cluster.submitTopology("test", conf, builder.createTopology());
-		
-		
 		
 		
 	}

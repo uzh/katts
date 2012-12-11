@@ -1,7 +1,5 @@
 package ch.uzh.ddis.katts.query.source;
 
-import javax.xml.bind.annotation.XmlTransient;
-
 import ch.uzh.ddis.katts.query.AbstractNode;
 
 /**
@@ -10,12 +8,10 @@ import ch.uzh.ddis.katts.query.AbstractNode;
  * @see Source
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
-public abstract class AbstractSource extends AbstractNode implements Source{
+public abstract class AbstractSource extends AbstractNode implements Source {
 
 	private static final long serialVersionUID = 1L;
-
-
 
 }
