@@ -10,3 +10,4 @@ data/test.lorenz.output.SameValueJoin.csv
 data/test.lorenz.output.csv
 data/output.csv
 doc
+/classes
