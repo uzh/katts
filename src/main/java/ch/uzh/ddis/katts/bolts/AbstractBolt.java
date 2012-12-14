@@ -1,5 +1,6 @@
 package ch.uzh.ddis.katts.bolts;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,23 +19,37 @@ import backtype.storm.tuple.Tuple;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
- * This Bolt implements the basics for a Bolt, that requires a handling for heart beats.
+ * This Bolt implements the basics for a Bolt. This are:
  * 
+ * <ul>
+ * <li>Heart Beat Handling: Each Bolt, even if he has no state, must handle the heartbeat. This abstract implementation
+ * provides convenient methods to make the handling easier. Normally for stateless Bolts no additional handling must be
+ * added. Statefull Bolts must ensure that they update the heartbeat date, with the current processing state.</li>
+ * <li>Data Collection: The emit infrastructure is not thread safe. This abstract bolt provides synchronization on the
+ * collector.</li>
+ * </ul>
+ * 
+ * This bolt has for heartbeat some storage facilities. But this data is no crucial and hence can be lost at any point
+ * in time. Hence this implementation can threaded as stateless bolt.
  * 
  * @author Thomas Hunziker
  * 
  */
 public abstract class AbstractBolt implements IRichBolt {
 
+	private static final long serialVersionUID = 1L;
+
 	private OutputCollector collector;
 
 	private Map<Integer, HeartBeat> lastHeartBeatPerTask = new HashMap<Integer, HeartBeat>();
-	private Set<Integer> tasksFromIncomingStreams = new HashSet<Integer>();
+	private List<Integer> tasksFromIncomingStreams = new ArrayList<Integer>();
 	private Date currentStreamTime;
 
+	private Boolean heartBeatMonitor = new Boolean(true);
+
 	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-		this.setCollector(collector);
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
+		this.collector = collector;
 
 		// Find all tasks from incoming streams
 		Map<GlobalStreamId, Grouping> sources = context.getThisSources();
@@ -48,40 +63,46 @@ public abstract class AbstractBolt implements IRichBolt {
 	}
 
 	@Override
-	public void execute(Tuple input) {
-
-		boolean isHeartBeatTuple = true;
+	public final void execute(Tuple input) {
 
 		// This synchronization is required, because we should not allow the execution of a heart beat tuple in parallel
 		// with a regular tuple. The reason is that, when the regular tuple processing takes more time than the
 		// processing of the heart beat tuple, we may emit a wrong stream processing time.
-		synchronized (this) {
+		synchronized (heartBeatMonitor) {
 			String heartBeatStreamId = HeartBeatSpout.buildHeartBeatStreamId(input.getSourceComponent());
 
 			if (heartBeatStreamId.equals(input.getSourceStreamId())) {
 				HeartBeat heartBeat = new HeartBeat(input);
 				executeHeartBeat(heartBeat);
 			} else {
-				isHeartBeatTuple = false;
+				executeRegularTuple(input);
 			}
-		}
-
-		if (!isHeartBeatTuple) {
-			executeHeartBeatFreeTuple(input);
 		}
 	}
 
-	public abstract void executeHeartBeatFreeTuple(Tuple input);
+	/**
+	 * This method is invoked, when a regular (non-heartbeat) tuple is executed. The input Tuple contains all the
+	 * information provided by Storm for this data item.
+	 * 
+	 * @param input
+	 *            The input tuple with all variables and the source task information.
+	 */
+	public abstract void executeRegularTuple(Tuple input);
 
+	/**
+	 * This method returns the components id.
+	 * 
+	 * @return The component id in the storm topology.
+	 */
 	public abstract String getId();
 
 	/**
 	 * This method handles the heart beat tuples. This method should not be overridden. Override instead the methods
-	 * {@link AbstractBolt#calculateOutgoingStreamDate()} or {@link AbstractBolt#updateIncomingStreamDate()}.
+	 * {@link AbstractBolt#getOutgoingStreamDate()} or {@link AbstractBolt#updateIncomingStreamDate()}.
 	 * 
 	 * @param heartBeat
 	 */
-	public synchronized void executeHeartBeat(HeartBeat heartBeat) {
+	protected void executeHeartBeat(HeartBeat heartBeat) {
 
 		// We synchronize the different heart beats from the different tasks. We will emit the heart beat with the
 		// lowest stream real time. We emit the heart beat only when the heart beat comes from the first task in the
@@ -104,21 +125,24 @@ public abstract class AbstractBolt implements IRichBolt {
 			}
 
 			currentStreamTime = lowestHeartBeat.getStreamDate();
-			updateIncomingStreamDate(lowestHeartBeat.getStreamDate());
 
-			this.getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
-					HeartBeatSpout.getOutputTuple(lowestHeartBeat.getTuple(), calculateOutgoingStreamDate()));
-
+			this.emit(
+					HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
+					HeartBeatSpout.getOutputTuple(lowestHeartBeat.getTuple(),
+							getOutgoingStreamDate(lowestHeartBeat.getStreamDate())));
 		}
 
 	}
 
-	public synchronized Date calculateOutgoingStreamDate() {
-		return getCurrentStreamTime();
-	}
-
-	public synchronized void updateIncomingStreamDate(Date streamDate) {
-		
+	/**
+	 * This method is used to retrieve the processing state of subclasses. The heartbeat must communicate the processing
+	 * state to subsequent bolts. The processing state is the date of the last date, that can guarantees that no earlier
+	 * date is emitted by the sub bolt.
+	 * 
+	 * @return The processing state for the heartbeat of this bolt.
+	 */
+	public Date getOutgoingStreamDate(Date streamDate) {
+		return streamDate;
 	}
 
 	@Override
@@ -127,14 +151,7 @@ public abstract class AbstractBolt implements IRichBolt {
 		declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this.getId()), HeartBeatSpout.getHeartBeatFields());
 	}
 
-	public OutputCollector getCollector() {
-		return collector;
-	}
-
-	public void setCollector(OutputCollector collector) {
-		this.collector = collector;
-	}
-
+	@Override
 	public Map<String, Object> getComponentConfiguration() {
 		return null;
 	}
@@ -144,16 +161,80 @@ public abstract class AbstractBolt implements IRichBolt {
 
 	}
 
-	public synchronized final Date getCurrentStreamTime() {
-		return currentStreamTime;
+	/**
+	 * This method returns the current processing state of all previous bolts. It is the lowest date, of all current
+	 * heartbeats over all streams.
+	 * 
+	 * @return The processing state of previous bolts.
+	 */
+	public final Date getCurrentStreamTime() {
+		synchronized (heartBeatMonitor) {
+			return currentStreamTime;
+		}
 	}
-	
-	public Set<Integer> getAllSourceTasksFromIncomingStreams() {
+
+	/**
+	 * This method returns all tasks that may send events to this bolt.
+	 * 
+	 * @return
+	 */
+	public List<Integer> getAllSourceTasksFromIncomingStreams() {
 		return tasksFromIncomingStreams;
 	}
-	
-	public synchronized HeartBeat getLastHeartBeatPerTask(Integer taskId) {
-		return this.lastHeartBeatPerTask.get(taskId);
+
+	/**
+	 * This method returns the heartbeat of a certain task id.
+	 * 
+	 * @param taskId
+	 *            The id of the task for which the heartbeat shoul be returned.
+	 * @return null or the heartbeat indicated by the taskId.
+	 */
+	public HeartBeat getLastHeartBeatPerTask(Integer taskId) {
+		synchronized (heartBeatMonitor) {
+			return this.lastHeartBeatPerTask.get(taskId);
+		}
 	}
-	
+
+	/**
+	 * This method emits a tuple on the indicated streamId. This method is thread safe.
+	 * 
+	 * @param streamId
+	 *            The stream id on which the tuple should be emitted.
+	 * @param anchor
+	 *            The tuple at which the tuple should be bound. Currently this is ignored, because KATTS provides anyway
+	 *            no reliability and hence this would produce unnecessary overhead.
+	 * @param tuple
+	 *            The tuple to emit.
+	 */
+	public void emit(String streamId, Tuple anchor, List<Object> tuple) {
+		// We do not emit the anchor, to prevent the tracking of the tuples
+		this.emit(streamId, tuple);
+	}
+
+	/**
+	 * This method emits a tuple on the indicated streamId. This method is thread safe.
+	 * 
+	 * @param streamId
+	 *            The stream id on which the tuple should be emitted.
+	 * @param tuple
+	 *            The tuple to emit.
+	 */
+	public void emit(String streamId, List<Object> tuple) {
+		synchronized (this.collector) {
+			this.collector.emit(streamId, tuple);
+		}
+	}
+
+	/**
+	 * This method acknowledge the receiving of a tuple. This is required by storm to provide reliability. Hence this
+	 * method is currently not used, because KATTS provides no reliability.
+	 * 
+	 * @param tuple
+	 */
+	public synchronized void ack(Tuple tuple) {
+		synchronized (this.collector) {
+			this.collector.ack(tuple);
+		}
+	}
+
 }

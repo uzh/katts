@@ -13,36 +13,34 @@ import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
 /**
- * The AbstractOutput does provide an convinient interface for
- * building an output bolt. An output bolt is a bolt which does
- * not send the data to another bolt. It may send it to a message 
- * queue or writing to the file.
+ * The AbstractOutput does provide an convenient interface for building an output bolt. An output bolt is a bolt which
+ * does not send the data to another bolt. It may send it to a message queue or writing to the file.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 public abstract class AbstractOutput extends AbstractNode implements Output {
-	
+
 	private static final long serialVersionUID = 1L;
-	
+
 	@XmlTransient
 	private List<StreamConsumer> consumers = new ArrayList<StreamConsumer>();
-	
+
 	@Override
-	@XmlElementWrapper(name="consumes")
-	@XmlElement(name="stream")
+	@XmlElementWrapper(name = "consumes")
+	@XmlElement(name = "stream")
 	public List<StreamConsumer> getConsumers() {
 		for (StreamConsumer consumer : consumers) {
 			consumer.setNode(this);
 		}
-		
+
 		return consumers;
 	}
 
 	public void setConsumers(List<StreamConsumer> consumers) {
 		this.consumers = consumers;
 	}
-	
+
 	public void appendConsumer(StreamConsumer consumer) {
 		this.getConsumers().add(consumer);
 	}
@@ -50,9 +48,8 @@ public abstract class AbstractOutput extends AbstractNode implements Output {
 	@Override
 	@XmlTransient
 	public int getParallelism() {
-		// We assume that a regular output is not parallelizable  
+		// We assume that a regular output is not parallelizable
 		return 1;
 	}
-
 
 }

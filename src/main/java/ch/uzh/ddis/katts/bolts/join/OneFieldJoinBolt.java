@@ -1,31 +1,30 @@
 package ch.uzh.ddis.katts.bolts.join;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.ConcurrentHashMap;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import ch.uzh.ddis.katts.bolts.AbstractStreamInternSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.AbstractSynchronizedBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.bolts.VariableBindings;
-import ch.uzh.ddis.katts.persistence.Storage;
-import ch.uzh.ddis.katts.persistence.StorageFactory;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
- * This Bolt joins two streams on a single variable (field) at the same time
- * with a certain precision.
+ * This Bolt joins two streams on a single variable (field) at the same time with a certain precision. This
+ * implementation provides a better performance as the temporal join, because the conditions and eviction rules are
+ * directly encoded in Java. Additionally the buffers can be emptied more efficent as it is possible with the temporal
+ * join.
  * 
+ * This bolt has a state and hence is stateful.
  * 
  * @author Thomas Hunziker
  * 
@@ -34,184 +33,110 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 
 	private static final long serialVersionUID = 1L;
 	private OneFieldJoinConfiguration configuration;
-	private Storage<Object, Map<StreamConsumer, PriorityQueue<Event>>> buffers;
-
-	private Logger logger = LoggerFactory.getLogger(OneFieldJoinBolt.class);
-
-	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-		super.prepare(stormConf, context, collector);
-
-		try {
-			String boltId = this.getId();
-			buffers = StorageFactory.createDefaultStorage(boltId + "_buffers");
-
-		} catch (InstantiationException e) {
-			logger.error("Could not load storage object.", e);
-		} catch (IllegalAccessException e) {
-			logger.error("Could not load storage object.", e);
-		}
-	}
-
-	@Override
-	public void execute(Event event) {
-		event.getEmittedOn();
-		Object joinOn = event.getVariableValue(this.getConfiguration().getJoinOn());
-
-		// This will probably not work for anything but string values and even
-		// with string values we're in danger
-		// of working with (http://en.wikipedia.org/wiki/String_interning)
-		// strings, which would not provide
-		// thread safety.
-		synchronized (joinOn) {
-
-			Map<StreamConsumer, PriorityQueue<Event>> variableBuffer = buffers.get(joinOn);
-
-			if (variableBuffer == null) {
-				variableBuffer = new HashMap<StreamConsumer, PriorityQueue<Event>>();
-				for (StreamConsumer consumer : this.getStreamConsumer()) {
-					variableBuffer.put(consumer, new PriorityQueue<Event>());
-				}
-				buffers.put(joinOn, variableBuffer);
-			}
-
-			PriorityQueue<Event> streamBuffer = variableBuffer.get(event.getEmittedOn());
-
-			streamBuffer.add(event);
-			ack(event);
-
-			joinEventsInBuffers(variableBuffer, event);
-
-			reduceSizeOfAllOversizedQueues(variableBuffer);
-		}
-	}
 
 	/**
-	 * This method tries to find events to join in the queues and emit them on
-	 * the output stream.
+	 * The buffers contains the data that is on hold, because we wait for another stream. The data inside the buffer is
+	 * ordered by the end date of the event.
 	 */
-	private void joinEventsInBuffers(Map<StreamConsumer, PriorityQueue<Event>> variableBuffer, Event anchorEvent) {
+	// TODO Move the buffers to the central storage infrastructure.
+	private Map<Object, Map<StreamConsumer, Event>> buffers;
+	private Collection<StreamConsumer> streamList;
 
-		evictUnjoinableEvents(variableBuffer);
+	private Date lastProcessedDate;
+
+	@Override
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
+		super.prepare(stormConf, context, collector);
+		streamList = this.getStreamConsumer();
+	}
+
+	@Override
+	public synchronized void execute(Event event) {
 
 		long precision = this.getConfiguration().getJoinPrecision();
+		long currentEndDate = event.getEndDate().getTime();
+		boolean joinable = true;
 
-		List<Event> peekEvents = new ArrayList<Event>();
-		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer.entrySet()) {
+		// TODO Add the precision on the join. This requires the refactoring of the buffer, because for each slot a
+		// different buffer is required.
 
-			// When one queue is empty, no join can be done
-			if (entry.getValue().size() <= 0) {
-				return;
+		// Truncate the buffer, when we are sure to be continued in time. This is important, because not evicted data
+		// may not removed and the memory consumption increases rapidly. Especial in case two streams from the triple
+		// filter are joined, because the key is for each variable binding changed.
+		if (lastProcessedDate == null || lastProcessedDate.before(event.getEndDate())) {
+			buffers = new HashMap<Object, Map<StreamConsumer, Event>>();
+		}
+
+		Object joinOn = event.getVariableValue(this.getConfiguration().getJoinOn());
+
+		Map<StreamConsumer, Event> joinBuffer = buffers.get(joinOn);
+
+		if (joinBuffer == null) {
+			joinBuffer = new ConcurrentHashMap<StreamConsumer, Event>();
+			this.buffers.put(joinOn, joinBuffer);
+		}
+
+		// Remove all events from join buffer, that are before the current event.
+		List<StreamConsumer> toRemove = new ArrayList<StreamConsumer>();
+		for (Entry<StreamConsumer, Event> entry : joinBuffer.entrySet()) {
+			if (entry.getValue().getEndDate().getTime() < (currentEndDate - precision)) {
+				toRemove.add(entry.getKey());
 			}
-
-			peekEvents.add(entry.getValue().peek());
 		}
 
-		// Verify that all the events in the peek list, are in the same time
-		// range. The evictUnjoinableEvents must ensure this, but for confidence
-		// we check it again:
-		long startDate = peekEvents.get(0).getStartDate().getTime();
-		for (Event event : peekEvents) {
-			if (event.getStartDate().getTime() < (startDate - precision)
-					|| event.getStartDate().getTime() > (startDate + precision)) {
-				throw new RuntimeException("The join could not be processed, since some events get out of order. "
-						+ "Potentially the OneFieldJoinBolt.evictUnjoinableEvents() failed somehow.");
+		for (StreamConsumer stream : toRemove) {
+			joinBuffer.remove(stream);
+		}
+
+		joinBuffer.put(event.getEmittedOn(), event);
+
+		// Check if we can emit a joined tuple
+		for (StreamConsumer consumer : streamList) {
+			Event streamEvent = joinBuffer.get(consumer);
+
+			if (streamEvent == null) {
+				joinable = false;
+				break;
 			}
 		}
 
-		emitJoinEvents(peekEvents, anchorEvent);
-
-		// Remove the peek events from the queues
-		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer.entrySet()) {
-			entry.getValue().poll();
+		if (joinable) {
+			emitJoinEvents(joinBuffer, event);
+			buffers.remove(joinOn);
 		}
 
-		// It is possible that other events can be joined. So
-		// try again. The stop condition of the recursion is that
-		// on of the queues is empty.
-		joinEventsInBuffers(variableBuffer, anchorEvent);
+		lastProcessedDate = event.getEndDate();
+
+		// Since we join on the end date and a certain precision, we can be sure that never an earlier date, as the one
+		// from the input will be emitted.
+		setLastDateProcessed(new Date(event.getEndDate().getTime()));
 
 	}
 
 	/**
-	 * This method emits a joined variable binding of all events given in the
-	 * events parameter.
+	 * This method emits a joined variable binding of all events given in the events parameter.
 	 * 
 	 * @param events
 	 *            all events that have been joined together in this time step.
 	 * @param anchorEvent
-	 *            storm forces us to re-use one of the events this bolt
-	 *            received. We attach all our new variable bindings to this
-	 *            event before sending it on.
+	 *            storm forces us to re-use one of the events this bolt received. We attach all our new variable
+	 *            bindings to this event before sending it on.
 	 */
-	private void emitJoinEvents(List<Event> events, Event anchorEvent) {
+	private void emitJoinEvents(Map<StreamConsumer, Event> events, Event anchorEvent) {
 		for (Stream stream : this.getStreams()) {
 			VariableBindings bindings = getEmitter().createVariableBindings(stream, anchorEvent);
 
-			// copy all varables from the input events into the new bindings
+			// copy all variables from the input events into the new bindings
 			// variable which we emit from this bolt.
-			for (Event event : events) {
-				for (Variable variable : event.getVariables()) {
-					bindings.add(variable.getName(), event.getVariableValue(variable));
+			for (Entry<StreamConsumer, Event> entry : events.entrySet()) {
+				for (Variable variable : entry.getValue().getVariables()) {
+					bindings.add(variable.getName(), entry.getValue().getVariableValue(variable));
 				}
 			}
-			bindings.setStartDate(events.get(0).getStartDate());
-			bindings.setEndDate(events.get(0).getEndDate());
+			bindings.setStartDate(anchorEvent.getStartDate());
+			bindings.setEndDate(anchorEvent.getEndDate());
 
 			bindings.emit();
-			
-			setLastDateProcessed(bindings.getEndDate());
-			
-		}
-	}
-
-	/**
-	 * This method removes all events from the buffer, that can never be joined,
-	 * because the required events on the other streams can never appear.
-	 * 
-	 * @param variableBuffer
-	 */
-	private void evictUnjoinableEvents(Map<StreamConsumer, PriorityQueue<Event>> variableBuffer) {
-		long precision = this.getConfiguration().getJoinPrecision();
-		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer.entrySet()) {
-			PriorityQueue<Event> queue = entry.getValue();
-
-			if (queue.size() > 0) {
-				Event firstEvent = queue.peek();
-				for (Entry<StreamConsumer, PriorityQueue<Event>> innerEntry : variableBuffer.entrySet()) {
-					if (innerEntry.getValue().size() > 0 && innerEntry.getKey() != entry.getKey()) {
-						if (firstEvent.getStartDate().getTime() < entry.getValue().peek().getStartDate().getTime()
-								- precision) {
-							// Since the event in the inner loop is greater then
-							// we can be sure, that the outer even
-							// can be never joined with all the events in all
-							// queues.
-							queue.poll();
-							evictUnjoinableEvents(variableBuffer);
-							return;
-						}
-					}
-				}
-
-			}
-		}
-
-	}
-
-	/**
-	 * This method reduce the size of all queues to the maximal allowed size.
-	 * 
-	 * @param variableBuffer
-	 */
-	private void reduceSizeOfAllOversizedQueues(Map<StreamConsumer, PriorityQueue<Event>> variableBuffer) {
-		int max = this.getConfiguration().getMaxBufferSize();
-		for (Entry<StreamConsumer, PriorityQueue<Event>> entry : variableBuffer.entrySet()) {
-			PriorityQueue<Event> queue = entry.getValue();
-			if (queue.size() > max) {
-				while (queue.size() > max) {
-					queue.poll();
-				}
-			}
 		}
 	}
 
@@ -226,12 +151,6 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 
 	public void setConfiguration(OneFieldJoinConfiguration configuration) {
 		this.configuration = configuration;
-	}
-
-	@Override
-	public String getSynchronizationDateExpression() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

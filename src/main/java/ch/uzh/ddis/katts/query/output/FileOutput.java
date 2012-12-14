@@ -10,12 +10,18 @@ import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.output.FileOutputBolt;
 import ch.uzh.ddis.katts.bolts.output.FileOutputConfiguration;
 
+/**
+ * This class implements the XML configuration node for a file output Bolt.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class FileOutput extends AbstractOutput implements FileOutputConfiguration{
+public class FileOutput extends AbstractOutput implements FileOutputConfiguration {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	@XmlTransient
 	private String filePath;
 
@@ -26,9 +32,9 @@ public class FileOutput extends AbstractOutput implements FileOutputConfiguratio
 		bolt.setConfiguration(this);
 		return bolt;
 	}
-	
+
 	@Override
-	@XmlAttribute(required=true)
+	@XmlAttribute(required = true)
 	public String getFilePath() {
 		return filePath;
 	}
@@ -36,5 +42,5 @@ public class FileOutput extends AbstractOutput implements FileOutputConfiguratio
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
 	}
-	
+
 }

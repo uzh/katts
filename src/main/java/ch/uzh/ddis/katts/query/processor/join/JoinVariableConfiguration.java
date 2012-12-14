@@ -11,7 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * This class is used by join condition configuration objects that need multiple variable definitions to join over. One
  * example of this is the {@link RegularJoinConditionConfiguration} class.
  * 
- * @author fischer
+ * @author Lorenz Fischer
  * @see RegularJoinConditionConfiguration
  */
 @XmlRootElement(name = "joinVariable")

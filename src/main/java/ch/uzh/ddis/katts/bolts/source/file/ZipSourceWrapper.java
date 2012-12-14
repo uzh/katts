@@ -1,15 +1,20 @@
 package ch.uzh.ddis.katts.bolts.source.file;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.zip.ZipException;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 
 import ch.uzh.ddis.katts.query.source.File;
 
+/**
+ * This class provides a wrapper around the sources to read in ziped files. Since the streams are used the
+ * uncompression is done on the fly.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class ZipSourceWrapper implements Source {
 	
 	private static final long serialVersionUID = 1L;

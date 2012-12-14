@@ -14,12 +14,14 @@ import ch.uzh.ddis.katts.bolts.join.SameValueJoinCondition;
  * This join condition checks if the value of the join field is the same for all
  * input streams.
  * 
- * @author fischer
+ * @author Lorenz Fischer
  */
 @XmlRootElement(name = "sameValue")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SameValueJoinConditionConfiguration implements JoinConditionConfiguration, Serializable {
 
+	private static final long serialVersionUID = 1L;
+	
 	@XmlTransient
 	private String joinField;
 

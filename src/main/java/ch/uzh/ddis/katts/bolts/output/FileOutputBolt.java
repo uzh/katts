@@ -1,9 +1,7 @@
 package ch.uzh.ddis.katts.bolts.output;
 
-import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Map;
@@ -17,24 +15,27 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import ch.uzh.ddis.katts.bolts.AbstractVariableBindingsBolt;
 import ch.uzh.ddis.katts.bolts.Event;
-import ch.uzh.ddis.katts.bolts.aggregate.PartitionerBolt;
-import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
+/**
+ * This Bolt writes all the input streams into a file. This is convenient way to store the output data of a query.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class FileOutputBolt extends AbstractVariableBindingsBolt {
 
 	private static final long serialVersionUID = 1L;
 	private FileOutputConfiguration configuration;
-	private DateFormat formatter = new SimpleDateFormat("dd.MM.yyyy H:m:s");
+	private DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 	private Logger logger = LoggerFactory.getLogger(FileOutputBolt.class);
 	private StreamConsumer stream;
 	private CSVWriter writer;
 	private int numberOfColumns;
-	private TerminationMonitor terminationMonitor;
 
 	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
 		FileWriter fstream;
@@ -46,7 +47,7 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 		}
 
 		// TODO: Currently the output stream can only consume one
-		// stream. This should be changed to multiple streams
+		// stream. This should be changed to multiple streams. 
 		stream = this.getStreamConsumer().iterator().next();
 		numberOfColumns = stream.getStream().getAllVariables().size() + 2;
 		String[] headerLine = new String[numberOfColumns];
@@ -60,16 +61,13 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 		}
 
 		writer.writeNext(headerLine);
-		
-		terminationMonitor = TerminationMonitor.getInstance(stormConf);
-
 	}
 
 	@Override
 	public synchronized void execute(Event event) {
 		String[] line = new String[numberOfColumns];
-		line[0] = event.getStartDate().toString();
-		line[1] = event.getEndDate().toString();
+		line[0] = formatter.format(event.getStartDate());
+		line[1] = formatter.format(event.getEndDate());
 
 		int i = 2;
 		for (Variable variable : stream.getStream().getAllVariables()) {
@@ -89,8 +87,6 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 		}
 
 		ack(event);
-		
-		terminationMonitor.dataIsSendToOutput();
 	}
 
 	public FileOutputConfiguration getConfiguration() {

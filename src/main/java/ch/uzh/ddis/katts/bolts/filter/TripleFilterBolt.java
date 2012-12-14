@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
@@ -14,17 +12,15 @@ import ch.uzh.ddis.katts.bolts.AbstractBolt;
 import ch.uzh.ddis.katts.query.processor.filter.TripleCondition;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.Variable;
-import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 import ch.uzh.ddis.katts.utils.XmlTypeMapping;
 
 /**
- * This class is used to filter out certain triples. This is the first step for
- * every stream consumed by the katts system. The output of this filter are
- * variable bindings. All other components work then only with these variable
+ * This class is used to filter out certain triples. This is the first step for every stream consumed by the katts
+ * system. The output of this filter are variable bindings. All other components work then only with these variable
  * bindings.
  * 
- * Since this bolt does not consumes variable bindings, it does not implement
- * the {@ch.uzh.ddis.katts.bolts.Bolt} interface.
+ * Since this bolt does not consumes variable bindings, it does not implement the {@link ch.uzh.ddis.katts.bolts.Bolt}
+ * interface. However it uses the Heartbeat infrastructure hence it inherit from the {@link AbstractBolt}.
  * 
  * @author Thomas Hunziker
  * 
@@ -35,10 +31,9 @@ public class TripleFilterBolt extends AbstractBolt implements IRichBolt {
 	private TripleFilterConfiguration configuration;
 	private long counter = 0;
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public void executeHeartBeatFreeTuple(Tuple tuple) {
-		
+	public void executeRegularTuple(Tuple tuple) {
+
 		if (tupleMatchConditions(tuple)) {
 			for (Stream stream : configuration.getProducers()) {
 				List<Object> output = new ArrayList<Object>();
@@ -53,25 +48,29 @@ public class TripleFilterBolt extends AbstractBolt implements IRichBolt {
 					String reference = variable.getReferencesTo();
 					Object value;
 					try {
-						value = XmlTypeMapping.converFromString(
-								tuple.getStringByField(reference),
-								variable.getType());
+						value = XmlTypeMapping.converFromString(tuple.getStringByField(reference), variable.getType());
 						output.add(value);
 					} catch (Exception e) {
-						e.printStackTrace();
+						throw new RuntimeException("Cant convert the given input value to the desired output data type.", e);
 					}
 				}
 
-				getCollector().emit(stream.getId(), output);
+				this.emit(stream.getId(), tuple, output);
 				counter++;
 			}
 		}
 
-		getCollector().ack(tuple);
+		this.ack(tuple);
 	}
 
+	/**
+	 * This method checks if a incoming tuple matches the defined condition. If so the method returns true.
+	 * 
+	 * @param tuple
+	 * @return True, if the tuple meets the conditions defined in the configuration.
+	 */
 	private boolean tupleMatchConditions(Tuple tuple) {
-		// Apply Filter
+		// Apply Filter by iterating over the conditions and matches them on the tuple values.
 		for (TripleCondition condition : this.configuration.getConditions()) {
 			String value = tuple.getStringByField(condition.getItem());
 			if (!value.equals(condition.getRestriction())) {
@@ -89,7 +88,7 @@ public class TripleFilterBolt extends AbstractBolt implements IRichBolt {
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		super.declareOutputFields(declarer);
-		
+
 		for (Stream stream : this.getStreams()) {
 			List<String> fields = new ArrayList<String>();
 			fields.add("sequenceNumber");
@@ -115,7 +114,6 @@ public class TripleFilterBolt extends AbstractBolt implements IRichBolt {
 	public void setConfiguration(TripleFilterConfiguration configuration) {
 		this.configuration = configuration;
 	}
-
 
 	@Override
 	public String getId() {

@@ -3,6 +3,7 @@ package ch.uzh.ddis.katts.query.processor;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
@@ -13,43 +14,50 @@ import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
 /**
- * This class implements an abstract processor. It provides convenient configuration
- * methods for consuming, processing and emitting data.
+ * This class implements an abstract processor. It provides convenient configuration methods for consuming, processing
+ * and emitting data.
  * 
  * These are primarily the handling of the stream configurations.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
-public abstract class AbstractProcessor extends AbstractNode implements Processor{
+public abstract class AbstractProcessor extends AbstractNode implements Processor {
 
 	private static final long serialVersionUID = 1L;
 
 	@XmlTransient
 	private List<StreamConsumer> consumers = new ArrayList<StreamConsumer>();
-	
+
+	// We assume that a regular processor is fully parallelizable
+	@XmlTransient
+	private int parallelism = 0;
+
+	@XmlTransient
+	private float parallelismWeight = 1;
+
 	@XmlTransient
 	private List<Stream> producers = new Producers(this);
-	
-	@XmlElementWrapper(name="consumes")
-	@XmlElement(name="stream")
+
+	@XmlElementWrapper(name = "consumes")
+	@XmlElement(name = "stream")
 	@Override
 	public List<StreamConsumer> getConsumers() {
 		for (StreamConsumer consumer : consumers) {
 			consumer.setNode(this);
 		}
-		
+
 		return consumers;
 	}
-	
-	@XmlElementWrapper(name="produces")
-	@XmlElement(name="stream")
+
+	@XmlElementWrapper(name = "produces")
+	@XmlElement(name = "stream")
 	@Override
 	public List<Stream> getProducers() {
 		for (Stream producer : producers) {
 			producer.setNode(this);
 		}
-		
+
 		return producers;
 	}
 
@@ -60,20 +68,32 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 	public void setProducers(List<Stream> producers) {
 		this.producers = producers;
 	}
-	
+
 	public void appendConsumer(StreamConsumer consumer) {
 		this.getConsumers().add(consumer);
 	}
-	
+
 	public void appendProducer(Stream producer) {
 		this.getProducers().add(producer);
 	}
-	
+
 	@Override
-	@XmlTransient
+	@XmlAttribute()
 	public int getParallelism() {
-		// We assume that a regular processor is fully parallelizable  
-		return 0;
+		return this.parallelism;
 	}
-	
+
+	public void setParallelism(int paralleism) {
+		this.parallelism = paralleism;
+	}
+
+	@Override
+	@XmlAttribute()
+	public float getParallelismWeight() {
+		return parallelismWeight;
+	}
+
+	public void setParallelismWeight(float parallelismWeight) {
+		this.parallelismWeight = parallelismWeight;
+	}
 }

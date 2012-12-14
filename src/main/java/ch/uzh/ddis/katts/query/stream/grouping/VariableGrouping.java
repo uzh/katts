@@ -16,25 +16,21 @@ import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
- * This {@link Grouping} sends the variable bindings always to 
- * the same group. The group can be build up on different
- * variable values. The {@link GroupOn} indicates on which
- * {@link Variable} value(s) should be grouped on.
+ * This {@link Grouping} sends the variable bindings always to the same group. The group can be build up on different
+ * variable values. The {@link GroupOn} indicates on which {@link Variable} value(s) should be grouped on.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class VariableGrouping implements Grouping{
-	
+public class VariableGrouping implements Grouping {
+
 	private static final long serialVersionUID = 1L;
-	
-	@XmlElementRefs({ 
-		@XmlElementRef(type=GroupOn.class), 
-	})
+
+	@XmlElementRefs({ @XmlElementRef(type = GroupOn.class), })
 	private List<GroupOn> groupOnVariables = new ArrayList<GroupOn>();
-	
+
 	@Override
 	public boolean validate() {
 		return true;
@@ -43,30 +39,17 @@ public class VariableGrouping implements Grouping{
 	@Override
 	public void attachToBolt(BoltDeclarer bolt, StreamConsumer stream) {
 		List<String> variables = new ArrayList<String>();
-		
+
 		for (GroupOn groupOn : this.getGroupOnVariables()) {
 			variables.add(groupOn.getVariable().getName());
 		}
-		
-//		System.out.println(stream.getStream().getNode());
-//		
-//		
-		
-		bolt.fieldsGrouping(
-				stream.
-				getStream().
-				getNode().
-				getId(), 
-				stream.getStream().getId(), 
-				new Fields(variables)
-		);
+
+		bolt.fieldsGrouping(stream.getStream().getNode().getId(), stream.getStream().getId(), new Fields(variables));
 	}
 
 	/**
-	 * The {@link GroupOn} defines on which {@link Variable} value
-	 * should the groups be build. Each group is then processed on
-	 * the same machine and in the same thread. This allows aggregation on
-	 * certain values.
+	 * The {@link GroupOn} defines on which {@link Variable} value should the groups be build. Each group is then
+	 * processed on the same machine and in the same thread. This allows aggregation on certain values.
 	 * 
 	 * @return
 	 */
@@ -76,7 +59,7 @@ public class VariableGrouping implements Grouping{
 	}
 
 	/**
-	 * Sets the {@link GroupOn} values. 
+	 * Sets the {@link GroupOn} values.
 	 * 
 	 * @see #getGroupOnVariables()
 	 * @param groupOnVariables
@@ -84,9 +67,9 @@ public class VariableGrouping implements Grouping{
 	public void setGroupOnVariables(List<GroupOn> groupOnVariables) {
 		this.groupOnVariables = groupOnVariables;
 	}
-	
+
 	/**
-	 * Adds a {@link GroupOn} value. 
+	 * Adds a {@link GroupOn} value.
 	 * 
 	 * @see #getGroupOnVariables()
 	 * @param groupOnVariables
@@ -94,5 +77,5 @@ public class VariableGrouping implements Grouping{
 	public void appendGroupOnVariable(Variable variable) {
 		this.getGroupOnVariables().add(new GroupOn(variable));
 	}
-	
+
 }

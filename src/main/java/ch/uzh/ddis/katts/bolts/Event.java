@@ -1,20 +1,19 @@
 package ch.uzh.ddis.katts.bolts;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
-import ch.uzh.ddis.katts.query.stream.Stream;
+import backtype.storm.tuple.Tuple;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 import ch.uzh.ddis.katts.query.stream.VariableList;
 
-import backtype.storm.tuple.Tuple;
-
+/**
+ * An event is a wrapper around the Tuple from Storm. It provides some convenient functionalities for handling incoming
+ * events.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class Event implements Comparable<Event> {
 
 	private Tuple tuple;
@@ -24,10 +23,23 @@ public class Event implements Comparable<Event> {
 	private Date startDate;
 	private Date endDate;
 
+	/**
+	 * Constructor without any argument.
+	 */
 	public Event() {
-
 	}
 
+	/**
+	 * Constructor to construct an event from a tuple, a source bolt and an the stream from which this event is coming
+	 * from.
+	 * 
+	 * @param tuple
+	 *            The tuple to wrap.
+	 * @param bolt
+	 *            The bolt on which this event was arriving.
+	 * @param emittedOn
+	 *            The stream on which this event is coming in.
+	 */
 	public Event(Tuple tuple, Bolt bolt, StreamConsumer emittedOn) {
 		this.setTuple(tuple);
 		this.setBolt(bolt);
@@ -37,6 +49,11 @@ public class Event implements Comparable<Event> {
 		this.setEndDate((Date) tuple.getValueByField("endDate"));
 	}
 
+	/**
+	 * Construct the event from another event. (Copy constructor)
+	 * 
+	 * @param event
+	 */
 	public Event(Event event) {
 		this.setTuple(event.getTuple());
 		this.setBolt(event.getBolt());
@@ -46,6 +63,11 @@ public class Event implements Comparable<Event> {
 		this.setEndDate((Date) tuple.getValueByField("endDate"));
 	}
 
+	/**
+	 * This method acknowledge the receiving of a tuple. This is required by storm to provide reliability. Hence this
+	 * method is currently not used, because KATTS provides no reliability.
+	 * 
+	 */
 	public void ack() {
 		this.getBolt().ack(this);
 	}

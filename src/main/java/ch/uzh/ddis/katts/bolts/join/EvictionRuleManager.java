@@ -26,7 +26,7 @@ import com.google.common.collect.ImmutableList;
  * and the eviction rule indices. They make use of optimized data structures in order to keep the set of variable
  * bindings in the current join cache relevant.
  * 
- * @author fischer
+ * @author Lorenz Fischer
  */
 public class EvictionRuleManager {
 

@@ -13,6 +13,13 @@ import org.slf4j.LoggerFactory;
 import ch.uzh.ddis.katts.RunXmlQueryLocally;
 import ch.uzh.ddis.katts.utils.Cluster;
 
+/**
+ * This monitor is used to record, when the query execution starts. The start is identified by the first file reader start
+ * reading.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class StarterMonitor {
 
 	private static StarterMonitor instance;

@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import backtype.storm.task.OutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 
@@ -14,18 +15,24 @@ import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
+/**
+ * This Bolt is used to print the output of a stream to the console. This is useful for testing, where the output in the
+ * console is convenient.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class SystemOutputBolt extends AbstractVariableBindingsBolt {
-	
+
 	private static final long serialVersionUID = 1L;
 	private SystemOutputConfiguration configuration;
 	private DateFormat formatter = new SimpleDateFormat("dd.MM.yyyy H:m:s");
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void execute(Event event) {
 		System.out.print(event.getSequenceNumber());
 		System.out.print(": \t");
-		
+
 		StreamConsumer stream = event.getEmittedOn();
 		for (Variable variable : stream.getStream().getAllVariables()) {
 			System.out.print("  ");
@@ -50,9 +57,10 @@ public class SystemOutputBolt extends AbstractVariableBindingsBolt {
 	public void setConfiguration(SystemOutputConfiguration configuration) {
 		this.configuration = configuration;
 	}
-	
+
 	@Override
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {}
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+	}
 
 	@Override
 	public String getId() {

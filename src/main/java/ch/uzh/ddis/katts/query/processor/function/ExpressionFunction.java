@@ -11,6 +11,12 @@ import ch.uzh.ddis.katts.bolts.function.ExpressionFunctionBolt;
 import ch.uzh.ddis.katts.bolts.function.ExpressionFunctionConfiguration;
 import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
 
+/**
+ * This class handles the configuration of the {@link ExpressionFunctionBolt}. 
+ * 
+ * @author Thomas Hunziker
+ *
+ */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ExpressionFunction extends AbstractProcessor implements ExpressionFunctionConfiguration {

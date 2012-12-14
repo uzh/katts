@@ -1,31 +1,37 @@
 package ch.uzh.ddis.katts;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.JAXBException;
 
-import org.apache.commons.io.FileUtils;
-
-import ch.uzh.ddis.katts.bolts.source.FileTripleReader;
-import ch.uzh.ddis.katts.monitoring.Recorder;
-import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
-import ch.uzh.ddis.katts.monitoring.VmMonitor;
-import ch.uzh.ddis.katts.query.Query;
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.StormTopology;
+import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
+import ch.uzh.ddis.katts.monitoring.VmMonitor;
+import ch.uzh.ddis.katts.query.Query;
 
+/**
+ * This is the main class from which a query is executed from. This class is called by Storm to build the topology.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class RunXmlQuery {
-	
+
 	public static final String CONF_EVALUATION_FOLDER_NAME = "katts_evaluation_folder";
 
+	/**
+	 * This method builds the topology from the XML file. This method expected a XML file which contains the query
+	 * serialized in XML.
+	 * 
+	 * @param args
+	 */
 	public static void main(String[] args) {
 
 		if (args.length == 0 || args[0] == null) {
@@ -33,6 +39,7 @@ public class RunXmlQuery {
 			System.exit(0);
 		}
 
+		// Read in the args
 		long monitoringRecordInterval = 15;
 		boolean monitoring = true;
 		String topologyName = "katts-topology";
@@ -55,21 +62,19 @@ public class RunXmlQuery {
 			} else if (args[i].equalsIgnoreCase("--termination-check-interval")) {
 				i++;
 				terminationCheckInterval = args[i];
-			} else	if (args[i].equalsIgnoreCase("--number-of-processors")) {
+			} else if (args[i].equalsIgnoreCase("--number-of-processors")) {
 				i++;
 				numberOfProcessors = Integer.valueOf(args[i]);
-			} else	if (args[i].equalsIgnoreCase("--number-of-workers")) {
+			} else if (args[i].equalsIgnoreCase("--number-of-workers")) {
 				i++;
 				numberOfWorkers = Integer.valueOf(args[i]);
-			} else	if (args[i].equalsIgnoreCase("--factor-of-threads-per-processor")) {
+			} else if (args[i].equalsIgnoreCase("--factor-of-threads-per-processor")) {
 				i++;
 				factorOfThreadsPerProcessor = Float.valueOf(args[i]);
-			} 
-			else if (args[i].startsWith("--")) {
+			} else if (args[i].startsWith("--")) {
 				i++;
 				// Unknown parameter, ignore it.
-			}
-			else {
+			} else {
 				path = args[i];
 			}
 		}
@@ -93,7 +98,6 @@ public class RunXmlQuery {
 			e.printStackTrace();
 			System.exit(0);
 		}
-		
 
 		Config conf = new Config();
 		conf.setNumWorkers(numberOfWorkers);
@@ -116,14 +120,16 @@ public class RunXmlQuery {
 			// Log every 15 seconds the Java Virtual Machine properties
 			conf.put(VmMonitor.RECORD_INVERVAL, monitoringRecordInterval);
 		}
-		
+
+		// Disable reliability
+		conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 0);
+
 		conf.put(RunXmlQueryLocally.RUN_TOPOLOGY_LOCALLY_CONFIG_KEY, false);
-		
+
 		TopologyBuilder builder = new TopologyBuilder(conf);
 		builder.setQuery(query);
 		builder.setFactorOfThreadsPerProcessor(factorOfThreadsPerProcessor);
 		builder.setParallelismByNumberOfProcessors(numberOfProcessors);
-			
 
 		try {
 			StormTopology topology = builder.createTopology();
@@ -135,7 +141,7 @@ public class RunXmlQuery {
 			e.printStackTrace();
 			System.exit(0);
 		}
-		
+
 	}
 
 	private static String getUsageMessage() {

@@ -2,27 +2,27 @@
 <query xmlns="http://uzh.ch/ddis/katts/query">
 
 	<!-- Send every three second a heart beat. -->
-	<heartBeat interval="500" />
+	<heartBeat interval="100" />
 
 
 	<!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
 	<fileSource id="tickerSource">
 		<files>
-<!-- 			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/2001_7ticker_wrds_crsp.sorted.triples" /> -->
-			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="/home/hunziker/Masterarbeit/2001_all_wrds_crsp.sorted.triples.gz" />
+			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/2001_7ticker_wrds_crsp.sorted.triples" />
+<!-- 			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="/home/hunziker/Masterarbeit/ticker_files/ticker_files0.csv.gz" /> -->
 		</files>
 	</fileSource>
 
 	<fileSource id="contractSource">
 		<files>
 			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/2001_5contracts.sorted.triples" />
-<!-- 			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="/home/hunziker/Masterarbeit/2001_All_Contracts_Full_20120618.sorted.triples.gz" /> -->
+<!-- 			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="/home/hunziker/Masterarbeit/contracts_files/contracts0.csv.gz" /> -->
 		</files>
 	</fileSource>
 
 
 	<!-- Pre-Filters for the ticker data -->
-	<tripleFilter groupOn="subject" applyOnSource="tickerSource" id="TripleFilter_TickerPRC">
+	<tripleFilter applyOnSource="tickerSource" id="TripleFilter_TickerPRC">
 		<conditions>
 			<condition restriction="PRC" item="predicate" /> <!-- ticker price -->
 		</conditions>
@@ -33,7 +33,7 @@
 			</stream>
 		</produces>
 	</tripleFilter>
-	<tripleFilter groupOn="subject" applyOnSource="tickerSource" id="TripleFilter_TickerCOMNAM">
+	<tripleFilter applyOnSource="tickerSource" id="TripleFilter_TickerCOMNAM">
 		<conditions>
 			<condition restriction="COMNAM" item="predicate" /> <!-- company name -->
 		</conditions>
@@ -44,7 +44,7 @@
 			</stream>
 		</produces>
 	</tripleFilter>
-	<tripleFilter groupOn="subject" applyOnSource="tickerSource" id="TripleFilter_TICKER">
+	<tripleFilter applyOnSource="tickerSource" id="TripleFilter_TICKER">
 		<conditions>
 			<condition restriction="TICKER" item="predicate" /> <!-- ticker symbol -->
 		</conditions>
@@ -252,9 +252,7 @@
 	<expressionFunction expression="#ticker_max / #ticker_min" id="expressionFunction">
 		<consumes>
 			<stream maxBufferSize="5" streamId="tickerStreamMinMax">
-				<variableGrouping>
-					<groupOn variableName="ticker_symbol" />
-				</variableGrouping>
+				<shuffleGrouping />
 			</stream>
 		</consumes>
 		<produces>
@@ -266,12 +264,10 @@
 
 
 
-	<expressionFilter expression="#ticker_fct > 2" id="expressionFilter">
+	<expressionFilter expression="#ticker_fct > 4" id="expressionFilter">
 		<consumes>
 			<stream maxBufferSize="5" streamId="tickerStreamfct">
-				<variableGrouping>
-					<groupOn variableName="ticker_symbol" />
-				</variableGrouping>
+				<shuffleGrouping />
 			</stream>
 		</consumes>
 		<produces>
@@ -279,8 +275,7 @@
 		</produces>
 	</expressionFilter>
 
-	<!-- Join together ticker and contract data -->
-	<temporalJoin id="TemporalJoin_TickerAndContractData">
+	<temporalJoin id="TemporalJoin_TickerAndContractData" parallelismWeight="10">
 		<consumes>
 			<stream maxBufferSize="5" streamId="contractStream">
 				<variableGrouping>
@@ -295,15 +290,9 @@
 		</consumes>
 
 		<evictBefore>
-			<!-- Evict old intervals -->
 			<evict from="filteredTickerStream" on="filteredTickerStream" if="#from.endDate lt #on.endDate" />
-			<!-- When we receive bindings on the aggregated ticker stream, we can remove all contracts that are older than the start date of the aggregated value, 
-				that we've just received. -->
 			<evict from="contractStream" on="filteredTickerStream" if="#from.endDate lt #on.startDate" />
-			<!-- When we receive bindings on the contract stream, we can remove all aggregated value bindings that are older than the contract item, that we've 
-				just received. -->
 			<evict from="filteredTickerStream" on="contractStream" if="#from.startDate lt #on.startDate" />
-			<!-- When we receive a contract value, we can remove all contracts that are more than 20 days old. -->
 			<evict from="contractStream" on="contractStream" if="(#from.endDate + 20 * 24 * 3600 * 1000) lt #on.startDate" />
 		</evictBefore>
 
@@ -326,5 +315,7 @@
 			</stream>
 		</consumes>
 	</fileOutput>
+
+	<termination />
 
 </query>

@@ -3,7 +3,7 @@ package ch.uzh.ddis.katts.query.processor.join;
 import ch.uzh.ddis.katts.bolts.join.JoinCondition;
 
 /**
- * @author fischer
+ * @author Lorenz Fischer
  */
 public interface JoinConditionConfiguration {
 

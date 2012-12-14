@@ -8,15 +8,14 @@ import backtype.storm.topology.BoltDeclarer;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
 /**
- * This {@link Grouping} sends the variable bindings randomly
- * to the linked nodes.
+ * This {@link Grouping} sends the variable bindings randomly to the linked nodes.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ShuffleGrouping implements Grouping{
+public class ShuffleGrouping implements Grouping {
 
 	private static final long serialVersionUID = 328341259453485756L;
 
@@ -27,7 +26,7 @@ public class ShuffleGrouping implements Grouping{
 
 	@Override
 	public void attachToBolt(BoltDeclarer bolt, StreamConsumer stream) {
-		bolt.shuffleGrouping(stream.getStream().getNode().getId(), stream.getStream().getId());
+		bolt.localOrShuffleGrouping(stream.getStream().getNode().getId(), stream.getStream().getId());
 	}
 
 }

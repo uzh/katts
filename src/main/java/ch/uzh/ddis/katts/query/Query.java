@@ -31,53 +31,45 @@ import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.source.FileSource;
 
 /**
- * The query class is the root element of a query structure. It contains
- * a list of nodes. Each node is linked by streams. All the nodes and
- * the query builds the topology configuration. The effective bolts and
- * spouts are implemented in a separated package. 
+ * The query class is the root element of a query structure. It contains a list of nodes. Each node is linked by
+ * streams. All the nodes and the query builds the topology configuration. The effective bolts and spouts are
+ * implemented in a separated package.
  * 
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 @XmlRootElement()
 public class Query implements Serializable {
 
-	@XmlElementRefs({ 
-		@XmlElementRef(type=FileSource.class),
-		@XmlElementRef(type=ExpressionFunction.class),
-		@XmlElementRef(type=Partitioner.class),
-		@XmlElementRef(type=OneFieldJoin.class),
-		@XmlElementRef(type=TemporalJoinConfiguration.class),
-		@XmlElementRef(type=SystemOutput.class),
-		@XmlElementRef(type=TripleFilter.class),
-		@XmlElementRef(type=ExpressionFilter.class),
-		@XmlElementRef(type=FileOutput.class),
-		@XmlElementRef(type=HeartBeat.class),
-	}) 
+	private static final long serialVersionUID = 1L;
+
+	@XmlElementRefs({ @XmlElementRef(type = FileSource.class), @XmlElementRef(type = ExpressionFunction.class),
+			@XmlElementRef(type = Partitioner.class), @XmlElementRef(type = OneFieldJoin.class),
+			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SystemOutput.class),
+			@XmlElementRef(type = TripleFilter.class), @XmlElementRef(type = ExpressionFilter.class),
+			@XmlElementRef(type = FileOutput.class), @XmlElementRef(type = HeartBeat.class),
+			@XmlElementRef(type = Termination.class), })
 	private List<Node> nodes = new ArrayList<Node>();
-	
+
 	@XmlTransient
 	private long defaultBufferTimeout = -1;
-	
-	
+
 	/**
-	 * This method checks in a recursive manner if the given query
-	 * is valid.
+	 * This method checks in a recursive manner if the given query is valid.
 	 * 
 	 * @return
 	 */
 	public Query validate() {
-		
-		// TODO: Check if all the consumers / producers get the right streams
-		// TODO: Check if there are missing variables on streams
-		// TODO: Remove not needed variables after each producer (add a filter)
-		
-		
-		
+
+		// TODO: Implement this method.
+
+		// Check if all the consumers / producers get the right streams
+		// Check if there are missing variables on streams
+		// Remove not needed variables after each producer (add a filter)
+
 		return this;
 	}
-	
 
 	/**
 	 * This method tries to optimize the query.
@@ -85,22 +77,23 @@ public class Query implements Serializable {
 	 * @return
 	 */
 	public Query optimize() {
-		
+
 		// TODO: Add a way to add optimization classes
 		// Important optimizations:
 		// - Arrangement of the bolts (the one with a higher selectivity first etc.)
-		
-		
+		// Potentially this method sets another scheduler for the query depending on the available Bolts / Spouts.
+
 		return this;
 	}
-	
+
 	/**
 	 * This method returns all nodes in the query.
+	 * 
 	 * @return
 	 */
 	@XmlTransient
 	public List<Node> getNodes() {
-		for (Node node : this.nodes){
+		for (Node node : this.nodes) {
 			node.setQuery(this);
 		}
 		return nodes;
@@ -127,10 +120,9 @@ public class Query implements Serializable {
 		this.getNodes().add(node);
 		return this;
 	}
-	
+
 	/**
-	 * This method builds a string representation of the query. The
-	 * representation is an xml serialization.
+	 * This method builds a string representation of the query. The representation is an xml serialization.
 	 * 
 	 * @return Xml serialization of the query
 	 */
@@ -142,15 +134,20 @@ public class Query implements Serializable {
 		}
 	}
 
-	@XmlAttribute()
-	public long getDefaultBufferTimeout() {
-		return defaultBufferTimeout;
-	}
+// Timeouts are not required anymore, however they are in situation useful, when it is not clear how long buffers should store items...
+//	/**
+//	 * This method returns the timeout for 
+//	 * @return
+//	 */
+//	@XmlAttribute()
+//	public long getDefaultBufferTimeout() {
+//		return defaultBufferTimeout;
+//	}
+//
+//	public void setDefaultBufferTimeout(long defaultBufferTimeout) {
+//		this.defaultBufferTimeout = defaultBufferTimeout;
+//	}
 
-	public void setDefaultBufferTimeout(long defaultBufferTimeout) {
-		this.defaultBufferTimeout = defaultBufferTimeout;
-	}
-	
 	/**
 	 * Alias of toString()
 	 * 
@@ -161,31 +158,33 @@ public class Query implements Serializable {
 	 */
 	public String getQueryAsString() throws JAXBException {
 		JAXBContext jaxbContext = getJAXBContext();
-		
-	    Marshaller marshaller = jaxbContext.createMarshaller();
 
-	    marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-	    
-	    ByteArrayOutputStream os = new ByteArrayOutputStream();
-	    marshaller.marshal(this, os);
-		
+		Marshaller marshaller = jaxbContext.createMarshaller();
+
+		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		marshaller.marshal(this, os);
+
 		return os.toString();
 	}
-	
+
 	/**
-	 * This method loads the query from a XML file. The XML file must be in a valid, in sense of the 
-	 * XSD, and serialized form. 
+	 * This method loads the query from a XML file. The XML file must be in a valid, in sense of the XSD, and serialized
+	 * form.
 	 * 
-	 * @param path Path to the file
+	 * @param path
+	 *            Path to the file
 	 * @return
 	 * @throws UnsupportedEncodingException
 	 * @throws FileNotFoundException
 	 * @throws JAXBException
 	 */
-	public static Query createFromFile(String path) throws UnsupportedEncodingException, FileNotFoundException, JAXBException {
+	public static Query createFromFile(String path) throws UnsupportedEncodingException, FileNotFoundException,
+			JAXBException {
 		return create(new FileInputStream(path));
 	}
-	
+
 	/**
 	 * This method loads the query from a InputStream.
 	 * 
@@ -195,13 +194,14 @@ public class Query implements Serializable {
 	 * @throws FileNotFoundException
 	 * @throws JAXBException
 	 */
-	public static Query create(InputStream xmlStream) throws UnsupportedEncodingException, FileNotFoundException, JAXBException {
+	public static Query create(InputStream xmlStream) throws UnsupportedEncodingException, FileNotFoundException,
+			JAXBException {
 		JAXBContext jaxbContext = Query.getJAXBContext();
 		Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-		
-		return (Query)unmarshaller.unmarshal(xmlStream);
+
+		return (Query) unmarshaller.unmarshal(xmlStream);
 	}
-	
+
 	/**
 	 * This method loads the query from a String.
 	 * 
@@ -211,10 +211,11 @@ public class Query implements Serializable {
 	 * @throws FileNotFoundException
 	 * @throws JAXBException
 	 */
-	public static Query create(String xmlAsString) throws UnsupportedEncodingException, FileNotFoundException, JAXBException {
+	public static Query create(String xmlAsString) throws UnsupportedEncodingException, FileNotFoundException,
+			JAXBException {
 		return create(new ByteArrayInputStream(xmlAsString.getBytes("UTF-8")));
 	}
-	
+
 	/**
 	 * This method returns a JAXB Context for the serialization and deserialization.
 	 * 

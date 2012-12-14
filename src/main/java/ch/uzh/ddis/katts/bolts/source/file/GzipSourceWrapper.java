@@ -1,19 +1,22 @@
 package ch.uzh.ddis.katts.bolts.source.file;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.zip.ZipException;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 import ch.uzh.ddis.katts.query.source.File;
 
+/**
+ * This class provides a wrapper around the sources to read in gziped files. Since the streams are used the
+ * uncompression is done on the fly.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class GzipSourceWrapper implements Source {
-	
+
 	private static final long serialVersionUID = 1L;
 	private Source component;
 
@@ -25,8 +28,6 @@ public class GzipSourceWrapper implements Source {
 	public InputStream buildInputStream(File file) throws Exception {
 		component.buildInputStream(file);
 		return new GzipCompressorInputStream(new FileInputStream(file.getPath()));
-//		ZipArchiveEntry entry = zipFile.getEntry(file.getZipFileEntry());
-//		return zipFile.getInputStream(entry);
 	}
 
 	@Override
@@ -38,5 +39,5 @@ public class GzipSourceWrapper implements Source {
 	public List<String> getNextTriple() throws Exception {
 		return component.getNextTriple();
 	}
-	
+
 }

@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
+import java.util.Date;
 import java.util.Map;
 
 import org.apache.commons.collections.MapIterator;
@@ -24,7 +25,13 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.ddis.katts.utils.Cluster;
 
-public final class Recorder implements Watcher {
+/**
+ * This class records the data and stored it to the ZooKeeper.
+ * 
+ * @author Thomas Hunziker
+ *
+ */
+public final class Recorder implements TerminationWatcher {
 
 	private static Recorder instance;
 
@@ -142,23 +149,25 @@ public final class Recorder implements Watcher {
 	}
 
 	@Override
-	public void process(WatchedEvent event) {
-		if (event.getType() == Event.EventType.None) {
-			switch (event.getState()) {
-			
-			case Expired:
-				// We need to reconnect
-				TerminationMonitor.getInstance(stormConfiguration).addTerminationWatcher(this);
-				break;
-			}
-		} else {
-			writeCounts();
-		}
+	public void terminated() {
+		writeCounts();
+		logger.info("Message counts are written to ZooKeeper");	
 	}
 
 	private void writeCounts() {
 		MapIterator it = messageCounter.mapIterator();
 
+		ZooKeeper zooKeeper;
+		
+		try {
+			zooKeeper = Cluster.createZooKeeper(stormConfiguration);
+		} catch (IOException e) {
+			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the message sending behaviour.",
+					e);
+		}
+
+		
+		
 		while (it.hasNext()) {
 			MultiKey next = (MultiKey) it.next();
 			Object[] keys = next.getKeys();
@@ -193,6 +202,11 @@ public final class Recorder implements Watcher {
 		
 	}
 	
+	/**
+	 * This method returns the nodes host on which this code is executed on.
+	 * 
+	 * @return
+	 */
 	private String getHostIdentifier() {
 		
 		try {

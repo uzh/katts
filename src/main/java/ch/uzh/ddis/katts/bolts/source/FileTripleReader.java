@@ -25,6 +25,21 @@ import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.query.source.File;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
+/**
+ * This Bolt reads in triples from files. By the abstraction of the {@link Source} different type of files can be read
+ * with this bolt.
+ * 
+ * Internally a thread is run to read in the data. Storm uses normally Spouts for read in data. Because of the
+ * heartbeat, this must be implement as a Bolt because the heartbeat is provided centrally and hence the reader must
+ * listen to this stream. Spouts are not able to listen to streams. Therefore a Bolt is used for this task.
+ * 
+ * To improve the parallelization of reading this bolt accepts multiple files. For each file a separate instance is created. 
+ * 
+ * TODO: Checkout how reliability can be achieved with this architecture.
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
 public class FileTripleReader implements IRichBolt {
 
 	/** This formatter is used to parse dateTime string values */
@@ -33,32 +48,37 @@ public class FileTripleReader implements IRichBolt {
 	private static final long serialVersionUID = 1L;
 	private OutputCollector collector;
 	private FileTripleReaderConfiguration configuration;
-	private List<Source> sources = new ArrayList<Source>();
+	private Source source = null;
 	private StarterMonitor starterMonitor;
-	
+
 	private Thread thread = null;
-	
-	private TripleReaderThread thripleReaderThread;
-	
+
 	private Date currentRealTimeDate;
-	
+
 	private Logger logger = LoggerFactory.getLogger(FileTripleReader.class);
 
-	public synchronized boolean nextTuple() {
+	private long numberRead = 0;
+
+	/**
+	 * This method reads the next tuple from the file source.
+	 * 
+	 * @return True, when a tuple was emitted.
+	 */
+	public boolean nextTuple() {
 		final String dateStringValue;
 		final Date date;
-		// TODO Do synchronize the different sources
 		// TODO Add support for end date
 
 		List<String> triple = null;
 		try {
-			triple = sources.iterator().next().getNextTriple();
+			triple = source.getNextTriple();
 		} catch (Exception e) {
 			throw new RuntimeException(String.format("Unable to read next triple because: %1s", e.getMessage()), e);
 		}
 
 		if (triple == null) {
-//			logger.info(String.format("Probably the end of file is reached. Component ID: %1s", this.getConfiguration().getId()));
+			logger.info(String.format("End of file is reached in component %1s at date %2s. Line: %3s", this
+					.getConfiguration().getId(), currentRealTimeDate.toString(), numberRead));
 			return false;
 		}
 
@@ -85,78 +105,82 @@ public class FileTripleReader implements IRichBolt {
 			tuple.add(triple.get(1));
 			tuple.add(triple.get(2));
 			tuple.add(triple.get(3));
-			
+
 			// We emit on the default stream, since we do not want multiple
 			// streams!
-			getCollector().emit(tuple);
+			synchronized (this) {
+				this.collector.emit(tuple);
+			}
+		} else {
+			logger.info(String.format("A triple could not be read and it was ignored. Component ID: %1s", this
+					.getConfiguration().getId()));
 		}
-		else {
-			logger.info(String.format("A triple could not be read and it was ignored. Component ID: %1s", this.getConfiguration().getId()));
+
+		if (numberRead % 30000 == 0) {
+			logger.info(String.format("Read time of component %1s is %2s. Line: %3s", this.getConfiguration().getId(),
+					currentRealTimeDate.toString(), numberRead));
 		}
+
+		numberRead++;
 
 		return true;
 	}
 
 	@Override
-	public void execute(Tuple input) {
-		
+	public synchronized void execute(Tuple input) {
+
 		// This bolt receives only heart beats, hence we do not need to handle here other tuples
-		
-		if (thread == null) {	
+
+		if (thread == null) {
 			starterMonitor.start();
-			
+
 			// Read the first line to ensure that the currentRealTimeDate is set.
 			nextTuple();
-			
+
 			thread = new Thread(new TripleReaderThread(this));
 			thread.start();
 		}
-		
-		synchronized (this) {
-			
-			// Ensure that the real time is not null, if so ignore the heart beat
-			if (currentRealTimeDate != null) {
-				List<Object> output = HeartBeatSpout.getOutputTuple(input, currentRealTimeDate);
-				getCollector().emit(HeartBeatSpout.buildHeartBeatStreamId(getConfiguration().getId()), output);
-			}
-			
+
+		// Ensure that the real time is not null, if so ignore the heart beat
+		if (currentRealTimeDate != null) {
+			List<Object> output = HeartBeatSpout.getOutputTuple(input, currentRealTimeDate);
+			this.collector.emit(HeartBeatSpout.buildHeartBeatStreamId(getConfiguration().getId()), output);
 		}
-	
 	}
-	
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		Fields fields = new Fields("startDate", "endDate", "subject", "predicate", "object");
 		declarer.declare(fields);
-		declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this.getConfiguration().getId()), HeartBeatSpout.getHeartBeatFields());
+		declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this.getConfiguration().getId()),
+				HeartBeatSpout.getHeartBeatFields());
 	}
 
-
-	private void buildSources() {
-		for (File file : configuration.getFiles()) {
-			Source source = null;
-			if (file.getMimeType().equals("text/comma-separated-values")) {
-				source = new CSVSource();
-			}
-
-			if (file.getPath().endsWith(".zip")) {
-				source = new ZipSourceWrapper(source);
-			}
-			else if(file.getPath().endsWith(".gz")) {
-				source = new GzipSourceWrapper(source);
-			}
-			
-			try {
-				InputStream inputStream = source.buildInputStream(file);
-				source.setFileInputStream(inputStream);
-			} catch (Exception e) {
-				throw new RuntimeException(String.format("Unable to read input file '%1s' because: %2s",
-						file.getPath(), e.getMessage()), e);
-			}
-			this.sources.add(source);
+	/**
+	 * This method inits the source stack including the ZIP and GZIP wrappers. The determination of the required
+	 * wrappers is done over the file extension.
+	 * 
+	 * @param sourceIndex
+	 */
+	private void buildSources(int sourceIndex) {
+		File file = configuration.getFiles().get(sourceIndex);
+		if (file.getMimeType().equals("text/comma-separated-values")) {
+			source = new CSVSource();
 		}
 
+		if (file.getPath().endsWith(".zip")) {
+			source = new ZipSourceWrapper(source);
+		} else if (file.getPath().endsWith(".gz")) {
+			source = new GzipSourceWrapper(source);
+		}
+
+		try {
+			InputStream inputStream = source.buildInputStream(file);
+			source.setFileInputStream(inputStream);
+		} catch (Exception e) {
+			throw new RuntimeException(String.format("Unable to read input file '%1s' because: %2s", file.getPath(),
+					e.getMessage()), e);
+		}
 	}
 
 	@Override
@@ -175,9 +199,10 @@ public class FileTripleReader implements IRichBolt {
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
-		
-		buildSources();
-		
+
+		int sourceIndex = context.getThisTaskIndex();
+		buildSources(sourceIndex);
+
 		starterMonitor = StarterMonitor.getInstance(stormConf);
 	}
 
@@ -185,13 +210,4 @@ public class FileTripleReader implements IRichBolt {
 	public void cleanup() {
 	}
 
-	public synchronized OutputCollector getCollector() {
-		return collector;
-	}
-
-	public synchronized void setCollector(OutputCollector collector) {
-		this.collector = collector;
-	}
-	
-	
 }

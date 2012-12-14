@@ -1,5 +1,11 @@
 package ch.uzh.ddis.katts.monitoring;
 
+/**
+ * This is protypical implementation for monitoring the memory consumption of the Java VM.
+ * 
+ * @author Thomas Hunziker
+ *
+ */
 public class VmMonitor implements Runnable {
 
 	private Recorder recorder;

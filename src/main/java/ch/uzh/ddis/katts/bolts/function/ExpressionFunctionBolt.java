@@ -1,7 +1,5 @@
 package ch.uzh.ddis.katts.bolts.function;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import org.springframework.expression.Expression;
@@ -17,24 +15,32 @@ import ch.uzh.ddis.katts.bolts.VariableBindings;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
-public class ExpressionFunctionBolt extends AbstractVariableBindingsBolt{
+/**
+ * The expression function bolt implementation provides a bolt, which is capable to build new variable bindings. The
+ * given expression is evaluated and the resulting value is assigned to the new variable. The expression must be
+ * formulated in SpEL.
+ * 
+ * This bolt is stateless. 
+ * 
+ * @author Thomas Hunziker
+ * 
+ */
+public class ExpressionFunctionBolt extends AbstractVariableBindingsBolt {
 
 	private static final long serialVersionUID = 1L;
 	private ExpressionFunctionConfiguration configuration;
-	private DateFormat formatter = new SimpleDateFormat("dd.MM.yyyy H:m:s");
 	private Expression expression;
-	
+
 	@Override
-	public void prepare(Map stormConf, TopologyContext context,
-			OutputCollector collector) {
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 		ExpressionParser parser = new SpelExpressionParser();
 		expression = parser.parseExpression(this.getConfiguration().getExpression());
 	}
-	
+
 	@Override
 	public void execute(Event event) {
-		
+
 		for (Stream stream : this.getStreams()) {
 			VariableBindings binding = getEmitter().createVariableBindings(stream, event);
 
@@ -42,19 +48,21 @@ public class ExpressionFunctionBolt extends AbstractVariableBindingsBolt{
 			for (Variable variable : stream.getInheritFrom().getAllVariables()) {
 				binding.add(variable, event.getVariableValue(variable));
 			}
-			
+
 			StandardEvaluationContext context = new StandardEvaluationContext();
 			
+			// Bind all variables from the input event to the evaluation context
 			for (Variable var : event.getEmittedOn().getStream().getAllVariables()) {
 				context.setVariable(var.getName(), event.getVariableValue(var));
 			}
-			
+
+			// Evaluate the expression
 			Object result = (Object) expression.getValue(context);
 			binding.add("result", result);
-			
+
 			binding.emit();
 		}
-		
+
 		event.ack();
 	}
 
