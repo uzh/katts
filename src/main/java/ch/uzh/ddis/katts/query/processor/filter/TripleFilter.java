@@ -17,6 +17,7 @@ import ch.uzh.ddis.katts.bolts.filter.TripleFilterConfiguration;
 import ch.uzh.ddis.katts.query.AbstractNode;
 import ch.uzh.ddis.katts.query.Node;
 import ch.uzh.ddis.katts.query.ProducerNode;
+import ch.uzh.ddis.katts.query.source.FileSource;
 import ch.uzh.ddis.katts.query.source.Source;
 import ch.uzh.ddis.katts.query.stream.Producers;
 import ch.uzh.ddis.katts.query.stream.Stream;
@@ -24,12 +25,16 @@ import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
- * A triple filter does build the variable bindings from a triple stream (output of an {@link Source} {@link Node}.
+ * Triple filters convert a stream of time annotated triples (quadruples) into a stream of variable bindings. Each
+ * triple filter is responsible for only one triple pattern. The patterns can be configured using a set of
+ * {@link TripleCondition} objects. Each condition object specifies the content of one of the three fields subject,
+ * predicate, or object. The values in the tiples are compared to the values of the condition using the equals operator.
  * 
- * The filtering can be done based on some conditions (see {@link TripleFilterBolt#setConditions(List)}).
+ * Triple filters are always applied to a specific {@link Source} nodes such as the {@link FileSource}.
+ * 
+ * The output stream of a triple filter is a stream of variable bindings (i.e. a stream of lists of key-value pairs).
  * 
  * @author Thomas Hunziker
- * 
  */
 @XmlRootElement
 public class TripleFilter extends AbstractNode implements ProducerNode, TripleFilterConfiguration {

@@ -14,8 +14,8 @@ import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
- * This class handles the {@link OneFieldJoinBolt}. The one field join is used to do an equity join on streams that
- * occurs at the same time.
+ * OneFieldJoin-Bolts join streams of variable bindings on the specified field. The startDate and endDate fields
+ * of the bindings need to be equivalent regarding the specified joinPrecision argument.
  * 
  * @author Thomas Hunziker
  * 

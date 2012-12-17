@@ -12,27 +12,34 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
 import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerBolt;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerComponent;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerConfiguration;
-import ch.uzh.ddis.katts.bolts.aggregate.component.AvgPartitionerComponent;
-import ch.uzh.ddis.katts.bolts.aggregate.component.MaxPartitionerComponent;
-import ch.uzh.ddis.katts.bolts.aggregate.component.MinPartitionerComponent;
 import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
 import ch.uzh.ddis.katts.query.processor.aggregate.component.MaxPartitioner;
 import ch.uzh.ddis.katts.query.processor.aggregate.component.MinPartitioner;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
- * This class handles the configuration for an {@link PartitionerBolt}, that builds the different PartitionerComponents.
+ * The partitioner node creates a sliding window over the stream of variable bindings and applies one or more
+ * aggregation operators on the contents of the window. The aggregate values are computed over a given subset of the
+ * variable bindings. These subsets are defined using the "partitionOn" field (equivalent to the group by clause in
+ * SQL). The aggreagte values are computed on the field specified in the "aggregateOn" attribute.
  * 
- * The aggregation is done over a sliding window. The window has a set of slides. The configuration requires to specify
- * the size of the window and the size of each slide as time durations. Also the {@link Variable} on which the
- * aggregation should be processed must be specified.
+ * Each partitioner creates a sliding window using a number buckets defined by the window size and the slide size (the
+ * step by which the window advances).
  * 
+ * The window size and step size are defined using the XML schema notation for durations documented in the
+ * {@link DatatypeFactory#newDuration(String)} method.
+ * 
+ * Currently the maximum (max) and the minimum (min) aggregation operators are supported.
+ * 
+ * @see MaxPartitioner
+ * @see MinPartitioner
  * @author Thomas Hunziker
  * 
  */
