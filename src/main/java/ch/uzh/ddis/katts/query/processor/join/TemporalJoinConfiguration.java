@@ -74,7 +74,7 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 	}
 
 	@Override
-	public Bolt getBolt() {
+	public Bolt createBoltInstance() {
 		return new TemporalJoinBolt(this);
 	}
 }

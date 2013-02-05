@@ -33,7 +33,7 @@ public class ExpressionFilter extends AbstractProcessor implements ExpressionFil
 	private String expression;
 
 	@Override
-	public Bolt getBolt() {
+	public Bolt createBoltInstance() {
 		ExpressionFilterBolt bolt = new ExpressionFilterBolt();
 		bolt.setConfiguration(this);
 		return bolt;

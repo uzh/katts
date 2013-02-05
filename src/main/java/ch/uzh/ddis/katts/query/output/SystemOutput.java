@@ -26,7 +26,7 @@ public class SystemOutput extends AbstractOutput implements SystemOutputConfigur
 	}
 
 	@Override
-	public Bolt getBolt() {
+	public Bolt createBoltInstance() {
 		SystemOutputBolt bolt = new SystemOutputBolt();
 
 		return bolt;

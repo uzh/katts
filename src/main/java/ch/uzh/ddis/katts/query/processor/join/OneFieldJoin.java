@@ -33,7 +33,7 @@ public class OneFieldJoin extends AbstractProcessor implements OneFieldJoinConfi
 	private long joinPrecision = 20000;
 
 	@Override
-	public Bolt getBolt() {
+	public Bolt createBoltInstance() {
 		OneFieldJoinBolt bolt = new OneFieldJoinBolt();
 		bolt.setConfiguration(this);
 		return bolt;

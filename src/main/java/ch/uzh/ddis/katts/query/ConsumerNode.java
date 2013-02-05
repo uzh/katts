@@ -24,12 +24,13 @@ public interface ConsumerNode extends Node {
 	public List<StreamConsumer> getConsumers();
 
 	/**
-	 * Returns the bolt, which processes the data of this kind of node.
+	 * This method creates an instance of the bolt class this configuration object is holding the configuration
+	 * information for. A new instance will be returned each time this method is called.
 	 * 
 	 * @see Bolt
 	 * 
-	 * @return
+	 * @return an instance of this bolt.
 	 */
-	public Bolt getBolt();
+	public Bolt createBoltInstance();
 
 }

@@ -33,7 +33,7 @@ public class ExpressionFunction extends AbstractProcessor implements ExpressionF
 	private String expression;
 
 	@Override
-	public Bolt getBolt() {
+	public Bolt createBoltInstance() {
 		ExpressionFunctionBolt bolt = new ExpressionFunctionBolt();
 		bolt.setConfiguration(this);
 		return bolt;

@@ -41,7 +41,7 @@ public abstract class AbstractNode implements Node {
 
 		// does this work with nodes that only produce??
 		if (this instanceof ConsumerNode) {
-			Bolt bolt = ((ConsumerNode) this).getBolt();
+			Bolt bolt = ((ConsumerNode) this).createBoltInstance();
 			bolt.setConsumerStreams(((ConsumerNode) this).getConsumers());
 
 			if (this instanceof ProducerNode) {

@@ -104,7 +104,7 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 
 	@Override
 	@XmlTransient
-	public Bolt getBolt() {
+	public Bolt createBoltInstance() {
 		PartitionerBolt bolt = new PartitionerBolt();
 		bolt.setConfiguration(this);
 		return bolt;

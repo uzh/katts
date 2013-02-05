@@ -29,7 +29,7 @@ public class FileOutput extends AbstractOutput implements FileOutputConfiguratio
 
 	@Override
 	@XmlTransient
-	public Bolt getBolt() {
+	public Bolt createBoltInstance() {
 		FileOutputBolt bolt = new FileOutputBolt();
 		bolt.setConfiguration(this);
 		return bolt;
