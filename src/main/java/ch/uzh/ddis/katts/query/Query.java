@@ -46,8 +46,9 @@ public class Query implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@XmlElementRefs({ @XmlElementRef(type = FileSource.class), @XmlElementRef(type = ExpressionFunction.class),
-			@XmlElementRef(type = Partitioner.class), @XmlElementRef(type = SumConfiguration.class), @XmlElementRef(type = OneFieldJoin.class),
-			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SystemOutput.class),
+			@XmlElementRef(type = Partitioner.class), @XmlElementRef(type = OneFieldJoin.class),
+			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class), 
+			@XmlElementRef(type = SystemOutput.class),
 			@XmlElementRef(type = TripleFilter.class), @XmlElementRef(type = ExpressionFilter.class),
 			@XmlElementRef(type = FileOutput.class), @XmlElementRef(type = HeartBeat.class),
 			@XmlElementRef(type = Termination.class), })
