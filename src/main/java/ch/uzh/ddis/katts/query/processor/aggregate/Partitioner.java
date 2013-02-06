@@ -11,7 +11,6 @@ import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
@@ -73,7 +72,6 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 	}
 
 	@Override
-	@XmlTransient
 	public Variable getAggregateOn() {
 		return aggregateOn;
 	}
@@ -83,7 +81,6 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 	}
 
 	@Override
-	@XmlTransient
 	public Duration getWindowSize() {
 		return windowSize;
 	}
@@ -93,7 +90,6 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 	}
 
 	@Override
-	@XmlTransient
 	public Duration getSlideSize() {
 		return slideSize;
 	}
@@ -103,7 +99,6 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 	}
 
 	@Override
-	@XmlTransient
 	public Bolt createBoltInstance() {
 		PartitionerBolt bolt = new PartitionerBolt();
 		bolt.setConfiguration(this);
@@ -111,7 +106,6 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 	}
 
 	@Override
-	@XmlTransient
 	public Variable getPartitionOn() {
 		return partitionOn;
 	}
@@ -120,7 +114,6 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 		this.partitionOn = partitionOn;
 	}
 
-	@XmlTransient
 	@Override
 	public List<PartitionerComponent> getComponents() {
 		return components;

@@ -4,7 +4,6 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.output.FileOutputBolt;
@@ -24,11 +23,10 @@ public class FileOutput extends AbstractOutput implements FileOutputConfiguratio
 
 	private static final long serialVersionUID = 1L;
 
-	@XmlTransient
+	@XmlAttribute(required = true)
 	private String filePath;
 
 	@Override
-	@XmlTransient
 	public Bolt createBoltInstance() {
 		FileOutputBolt bolt = new FileOutputBolt();
 		bolt.setConfiguration(this);
@@ -36,7 +34,6 @@ public class FileOutput extends AbstractOutput implements FileOutputConfiguratio
 	}
 
 	@Override
-	@XmlAttribute(required = true)
 	public String getFilePath() {
 		return filePath;
 	}
