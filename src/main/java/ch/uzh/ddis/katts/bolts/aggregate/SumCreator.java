@@ -24,14 +24,14 @@ import javax.xml.datatype.Duration;
 public class SumCreator {
 
 	/** The current sum value */
-	private long sum;
+	private double sum;
 
 	/**
 	 * In case of a windowed sum creator, we use this list to store all values that contribute to the current sum. Each
 	 * array has exactly two elements, the first of which being the timestamp at which the value (the second element)
 	 * was added to the sum.
 	 */
-	private final LinkedList<long[]> windowList;
+	private final LinkedList<double[]> windowList;
 
 	private final long windowSize;
 
@@ -64,7 +64,7 @@ public class SumCreator {
 	/** Constructs a sum creator using windowSize as the size of the window to compute the sum over */
 	private SumCreator(Duration windowSize) {
 		this.windowSize = windowSize.getTimeInMillis(new Date());
-		this.windowList = new LinkedList<long[]>();
+		this.windowList = new LinkedList<double[]>();
 	}
 
 	/**
@@ -79,9 +79,9 @@ public class SumCreator {
 	 *            the value that is to be added to the current sum.
 	 * @return the new sum value.
 	 */
-	public long add(long systemTime, long value) {
+	public double add(long systemTime, double value) {
 		if (this.windowSize > 0) {
-			long[] element = this.windowList.peek();
+			double[] element = this.windowList.peek();
 			while ((element != null) && (element[0] < (systemTime - this.windowSize))) {
 				this.sum -= element[1];
 				this.windowList.remove();

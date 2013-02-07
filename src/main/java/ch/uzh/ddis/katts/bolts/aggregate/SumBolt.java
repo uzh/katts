@@ -29,17 +29,6 @@ import com.google.common.collect.ImmutableList;
  */
 public class SumBolt extends AbstractSynchronizedBolt {
 
-	/**
-	 * The value of the sum can be referenced in the variable list of the outgoing streams using this name.
-	 * 
-	 * Example:
-	 * 
-	 * <pre>
-	 * &lt;variable type="xs:long" name="sumValue" referencesTo="sum" /&gt;
-	 * </pre>
-	 */
-	public static final String REFERENCE_NAME = "sum";
-
 	/** The configuration object holding all the */
 	private final SumConfiguration configuration;
 
@@ -54,6 +43,9 @@ public class SumBolt extends AbstractSynchronizedBolt {
 
 	/** The name of the field, the value of which is to be summed over. */
 	private String sumFieldName;
+
+	/** The name under which the sum can be referenced in the outgoing stream configuration. */
+	private String referenceName;
 
 	/**
 	 * This list contains all field names over which we need to group
@@ -100,18 +92,28 @@ public class SumBolt extends AbstractSynchronizedBolt {
 			};
 		}
 
+		if (this.configuration.getField() == null) {
+			throw new IllegalStateException("Missing 'field=\"field_name\"' in the configuration.");
+		} else if (this.configuration.getAs() == null) {
+			throw new IllegalStateException("Missing 'as=\"ref_name\"' in the configuration.");
+		}
+
 		this.sumFieldName = this.configuration.getField();
-		this.groupByFieldNames = ImmutableList.copyOf(this.configuration.getGroupBy().split(","));
+		this.referenceName = this.configuration.getAs();
+
+		if (this.configuration.getGroupBy() != null) {
+			this.groupByFieldNames = ImmutableList.copyOf(this.configuration.getGroupBy().split(","));
+		}
 	}
 
 	@Override
 	public void execute(Event event) {
 		SimpleVariableBindings bindings = new SimpleVariableBindings(event.getTuple());
-		long value;
-		long sum;
+		double value;
+		double sum;
 		SumCreator sumCreator;
 
-		if (this.nonGroupedSumCreator == null) { // no grouping configured
+		if (this.nonGroupedSumCreator != null) { // no grouping configured
 			sumCreator = this.nonGroupedSumCreator;
 		} else {
 			// find the sum creator for the current group-by configuration
@@ -126,18 +128,23 @@ public class SumBolt extends AbstractSynchronizedBolt {
 			sumCreator = this.sumCreators.get(groupByKey);
 		}
 
-		value = Long.parseLong((String) bindings.get(sumFieldName));
+		value = ((Double) bindings.get(this.sumFieldName)).doubleValue();
 		sum = sumCreator.add(event.getEndDate().getTime(), value);
 		// store the sum into our variable bindings data structure using the name
-		bindings.put(SumBolt.REFERENCE_NAME, sum);
+		bindings.put(this.referenceName, sum);
 
 		// emit the new sum value results by creating a variableBindings object for each stream
 		for (Stream stream : this.getStreams()) {
 			VariableBindings bindingsToEmit = getEmitter().createVariableBindings(stream, event);
 
-			for (Variable variable : stream.getVariables()) {
+			/*
+			 * Copy all values from the bindings object into the outgoing binding. This includes the inherited
+			 * variables.
+			 */
+			for (Variable variable : stream.getAllVariables()) {
 				if (bindings.get(variable.getReferencesTo()) == null) {
-					throw new NullPointerException();
+					throw new NullPointerException("Could not find a value for variable \""
+							+ variable.getReferencesTo() + "\" in the bindings object.");
 				}
 				bindingsToEmit.add(variable, bindings.get(variable.getReferencesTo()));
 			}

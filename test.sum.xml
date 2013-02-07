@@ -45,6 +45,17 @@
 			</stream>
 		</produces>
 	</tripleFilter>
+	<tripleFilter applyOnSource="tickerSource" id="TripleFilter_DEPARTMENT">
+    <conditions>
+      <condition restriction="DEPARTMENT" item="predicate" /> <!-- ticker symbol -->
+    </conditions>
+    <produces>
+      <stream id="tickerDepartment">
+        <variable type="xs:string" name="ticker_department" referencesTo="object" />
+        <variable type="xs:string" name="ticker_id" referencesTo="subject" />
+      </stream>
+    </produces>
+  </tripleFilter>
 
 	<oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="Ticker_Join">
 		<consumes>
@@ -63,21 +74,40 @@
 					<groupOn variableName="ticker_id" />
 				</variableGrouping>
 			</stream>
+			<stream maxBufferSize="5" streamId="tickerDepartment">
+        <variableGrouping>
+          <groupOn variableName="ticker_id" />
+        </variableGrouping>
+      </stream>
 		</consumes>
 		<produces>
 			<stream id="tickerStream">
 				<variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" />
 				<variable type="xs:double" name="ticker_price" referencesTo="ticker_price" />
 				<variable type="xs:string" name="company_name" referencesTo="company_name" />
+				<variable type="xs:string" name="ticker_department" referencesTo="ticker_department" />
 			</stream>
 		</produces>
 	</oneFieldJoin>
 
-  <sum 
+  <sum field="ticker_price" as="teh_sum" groupBy="ticker_symbol,ticker_department" parallelism="1">
+    <consumes>
+      <stream maxBufferSize="5" streamId="tickerStream">
+        <variableGrouping>
+          <groupOn variableName="ticker_symbol" />
+        </variableGrouping>
+      </stream>
+    </consumes>
+    <produces>
+      <stream id="summedTickerStream" inheritFrom="tickerStream" >
+        <variable type="xs:long" name="ticker_sum" referencesTo="teh_sum" />
+      </stream>
+    </produces>
+  </sum>
 
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>
-			<stream maxBufferSize="5" streamId="tickerStream">
+			<stream maxBufferSize="5" streamId="summedTickerStream">
 				<shuffleGrouping />
 			</stream>
 		</consumes>

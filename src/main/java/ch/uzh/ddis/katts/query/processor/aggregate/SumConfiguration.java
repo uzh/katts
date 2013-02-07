@@ -27,7 +27,19 @@ public class SumConfiguration extends AbstractProcessor {
 	@XmlAttribute(required = true)
 	private String field;
 
-	/** The name of the variable that should contain the sum value. */
+	/** 
+	 * The value of the sum can be referenced in the variable list of the outgoing streams using this name.
+	 * 
+	 * Example:
+	 * The following configuration:
+	 * <pre>
+	 * &lt;sum field="PRC" as="sum" goupBy="TICKER" /&gt;
+	 * </pre> 
+	 * would allow you to use the variable "sum" in the variable configuration as follows:
+	 * <pre>
+	 * &lt;variable type="xs:long" name="sumValue" referencesTo="sum" /&gt;
+	 * </pre> 
+	 */
 	@XmlAttribute(required = true)
 	private String as;
 	
