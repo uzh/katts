@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import ch.uzh.ddis.katts.query.output.FileOutput;
 import ch.uzh.ddis.katts.query.output.SystemOutput;
+import ch.uzh.ddis.katts.query.processor.UnionConfiguration;
 import ch.uzh.ddis.katts.query.processor.aggregate.Partitioner;
 import ch.uzh.ddis.katts.query.processor.aggregate.SumConfiguration;
 import ch.uzh.ddis.katts.query.processor.filter.ExpressionFilter;
@@ -48,7 +49,7 @@ public class Query implements Serializable {
 	@XmlElementRefs({ @XmlElementRef(type = FileSource.class), @XmlElementRef(type = ExpressionFunction.class),
 			@XmlElementRef(type = Partitioner.class), @XmlElementRef(type = OneFieldJoin.class),
 			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class), 
-			@XmlElementRef(type = SystemOutput.class),
+			@XmlElementRef(type = UnionConfiguration.class), @XmlElementRef(type = SystemOutput.class),
 			@XmlElementRef(type = TripleFilter.class), @XmlElementRef(type = ExpressionFilter.class),
 			@XmlElementRef(type = FileOutput.class), @XmlElementRef(type = HeartBeat.class),
 			@XmlElementRef(type = Termination.class), })

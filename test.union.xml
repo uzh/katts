@@ -7,7 +7,7 @@
 	<!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
 	<fileSource id="tickerSource">
 		<files>
-			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/test.sum.triples" />
+			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/test.union.triples" />
 		</files>
 	</fileSource>
 
@@ -57,7 +57,7 @@
     </produces>
   </tripleFilter>
 
-	<oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="Ticker_Join">
+	<union>
 		<consumes>
 			<stream maxBufferSize="5" streamId="tickerSymbol">
 				<variableGrouping>
@@ -88,26 +88,11 @@
 				<variable type="xs:string" name="ticker_department" referencesTo="ticker_department" />
 			</stream>
 		</produces>
-	</oneFieldJoin>
-
-  <sum field="ticker_price" as="teh_sum" groupBy="ticker_symbol,ticker_department" parallelism="1">
-    <consumes>
-      <stream maxBufferSize="5" streamId="tickerStream">
-        <variableGrouping>
-          <groupOn variableName="ticker_symbol" />
-        </variableGrouping>
-      </stream>
-    </consumes>
-    <produces>
-      <stream id="summedTickerStream" inheritFrom="tickerStream" >
-        <variable type="xs:long" name="ticker_sum" referencesTo="teh_sum" />
-      </stream>
-    </produces>
-  </sum>
-
+	</union>
+ 
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>
-			<stream maxBufferSize="5" streamId="summedTickerStream">
+			<stream maxBufferSize="5" streamId="tickerStream">
 				<shuffleGrouping />
 			</stream>
 		</consumes>
