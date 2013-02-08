@@ -88,6 +88,8 @@ public class SumCreator {
 				element = this.windowList.peek();
 			}
 		}
+		
+		//TODO: add elements to list!!
 
 		this.sum += value;
 

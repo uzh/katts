@@ -30,7 +30,8 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  * SQL). The aggreagte values are computed on the field specified in the "aggregateOn" attribute.
  * 
  * Each partitioner creates a sliding window using a number buckets defined by the window size and the slide size (the
- * step by which the window advances).
+ * step by which the window advances). Values of a bucket is emitted, when the current bucket time has expired and a new
+ * bucket has started to "fill up". This means that values will only be emitted when the aggregate value has changed.
  * 
  * The window size and step size are defined using the XML schema notation for durations documented in the
  * {@link DatatypeFactory#newDuration(String)} method.
