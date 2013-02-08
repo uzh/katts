@@ -90,7 +90,7 @@
 		</produces>
 	</union>
  
-	<fileOutput filePath="data/output.csv" id="fileOutput">
+	<fileOutput filePath="data/output.csv" id="fileOutput" allowNullValues="true">
 		<consumes>
 			<stream maxBufferSize="5" streamId="tickerStream">
 				<shuffleGrouping />

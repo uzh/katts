@@ -17,4 +17,11 @@ public interface FileOutputConfiguration extends Configuration{
 	 */
 	public String getFilePath();
 	
+	/** 
+	 * If true, an exception will be thrown if any of the values of the incoming streams is <b>null</b>.
+	 * 
+	 * Default is <b>false</b>.
+	 */
+	public boolean isAllowNullValues();
+	
 }

@@ -47,7 +47,7 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 		}
 
 		// TODO: Currently the output stream can only consume one
-		// stream. This should be changed to multiple streams. 
+		// stream. This should be changed to multiple streams.
 		stream = this.getStreamConsumer().iterator().next();
 		numberOfColumns = stream.getStream().getAllVariables().size() + 2;
 		String[] headerLine = new String[numberOfColumns];
@@ -65,21 +65,27 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 
 	@Override
 	public synchronized void execute(Event event) {
-		String[] line = new String[numberOfColumns];
-		line[0] = formatter.format(event.getStartDate());
-		line[1] = formatter.format(event.getEndDate());
+		String[] values = new String[numberOfColumns];
+		values[0] = formatter.format(event.getStartDate());
+		values[1] = formatter.format(event.getEndDate());
 
 		int i = 2;
 		for (Variable variable : stream.getStream().getAllVariables()) {
 			Object variableValue = event.getVariableValue(variable);
 			if (variableValue == null) {
-				throw new IllegalStateException(String.format("Missing variable '%1s' in event: %2s",
-						variable.toString(), event.toString()));
+				if (this.configuration.isAllowNullValues()) {
+					values[i] = "null";
+				} else {
+					throw new IllegalStateException(String.format("Missing variable '%1s' in event: %2s",
+							variable.toString(), event.toString()));
+				}
+			} else {
+				values[i] = variableValue.toString();
 			}
-			line[i] = variableValue.toString();
+
 			i++;
 		}
-		writer.writeNext(line);
+		writer.writeNext(values);
 		try {
 			writer.flush();
 		} catch (IOException e) {

@@ -23,6 +23,14 @@ public class FileOutput extends AbstractOutput implements FileOutputConfiguratio
 
 	private static final long serialVersionUID = 1L;
 
+	/** 
+	 * If true, an exception will be thrown if any of the values of the incoming streams is <b>null</b>.
+	 * 
+	 * Default is <b>false</b>.
+	 */
+	@XmlAttribute
+	private boolean allowNullValues = false;
+	
 	@XmlAttribute(required = true)
 	private String filePath;
 
@@ -40,6 +48,20 @@ public class FileOutput extends AbstractOutput implements FileOutputConfiguratio
 
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
+	}
+
+	/**
+	 * @return the allowNullValues
+	 */
+	public boolean isAllowNullValues() {
+		return allowNullValues;
+	}
+
+	/**
+	 * @param allowNullValues the allowNullValues to set
+	 */
+	public void setAllowNullValues(boolean allowNullValues) {
+		this.allowNullValues = allowNullValues;
 	}
 
 }
