@@ -19,7 +19,7 @@ import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
  * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
  * @see SumBolt
  */
-@XmlRootElement(name = "sum")
+@XmlRootElement(name = "computeSum")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SumConfiguration extends AbstractProcessor {
 

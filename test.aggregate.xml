@@ -7,7 +7,7 @@
 	<!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
 	<fileSource id="tickerSource">
 		<files>
-			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/test.sum.triples" />
+			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/test.aggregate.triples" />
 		</files>
 	</fileSource>
 
@@ -90,7 +90,7 @@
 		</produces>
 	</oneFieldJoin>
 
-  <computeSum field="ticker_price" as="teh_sum" groupBy="ticker_symbol,ticker_department" parallelism="1">
+  <aggregate groupBy="ticker_symbol,ticker_department" windowSize="P1D" every="P1D" onlyIfChanged="true" parallelism="1">
     <consumes>
       <stream maxBufferSize="5" streamId="tickerStream">
         <variableGrouping>
@@ -98,12 +98,19 @@
         </variableGrouping>
       </stream>
     </consumes>
+    
+    <aggregators>
+      <sum of="ticker_price" as="teh_sum" />
+    </aggregators>
+    
     <produces>
-      <stream id="summedTickerStream" inheritFrom="tickerStream" >
-        <variable type="xs:long" name="ticker_sum" referencesTo="teh_sum" />
+      <stream id="summedTickerStream">
+        <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" />
+        <variable type="xs:string" name="ticker_department" referencesTo="ticker_department" />
+        <variable type="xs:double" name="ticker_sum" referencesTo="teh_sum" />
       </stream>
     </produces>
-  </computeSum>
+  </sum>
 
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>

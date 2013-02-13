@@ -14,7 +14,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -23,6 +22,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import ch.uzh.ddis.katts.query.output.FileOutput;
 import ch.uzh.ddis.katts.query.output.SystemOutput;
 import ch.uzh.ddis.katts.query.processor.UnionConfiguration;
+import ch.uzh.ddis.katts.query.processor.aggregate.AggregateConfiguration;
 import ch.uzh.ddis.katts.query.processor.aggregate.Partitioner;
 import ch.uzh.ddis.katts.query.processor.aggregate.SumConfiguration;
 import ch.uzh.ddis.katts.query.processor.filter.ExpressionFilter;
@@ -48,11 +48,11 @@ public class Query implements Serializable {
 
 	@XmlElementRefs({ @XmlElementRef(type = FileSource.class), @XmlElementRef(type = ExpressionFunction.class),
 			@XmlElementRef(type = Partitioner.class), @XmlElementRef(type = OneFieldJoin.class),
-			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class), 
-			@XmlElementRef(type = UnionConfiguration.class), @XmlElementRef(type = SystemOutput.class),
-			@XmlElementRef(type = TripleFilter.class), @XmlElementRef(type = ExpressionFilter.class),
-			@XmlElementRef(type = FileOutput.class), @XmlElementRef(type = HeartBeat.class),
-			@XmlElementRef(type = Termination.class), })
+			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class),
+			@XmlElementRef(type = UnionConfiguration.class), @XmlElementRef(type = AggregateConfiguration.class),
+			@XmlElementRef(type = SystemOutput.class), @XmlElementRef(type = TripleFilter.class),
+			@XmlElementRef(type = ExpressionFilter.class), @XmlElementRef(type = FileOutput.class),
+			@XmlElementRef(type = HeartBeat.class), @XmlElementRef(type = Termination.class), })
 	private List<Node> nodes = new ArrayList<Node>();
 
 	@XmlTransient
@@ -137,19 +137,20 @@ public class Query implements Serializable {
 		}
 	}
 
-// Timeouts are not required anymore, however they are in situation useful, when it is not clear how long buffers should store items...
-//	/**
-//	 * This method returns the timeout for 
-//	 * @return
-//	 */
-//	@XmlAttribute()
-//	public long getDefaultBufferTimeout() {
-//		return defaultBufferTimeout;
-//	}
-//
-//	public void setDefaultBufferTimeout(long defaultBufferTimeout) {
-//		this.defaultBufferTimeout = defaultBufferTimeout;
-//	}
+	// Timeouts are not required anymore, however they are in situation useful, when it is not clear how long buffers
+	// should store items...
+	// /**
+	// * This method returns the timeout for
+	// * @return
+	// */
+	// @XmlAttribute()
+	// public long getDefaultBufferTimeout() {
+	// return defaultBufferTimeout;
+	// }
+	//
+	// public void setDefaultBufferTimeout(long defaultBufferTimeout) {
+	// this.defaultBufferTimeout = defaultBufferTimeout;
+	// }
 
 	/**
 	 * Alias of toString()
