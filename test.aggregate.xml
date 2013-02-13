@@ -110,7 +110,7 @@
         <variable type="xs:double" name="ticker_sum" referencesTo="teh_sum" />
       </stream>
     </produces>
-  </sum>
+  </aggregate>
 
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>
