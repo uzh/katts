@@ -113,7 +113,7 @@ public class AggregateConfiguration extends AbstractProcessor {
 	private boolean onlyIfChanged;
 
 	@XmlElementRefs({ @XmlElementRef(type = SumAggregatorConfiguration.class) })
-	@XmlElementWrapper(name = "components")
+	@XmlElementWrapper(name = "aggregators")
 	private List<AggregatorConfiguration<?>> aggregators = new ArrayList<AggregatorConfiguration<?>>();
 
 	@Override

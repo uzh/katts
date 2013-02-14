@@ -90,7 +90,7 @@
 		</produces>
 	</oneFieldJoin>
 
-  <aggregate groupBy="ticker_symbol,ticker_department" windowSize="P1D" every="P1D" onlyIfChanged="true" parallelism="1">
+  <aggregate groupBy="ticker_symbol,ticker_department" windowSize="P3D" every="P3D" onlyIfChanged="true" parallelism="1">
     <consumes>
       <stream maxBufferSize="5" streamId="tickerStream">
         <variableGrouping>

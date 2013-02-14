@@ -64,7 +64,9 @@ public class Emitter {
 		long sequenceNumber = counters.get(variableBinding.getStream());
 		List<Object> tuple = variableBinding.getDataListSorted(sequenceNumber);
 		String streamId = variableBinding.getStream().getId();
-		this.getSourceBolt().emit(streamId, variableBinding.getAnchorEvent().getTuple(), tuple);
+		// TODO lorenz: figure out this achor stuff and remove this null-hack
+		// this.getSourceBolt().emit(streamId, variableBinding.getAnchorEvent().getTuple(), tuple);
+		this.getSourceBolt().emit(streamId, null, tuple);
 
 		sequenceNumber++;
 		counters.put(variableBinding.getStream(), sequenceNumber);

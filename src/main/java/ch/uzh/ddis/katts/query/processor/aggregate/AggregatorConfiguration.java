@@ -1,5 +1,7 @@
 package ch.uzh.ddis.katts.query.processor.aggregate;
 
+import java.io.Serializable;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -14,7 +16,7 @@ import ch.uzh.ddis.katts.bolts.aggregate.Aggregator;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-public abstract class AggregatorConfiguration<T extends Aggregator<?>> {
+public abstract class AggregatorConfiguration<T extends Aggregator<?>> implements Serializable {
 
 	/** Creates an instance of the aggregator this configuration object is for. */
 	public abstract T createInstance(int numberOfBuckets);

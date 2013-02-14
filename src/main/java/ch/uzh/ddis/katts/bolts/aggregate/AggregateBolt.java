@@ -20,6 +20,8 @@ import ch.uzh.ddis.katts.query.stream.Variable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Table;
 
+// TODO: make sure data gets output even when only the heartbeat is advanced
+
 /**
  * This is the implementation of the AggregateBolt as documented in {@link AggregateConfiguration}.
  * 
@@ -53,7 +55,6 @@ public class AggregateBolt extends AbstractSynchronizedBolt {
 		super.prepare(stormConf, context, collector);
 
 		AggregatorConfiguration<?>[] configs;
-
 		configs = new AggregatorConfiguration[configuration.getAggregators().size()];
 
 		this.aggregatorManager = new AggregatorManager(this.configuration.getWindowSize(),
