@@ -42,7 +42,8 @@ public class TerminationBolt extends AbstractBolt {
 	}
 
 	@Override
-	public synchronized Date getOutgoingStreamDate(Date streamDate) {
+	public synchronized Date getProcessingDate() {
+		Date streamDate = getLowestCurrentHeartBeat();		
 		
 		if (streamDate.after(new Date())) {
 			monitor.terminate(lastProcessedDate);

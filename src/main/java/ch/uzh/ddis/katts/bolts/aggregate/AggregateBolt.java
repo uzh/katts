@@ -116,6 +116,13 @@ public class AggregateBolt extends AbstractSynchronizedBolt {
 	}
 
 	@Override
+	protected void setLowestCurrentHeartBeat(Date value) {
+		super.setLowestCurrentHeartBeat(value);
+		
+		this.aggregatorManager.advanceInTime(value.getTime());
+	}
+	
+	@Override
 	public void execute(Event event) {
 		SimpleVariableBindings bindings = new SimpleVariableBindings(event.getTuple());
 		ImmutableList<Object> groupByKey;
@@ -131,7 +138,7 @@ public class AggregateBolt extends AbstractSynchronizedBolt {
 			groupByKey = builder.build();
 		}
 
-		this.aggregatorManager.incorporateValue(bindings.getEndDate().longValue(), groupByKey, bindings);
+		this.aggregatorManager.incorporateValue(groupByKey, bindings);
 	}
 
 	@Override

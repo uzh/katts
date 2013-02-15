@@ -2,12 +2,10 @@ package ch.uzh.ddis.katts.bolts;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.Grouping;
@@ -33,6 +31,7 @@ import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
  * in time. Hence this implementation can threaded as stateless bolt.
  * 
  * @author Thomas Hunziker
+ * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
  * 
  */
 public abstract class AbstractBolt implements IRichBolt {
@@ -41,9 +40,14 @@ public abstract class AbstractBolt implements IRichBolt {
 
 	private OutputCollector collector;
 
-	private Map<Integer, HeartBeat> lastHeartBeatPerTask = new HashMap<Integer, HeartBeat>();
+	private Map<Integer, HeartBeat> lastHeartBeatPerTask = new ConcurrentHashMap<Integer, HeartBeat>();
 	private List<Integer> tasksFromIncomingStreams = new ArrayList<Integer>();
-	private Date currentStreamTime;
+
+	/**
+	 * The lowest current hearbeat is the the oldest date value among all the heartbeat messages that have been received
+	 * by this bolt.
+	 */
+	private Date lowestCurrentHeartBeat;
 
 	private Boolean heartBeatMonitor = new Boolean(true);
 
@@ -65,9 +69,15 @@ public abstract class AbstractBolt implements IRichBolt {
 	@Override
 	public final void execute(Tuple input) {
 
-		// This synchronization is required, because we should not allow the execution of a heart beat tuple in parallel
-		// with a regular tuple. The reason is that, when the regular tuple processing takes more time than the
-		// processing of the heart beat tuple, we may emit a wrong stream processing time.
+		/*
+		 * This synchronization is required, because we should not allow the execution of a heart beat tuple in parallel
+		 * with a regular tuple. The reason is that, when the regular tuple processing takes more time than the
+		 * processing of the heart beat tuple, we may emit a wrong stream processing time.
+		 * 
+		 * TODO: remove this hack. I'm not even sure this works, because we cannot make any assumptions on how fast a
+		 * tuple is transmitted over the network. better solution: update the "lastTupleDateWeSent" only when the tuple
+		 * has been 'acked'.
+		 */
 		synchronized (heartBeatMonitor) {
 			String heartBeatStreamId = HeartBeatSpout.buildHeartBeatStreamId(input.getSourceComponent());
 
@@ -109,11 +119,14 @@ public abstract class AbstractBolt implements IRichBolt {
 		// set.
 
 		// Add heart beat to our list.
-		lastHeartBeatPerTask.put(heartBeat.getTaskId(), heartBeat);
+		lastHeartBeatPerTask.put(heartBeat.getSourceTaskId(), heartBeat);
 
-		// Check if we have the first heart beat got:
-		Integer firstTaskInList = tasksFromIncomingStreams.iterator().next();
-		if (firstTaskInList.equals(heartBeat.getTaskId())) {
+		/*
+		 * In order to prevent duplication of heartbeat messages, we only update and emit the heartbeat state of this
+		 * node, when we receive a heartbeat message from one task. Here, we use the first task in the list of all the
+		 * tasks that are sending heartbeats. However, This could be any task, really.
+		 */
+		if (tasksFromIncomingStreams.get(0).equals(heartBeat.getSourceTaskId())) {
 
 			HeartBeat lowestHeartBeat = null;
 
@@ -124,25 +137,56 @@ public abstract class AbstractBolt implements IRichBolt {
 				}
 			}
 
-			currentStreamTime = lowestHeartBeat.getStreamDate();
+			setLowestCurrentHeartBeat(lowestHeartBeat.getStreamDate());
 
-			this.emit(
-					HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
-					HeartBeatSpout.getOutputTuple(lowestHeartBeat.getTuple(),
-							getOutgoingStreamDate(lowestHeartBeat.getStreamDate())));
+			this.emit(HeartBeatSpout.buildHeartBeatStreamId(this.getId()),
+					HeartBeatSpout.getOutputTuple(lowestHeartBeat.getTuple(), getProcessingDate()));
 		}
 
 	}
 
 	/**
-	 * This method is used to retrieve the processing state of subclasses. The heartbeat must communicate the processing
-	 * state to subsequent bolts. The processing state is the date of the last date, that can guarantees that no earlier
-	 * date is emitted by the sub bolt.
+	 * This method sets a new value for the lowest current heartbeat. Each bolt keeps track of all the current (or last
+	 * received) heartbeat dates for all the incoming tasks it is connected to. The lowest current hearbeat is the the
+	 * the oldest date value from all of these.
+	 * <p/>
+	 * This method is called at the heartbeat rate.
 	 * 
-	 * @return The processing state for the heartbeat of this bolt.
+	 * @param value
+	 *            the new date to use as the lowestCurrentHeartBeat date.
 	 */
-	public Date getOutgoingStreamDate(Date streamDate) {
-		return streamDate;
+	protected void setLowestCurrentHeartBeat(Date value) {
+		this.lowestCurrentHeartBeat = value;
+	}
+
+	/**
+	 * Each bolt keeps track of all the current (or last received) heartbeat dates for all the incoming tasks it is
+	 * connected to. The lowest current hearbeat is the the the oldest date value from all of these.
+	 * 
+	 * @return the lowest value among all the heartbeat dates.
+	 */
+	public final Date getLowestCurrentHeartBeat() {
+		return this.lowestCurrentHeartBeat;
+	}
+
+	/**
+	 * <p/>
+	 * This method is used to retrieve the processing date of this bolt. The processing date is the date up until which
+	 * we can assume all messages have been processed by this bolt. This could either be the endDate of the message we
+	 * emitted last (for synchronized bolts) or some other date that. Whatever date we return in this function, we need
+	 * to guarantee that this bolt is never going to emit a tuple with a date that is older than this processing date.
+	 * 
+	 * <p/>
+	 * The default implementation returns the value of {@link #getLowestCurrentHeartBeat()} and in doing so just passes
+	 * on the processing date of the "slowest" preceeding task. This default implementation will most likely be used by
+	 * all non-synchronized bolts. These are mostly stateless bolts in which the temporal order of tuples don't matter.
+	 * Since we cannot reasonably make any guarantees about what tuples have been processed already, we just pass on the
+	 * value form the preceeding bolt.
+	 * 
+	 * @return the processing date of this bolt.
+	 */
+	public Date getProcessingDate() {
+		return getLowestCurrentHeartBeat();
 	}
 
 	@Override
@@ -162,18 +206,6 @@ public abstract class AbstractBolt implements IRichBolt {
 	}
 
 	/**
-	 * This method returns the current processing state of all previous bolts. It is the lowest date, of all current
-	 * heartbeats over all streams.
-	 * 
-	 * @return The processing state of previous bolts.
-	 */
-	public final Date getCurrentStreamTime() {
-		synchronized (heartBeatMonitor) {
-			return currentStreamTime;
-		}
-	}
-
-	/**
 	 * This method returns all tasks that may send events to this bolt.
 	 * 
 	 * @return
@@ -190,9 +222,7 @@ public abstract class AbstractBolt implements IRichBolt {
 	 * @return null or the heartbeat indicated by the taskId.
 	 */
 	public HeartBeat getLastHeartBeatPerTask(Integer taskId) {
-		synchronized (heartBeatMonitor) {
-			return this.lastHeartBeatPerTask.get(taskId);
-		}
+		return this.lastHeartBeatPerTask.get(taskId);
 	}
 
 	/**

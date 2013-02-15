@@ -159,16 +159,13 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	}
 	
 	@Override
-	public synchronized Date getOutgoingStreamDate(Date streamDate) {
-		
-		Date result = super.getOutgoingStreamDate(streamDate);
-		
+	public Date getProcessingDate() {
 		// TODO: Remove this workaround. This is required to ensure the proper termination of the system.
-		if (streamDate.after(new Date())) {
-			setLastDateProcessed(streamDate);
+		if (getLowestCurrentHeartBeat().after(new Date())) {
+			setLastDateProcessed(getLowestCurrentHeartBeat());
 		}
 		
-		return result;
+		return super.getProcessingDate();
 	}
 
 	@Override

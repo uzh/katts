@@ -33,7 +33,10 @@ public class HeartBeat {
 		this.tuple = tuple;
 	}
 
-	public Integer getTaskId() {
+	/**
+	 * @return the ID of the task, this heartbeat message has been received from.
+	 */
+	public Integer getSourceTaskId() {
 		return tuple.getSourceTask();
 	}
 

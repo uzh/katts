@@ -20,6 +20,9 @@ import backtype.storm.tuple.Tuple;
  */
 public class SimpleVariableBindings extends HashMap<String, Object> {
 
+	public static String FIELD_STARTDATE = "startDate";
+	public static String FIELD_ENDDATE = "endDate";
+
 	private static final long serialVersionUID = 1L;
 
 	public SimpleVariableBindings() {
@@ -32,11 +35,11 @@ public class SimpleVariableBindings extends HashMap<String, Object> {
 	}
 
 	public Long getStartDate() {
-		return ((Date) get("startDate")).getTime();
+		return ((Date) get(FIELD_STARTDATE)).getTime();
 	}
 
 	public Long getEndDate() {
-		return ((Date) get("endDate")).getTime();
+		return ((Date) get(FIELD_ENDDATE)).getTime();
 	}
 
 	@Override

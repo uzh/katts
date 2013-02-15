@@ -58,7 +58,7 @@ public class AggregatorManager {
 
 	/** The interval in which updates will be propagated milliseconds. */
 	private final long updateInterval;
-	
+
 	/** The size of the window in milliseconds. */
 	private final long windowSize;
 
@@ -114,10 +114,12 @@ public class AggregatorManager {
 		 */
 		this.windowSize = windowSize.getTimeInMillis(currentDate);
 		this.updateInterval = updateInterval.getTimeInMillis(currentDate);
-		this.bucketDuration = BigInteger.valueOf(this.windowSize).gcd(BigInteger.valueOf(this.updateInterval)).longValue();
+		this.bucketDuration = BigInteger.valueOf(this.windowSize).gcd(BigInteger.valueOf(this.updateInterval))
+				.longValue();
 		this.numberOfBuckets = Long.valueOf(this.windowSize / this.bucketDuration).intValue();
 
 		this.bucketTimes = new long[this.numberOfBuckets];
+		this.bucketTimes[0] = -1; // set a marker to initialize the bucket time upon first usage
 
 		// the aggregators map has creates a new list of aggregators for each group-by key
 		this.aggregators = new HashMap<ImmutableList<Object>, Aggregator<?>[]>() {
@@ -147,11 +149,12 @@ public class AggregatorManager {
 	 * @param bindings
 	 *            the variable bindings object that has been received.
 	 */
-	public void incorporateValue(long currentTime, ImmutableList<Object> groupByKey, SimpleVariableBindings bindings) {
+	public void incorporateValue(ImmutableList<? extends Object> groupByKey, SimpleVariableBindings bindings) {
+
 
 		// check if we have to switch buckets or propagate updates using the callback
-		advanceInTime(currentTime);
-
+		advanceInTime(bindings.getEndDate());
+		
 		// add value to aggregator
 		for (Aggregator<?> aggregator : this.aggregators.get(groupByKey)) {
 			aggregator.extractAndIncorporateValue(bindings, this.currentBucketIndex);
@@ -160,12 +163,22 @@ public class AggregatorManager {
 
 	/**
 	 * This method moves the current time of the manager and informs about updates of the aggregate values if necessary.
+	 * This method will typically be called by an external timer such as the heartbeat of the system or similar.
 	 * 
 	 * @param currentTime
 	 *            the time up to which the state of the datastructures should be advanced.
 	 */
-	private void advanceInTime(long currentTime) {
-		while (currentTime > this.bucketTimes[this.currentBucketIndex] + this.bucketDuration) {
+	public void advanceInTime(long currentTime) {
+	
+		/*
+		 * When this method is called for the first time, the first bucket will have no time set. In that case
+		 * we initialize the value to be the current processing time as given by currenttime.
+		 */
+		if (this.bucketTimes[this.currentBucketIndex] < 0) {
+			this.bucketTimes[this.currentBucketIndex] = currentTime;
+		}
+		
+		while (currentTime >= this.bucketTimes[this.currentBucketIndex] + this.bucketDuration) {
 			long newBucketTime;
 
 			// check if we need to send an update
@@ -173,19 +186,19 @@ public class AggregatorManager {
 				long startDate;
 				long endDate;
 				Table<ImmutableList<Object>, String, Object> aggregates = HashBasedTable.create();
-				
+
 				for (ImmutableList<Object> groupByKey : this.aggregators.keySet()) {
 					for (Aggregator<?> aggregator : aggregators.get(groupByKey)) {
 						Object lastSentValue = this.lastSentAggregates.get(groupByKey, aggregator.getName());
 						Object currentValue = aggregator.computeCurrentValue();
 
-						if (onlyReportIfValuesChanged && !currentValue.equals(lastSentValue)) {
+						if (!onlyReportIfValuesChanged || !currentValue.equals(lastSentValue)) {
 							this.lastSentAggregates.put(groupByKey, aggregator.getName(), currentValue);
 							aggregates.put(groupByKey, aggregator.getName(), currentValue);
 						}
 					}
 				}
-				
+
 				startDate = this.bucketTimes[computeBucketIndexBefore(this.currentBucketIndex)];
 				endDate = startDate + AggregatorManager.this.windowSize;
 				this.callback.callback(aggregates, new Date(startDate), new Date(endDate));
@@ -196,7 +209,7 @@ public class AggregatorManager {
 
 			// move the pointer to the next bucket
 			this.currentBucketIndex = computeBucketIndexAfter(this.currentBucketIndex);
-			
+
 			// reset the bucket at the (now new) current index
 			this.bucketTimes[this.currentBucketIndex] = newBucketTime;
 			for (ImmutableList<Object> groupByKey : this.aggregators.keySet()) {
@@ -206,28 +219,30 @@ public class AggregatorManager {
 			}
 		}
 	}
-	
-	/** 
+
+	/**
 	 * Computes the bucket index that follows after <code>index</code>.
 	 * 
-	 * @param index the index to base the calculation on.
+	 * @param index
+	 *            the index to base the calculation on.
 	 * @return the index of the bucket that follows the one at position <code>index</code>.
 	 */
-	private int computeBucketIndexAfter(int index){
+	private int computeBucketIndexAfter(int index) {
 		index++;
 		if (index >= this.numberOfBuckets) {
 			index = 0;
 		}
 		return index;
 	}
-	
-	/** 
+
+	/**
 	 * Computes the bucket index that follows after <code>index</code>.
 	 * 
-	 * @param index the index to base the calculation on.
+	 * @param index
+	 *            the index to base the calculation on.
 	 * @return the index of the bucket that follows the one at position <code>index</code>.
 	 */
-	private int computeBucketIndexBefore(int index){
+	private int computeBucketIndexBefore(int index) {
 		index--;
 		if (index < 0) {
 			index = this.numberOfBuckets - 1;

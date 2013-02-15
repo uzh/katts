@@ -4,11 +4,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
-import org.springframework.expression.Expression;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
-
 import backtype.storm.tuple.Tuple;
 
 /**
@@ -123,14 +118,14 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	}
 
 	@Override
-	public Date getOutgoingStreamDate(Date streamDate) {
+	public Date getProcessingDate() {
 
 		executeEventsInBuffer();
 
 		synchronized (buffer) {
 			// In case the buffer is empty, we can return the default value for the heart beat stream.
 			if (this.buffer.size() <= 0) {
-				return getCurrentStreamTime();
+				return getLowestCurrentHeartBeat();
 			}
 
 			// In case we have something in the buffer, but we have nothing processed so far, we return a date long a
