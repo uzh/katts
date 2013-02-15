@@ -12,7 +12,6 @@ import ch.uzh.ddis.katts.bolts.AbstractBolt;
 import ch.uzh.ddis.katts.query.processor.filter.TripleCondition;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.Variable;
-import ch.uzh.ddis.katts.utils.XmlTypeMapping;
 
 /**
  * This class is used to filter out certain triples. This is the first step for every stream consumed by the katts
@@ -47,12 +46,8 @@ public class TripleFilterBolt extends AbstractBolt implements IRichBolt {
 				for (Variable variable : stream.getAllVariables()) {
 					String reference = variable.getReferencesTo();
 					Object value;
-					try {
-						value = XmlTypeMapping.converFromString(tuple.getStringByField(reference), variable.getType());
-						output.add(value);
-					} catch (Exception e) {
-						throw new RuntimeException("Cant convert the given input value to the desired output data type.", e);
-					}
+					value = tuple.getValueByField(reference);
+					output.add(value);
 				}
 
 				this.emit(stream.getId(), tuple, output);

@@ -11,6 +11,8 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import clojure.pprint.pretty_writer__init;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
@@ -33,7 +35,8 @@ import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
  * heartbeat, this must be implement as a Bolt because the heartbeat is provided centrally and hence the reader must
  * listen to this stream. Spouts are not able to listen to streams. Therefore a Bolt is used for this task.
  * 
- * To improve the parallelization of reading this bolt accepts multiple files. For each file a separate instance is created. 
+ * To improve the parallelization of reading this bolt accepts multiple files. For each file a separate instance is
+ * created.
  * 
  * TODO: Checkout how reliability can be achieved with this architecture.
  * 
@@ -43,7 +46,7 @@ import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 public class FileTripleReader implements IRichBolt {
 
 	/** This formatter is used to parse dateTime string values */
-	private transient DateTimeFormatter isoFormat;
+	private transient DateTimeFormatter isoFormat = ISODateTimeFormat.dateTimeParser();
 
 	private static final long serialVersionUID = 1L;
 	private OutputCollector collector;
@@ -59,6 +62,39 @@ public class FileTripleReader implements IRichBolt {
 
 	private long numberRead = 0;
 
+	/**
+	 * Converts a string into a proper Java object.
+	 * <p/>
+	 * The order in which we try to convert the values is: Long - Double - Date - String.
+	 * 
+	 * @param value
+	 *            the string value to convert into an object.
+	 * @return the created object.
+	 */
+	public Object convertStringToObject(String value) {
+		Object result = value;
+
+		try {
+			result = this.isoFormat.parseDateTime(value).toDate();
+		} catch (IllegalArgumentException e) {
+			// so it's also not a date either
+		}
+
+		try {
+			result = Double.valueOf(value);
+		} catch (NumberFormatException e) {
+			// so it's not a double
+		}
+
+		try {
+			result = Long.valueOf(value);
+		} catch (NumberFormatException e) {
+			// so it's not a long
+		}
+
+		return result;
+	}
+	
 	/**
 	 * This method reads the next tuple from the file source.
 	 * 
@@ -85,7 +121,7 @@ public class FileTripleReader implements IRichBolt {
 		// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
 		dateStringValue = triple.get(0);
 		if (dateStringValue.contains("-") || dateStringValue.contains("T") || dateStringValue.contains(":")) {
-			if (isoFormat == null) { // when the bolt gets deserialized this could be reset to null
+			if (this.isoFormat == null) {
 				this.isoFormat = ISODateTimeFormat.dateTimeParser();
 			}
 			date = this.isoFormat.parseDateTime(dateStringValue).toDate();
@@ -102,9 +138,9 @@ public class FileTripleReader implements IRichBolt {
 		if (date != null & triple.get(1) != null && triple.get(2) != null && triple.get(3) != null) {
 			// currently the start and end date are equal
 			tuple.add(date);
-			tuple.add(triple.get(1));
-			tuple.add(triple.get(2));
-			tuple.add(triple.get(3));
+			tuple.add(convertStringToObject(triple.get(1)));
+			tuple.add(convertStringToObject(triple.get(2)));
+			tuple.add(convertStringToObject(triple.get(3)));
 
 			// We emit on the default stream, since we do not want multiple
 			// streams!

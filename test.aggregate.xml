@@ -18,8 +18,8 @@
 		</conditions>
 		<produces>
 			<stream id="tickerPrice">
-				<variable type="xs:double" name="ticker_price" referencesTo="object" />
-				<variable type="xs:string" name="ticker_id" referencesTo="subject" />
+				<variable name="ticker_price" referencesTo="object" />
+				<variable name="ticker_id" referencesTo="subject" />
 			</stream>
 		</produces>
 	</tripleFilter>
@@ -29,8 +29,8 @@
 		</conditions>
 		<produces>
 			<stream id="tickerCompanyName">
-				<variable type="xs:string" name="company_name" referencesTo="object" />
-				<variable type="xs:string" name="ticker_id" referencesTo="subject" />
+				<variable name="company_name" referencesTo="object" />
+				<variable name="ticker_id" referencesTo="subject" />
 			</stream>
 		</produces>
 	</tripleFilter>
@@ -40,8 +40,8 @@
 		</conditions>
 		<produces>
 			<stream id="tickerSymbol">
-				<variable type="xs:string" name="ticker_symbol" referencesTo="object" />
-				<variable type="xs:string" name="ticker_id" referencesTo="subject" />
+				<variable name="ticker_symbol" referencesTo="object" />
+				<variable name="ticker_id" referencesTo="subject" />
 			</stream>
 		</produces>
 	</tripleFilter>
@@ -51,8 +51,8 @@
     </conditions>
     <produces>
       <stream id="tickerDepartment">
-        <variable type="xs:string" name="ticker_department" referencesTo="object" />
-        <variable type="xs:string" name="ticker_id" referencesTo="subject" />
+        <variable name="ticker_department" referencesTo="object" />
+        <variable name="ticker_id" referencesTo="subject" />
       </stream>
     </produces>
   </tripleFilter>
@@ -82,10 +82,10 @@
 		</consumes>
 		<produces>
 			<stream id="tickerStream">
-				<variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" />
-				<variable type="xs:double" name="ticker_price" referencesTo="ticker_price" />
-				<variable type="xs:string" name="company_name" referencesTo="company_name" />
-				<variable type="xs:string" name="ticker_department" referencesTo="ticker_department" />
+				<variable name="ticker_symbol" referencesTo="ticker_symbol" />
+				<variable name="ticker_price" referencesTo="ticker_price" />
+				<variable name="company_name" referencesTo="company_name" />
+				<variable name="ticker_department" referencesTo="ticker_department" />
 			</stream>
 		</produces>
 	</oneFieldJoin>
@@ -105,9 +105,9 @@
     
     <produces>
       <stream id="summedTickerStream">
-        <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" />
-        <variable type="xs:string" name="ticker_department" referencesTo="ticker_department" />
-        <variable type="xs:double" name="ticker_sum" referencesTo="teh_sum" />
+        <variable name="ticker_symbol" referencesTo="ticker_symbol" />
+        <variable name="ticker_department" referencesTo="ticker_department" />
+        <variable name="ticker_sum" referencesTo="teh_sum" />
       </stream>
     </produces>
   </aggregate>
