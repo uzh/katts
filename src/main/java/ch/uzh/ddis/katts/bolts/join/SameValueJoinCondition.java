@@ -11,9 +11,10 @@ import ch.uzh.ddis.katts.query.processor.join.JoinConditionConfiguration;
 import ch.uzh.ddis.katts.query.processor.join.SameValueJoinConditionConfiguration;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 
 /**
- * This condition joins the variable bindings of each stream if they share the same value on a given field.
+ * This condition joins the variable bindings of each stream if they share the same value on a given list of fields.
  * 
  * @author Lorenz Fischer
  * 
@@ -25,14 +26,15 @@ public class SameValueJoinCondition extends AbstractJoinCondition {
 	 */
 	private Set<String> streamIds;
 
-	/** The name of the field, this condition joins on. */
-	private String joinField;
+	/** The join key is a list of all the fields whose values will be checked during the join. */
+	private ImmutableList<String> joinFields;
 
 	/**
 	 * This map contains a multimap for each stream this condition works on. Each multimap contains all the bindings
-	 * that share the same value on the field with name joinField. The key of this map is the shared value itself.
+	 * that share the same values on all the fields of the join condition. The key of this map is the shared value
+	 * itself.
 	 */
-	private Map<String, HashMultimap<String, SimpleVariableBindings>> joinCache;
+	private Map<String, HashMultimap<ImmutableList<Object>, SimpleVariableBindings>> joinCache;
 
 	@Override
 	public void prepare(JoinConditionConfiguration configuration, Set<String> streamIds) {
@@ -45,54 +47,70 @@ public class SameValueJoinCondition extends AbstractJoinCondition {
 
 		castConfiguration = (SameValueJoinConditionConfiguration) configuration;
 
-		if (castConfiguration.getJoinField() == null) {
+		if (castConfiguration.getJoinFields() == null) {
 			throw new IllegalArgumentException("Missing join field 'joinOn' in configuration: " + configuration);
 		}
 
-		this.joinField = castConfiguration.getJoinField();
-		this.joinCache = new HashMap<String, HashMultimap<String, SimpleVariableBindings>>();
+		this.joinFields = ImmutableList.copyOf(castConfiguration.getJoinFields().split(","));
+		this.joinCache = new HashMap<String, HashMultimap<ImmutableList<Object>, SimpleVariableBindings>>();
 		this.streamIds = streamIds;
 
 		for (String streamId : this.streamIds) { // create a join map per stream
-			HashMultimap<String, SimpleVariableBindings> mapForStream = HashMultimap.create();
+			HashMultimap<ImmutableList<Object>, SimpleVariableBindings> mapForStream = HashMultimap.create();
 			this.joinCache.put(streamId, mapForStream);
 		}
+	}
+
+	/**
+	 * Builds and returns the key on which the join will be excuted based on the values in <code>bindings</code> and the
+	 * configured list of join fields.
+	 * 
+	 * @param bindings
+	 *            the object containing the variable bindings to use for the key
+	 * @return the key based on the values found in <code>bindings</code>.
+	 */
+	private ImmutableList<Object> buildJoinKey(SimpleVariableBindings bindings) {
+		ImmutableList.Builder<Object> builder = ImmutableList.builder();
+		for (String fieldName : joinFields) {
+			builder.add(bindings.get(fieldName));
+		}
+		return builder.build();
 	}
 
 	@Override
 	public Set<SimpleVariableBindings> join(SimpleVariableBindings newBindings, String fromStreamId) {
 		Set<SimpleVariableBindings> result = AbstractJoinCondition.emptySet;
-		Object fieldValue = newBindings.get(this.joinField.toString());
+		ImmutableList<Object> joinKey = buildJoinKey(newBindings);
+		List<Set<SimpleVariableBindings>> setsToJoin;
 
-		if (fieldValue != null) {
-			List<Set<SimpleVariableBindings>> setsToJoin;
+		// put the bindings object into the join cache of the stream we received the bindings object on
+		this.joinCache.get(fromStreamId).put(joinKey, newBindings);
 
-			// put the bindings object into the join cache
-			this.joinCache.get(fromStreamId).put(fieldValue.toString(), newBindings);
+		// we store all bindings that need to be joined in this arraylist
+		setsToJoin = new ArrayList<Set<SimpleVariableBindings>>();
 
-			// create the list of streamIds we have to check for matching values
-			setsToJoin = new ArrayList<Set<SimpleVariableBindings>>();
-			for (String streamId : this.streamIds) {
-				if (!streamId.equals(fromStreamId)) { // we only test all other caches
-					HashMultimap<String, SimpleVariableBindings> bindingsForValues = this.joinCache.get(streamId);
+		// create the list of streamIds we have to check for matching values
+		for (String streamId : this.streamIds) {
+			if (!streamId.equals(fromStreamId)) { // we only test all other caches
+				HashMultimap<ImmutableList<Object>, SimpleVariableBindings> bindingsForValues = this.joinCache
+						.get(streamId);
 
-					if (!bindingsForValues.containsKey(fieldValue)) {
-						// we don't have to check any other cache and can safely abort here.
-						setsToJoin.clear();
-						break;
-					}
-
-					setsToJoin.add(bindingsForValues.get(fieldValue.toString()));
+				if (!bindingsForValues.containsKey(joinKey)) {
+					// we don't have to check any other cache and can safely abort here.
+					setsToJoin.clear();
+					break;
 				}
+
+				setsToJoin.add(bindingsForValues.get(joinKey));
 			}
+		}
 
-			if (setsToJoin.size() > 0) {
-				result = new HashSet<SimpleVariableBindings>();
-				List<SimpleVariableBindings> cartesianBindings = createCartesianBindings(setsToJoin,
-						AbstractJoinCondition.ignoredBindings);
-				for (SimpleVariableBindings bindings : cartesianBindings) {
-					result.add(merge(newBindings, bindings, AbstractJoinCondition.ignoredBindings));
-				}
+		if (setsToJoin.size() > 0) {
+			result = new HashSet<SimpleVariableBindings>();
+			List<SimpleVariableBindings> cartesianBindings = createCartesianBindings(setsToJoin,
+					AbstractJoinCondition.ignoredBindings);
+			for (SimpleVariableBindings bindings : cartesianBindings) {
+				result.add(merge(newBindings, bindings, AbstractJoinCondition.ignoredBindings));
 			}
 		}
 
@@ -105,7 +123,7 @@ public class SameValueJoinCondition extends AbstractJoinCondition {
 
 	@Override
 	public void removeBindingsFromCache(SimpleVariableBindings bindings, String streamId) {
-		this.joinCache.get(streamId).remove(bindings.get(this.joinField), bindings);
+		this.joinCache.get(streamId).remove(buildJoinKey(bindings), bindings);
 	}
 
 	@Override

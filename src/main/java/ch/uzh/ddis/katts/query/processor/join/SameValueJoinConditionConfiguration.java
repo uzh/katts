@@ -11,10 +11,14 @@ import javax.xml.bind.annotation.XmlTransient;
 import ch.uzh.ddis.katts.bolts.join.SameValueJoinCondition;
 
 /**
- * This join condition checks if the value of the join field is the same for all
- * input streams.
+ * This join condition checks if the value of ll the join fields are the same on all incoming streams. The value of the joinFields
+ * attribute is a comma separated list of field names.
  * 
- * @author Lorenz Fischer
+ * <p/>Example:
+ * &lt;sameValue onFields="ticker_id,ticker_department" /&gt;
+ * 
+ * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
+ * @see TemporalJoinConfiguration
  */
 @XmlRootElement(name = "sameValue")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -23,15 +27,15 @@ public class SameValueJoinConditionConfiguration implements JoinConditionConfigu
 	private static final long serialVersionUID = 1L;
 	
 	@XmlTransient
-	private String joinField;
+	private String joinFields;
 
-	public void setJoinField(String joinField) {
-		this.joinField = joinField;
+	public void setJoinFields(String joinField) {
+		this.joinFields = joinField;
 	}
 
-	@XmlAttribute(name = "onField", required = true)
-	public String getJoinField() {
-		return joinField;
+	@XmlAttribute(name = "onFields", required = true)
+	public String getJoinFields() {
+		return joinFields;
 	}
 
 	@Override
@@ -41,7 +45,7 @@ public class SameValueJoinConditionConfiguration implements JoinConditionConfigu
 
 	@Override
 	public String toString() {
-		return String.format("<sameValue onField='%1s'/>",joinField);
+		return String.format("<sameValue onField='%1s'/>",joinFields);
 	}
 	
 }
