@@ -3,6 +3,7 @@ package ch.uzh.ddis.katts.query.processor.filter;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -15,11 +16,12 @@ import backtype.storm.tuple.Tuple;
  * 
  */
 @SuppressWarnings("serial")
-@XmlRootElement
+@XmlRootElement(name = "constantCondition")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ConstantNTupleCondition implements NTupleCondition {
 
 	public ConstantNTupleCondition() {
+		return;
 	}
 
 	@Override

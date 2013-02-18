@@ -6,6 +6,8 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -25,19 +27,24 @@ import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
- * Triple filters convert a stream of time annotated triples (quadruples) into a stream of variable bindings. Each
- * triple filter is responsible for only one triple pattern. The patterns can be configured using a set of
- * {@link TripleCondition} objects. Each condition object specifies the content of one of the three fields subject,
- * predicate, or object. The values in the tiples are compared to the values of the condition using the equals operator.
+ * Triple filters convert a stream of time annotated triples (quadruples) into a
+ * stream of variable bindings. Each triple filter is responsible for only one
+ * triple pattern. The patterns can be configured using a set of
+ * {@link TripleCondition} objects. Each condition object specifies the content
+ * of one of the three fields subject, predicate, or object. The values in the
+ * tiples are compared to the values of the condition using the equals operator.
  * 
- * Triple filters are always applied to a specific {@link Source} nodes such as the {@link FileSource}.
+ * Triple filters are always applied to a specific {@link Source} nodes such as
+ * the {@link FileSource}.
  * 
- * The output stream of a triple filter is a stream of variable bindings (i.e. a stream of lists of key-value pairs).
+ * The output stream of a triple filter is a stream of variable bindings (i.e. a
+ * stream of lists of key-value pairs).
  * 
  * @author Thomas Hunziker
  */
 @XmlRootElement
-public class NTupleFilter extends AbstractNode implements ProducerNode, NTupleFilterConfiguration {
+public class NTupleFilter extends AbstractNode implements ProducerNode,
+		NTupleFilterConfiguration {
 
 	private static final long serialVersionUID = 1L;
 
@@ -49,11 +56,13 @@ public class NTupleFilter extends AbstractNode implements ProducerNode, NTupleFi
 
 	@XmlElementWrapper(name = "conditions")
 	@XmlAnyElement
+	@XmlElementRefs({ @XmlElementRef(type = ConstantNTupleCondition.class),
+			@XmlElementRef(type = VariableNTupleCondition.class) })
 	private List<NTupleCondition> conditions = new ArrayList<NTupleCondition>();
 
 	@XmlTransient
 	private List<Stream> producers = new Producers(this);
-	
+
 	public NTupleFilter() {
 		return;
 	}
@@ -77,7 +86,8 @@ public class NTupleFilter extends AbstractNode implements ProducerNode, NTupleFi
 	public void createTopology(TopologyBuilder builder) {
 		NTupleFilterBolt bolt = new NTupleFilterBolt();
 		bolt.setConfiguration(this);
-		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt, getDeclaredParallelism(builder));
+		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt,
+				getDeclaredParallelism(builder));
 		if (groupOn == null || groupOn.isEmpty()) {
 			declarer.localOrShuffleGrouping(applyOnSource);
 		} else {
@@ -85,7 +95,8 @@ public class NTupleFilter extends AbstractNode implements ProducerNode, NTupleFi
 		}
 
 		// Attach the heart beat to the bolt
-		declarer.allGrouping(applyOnSource, HeartBeatSpout.buildHeartBeatStreamId(applyOnSource));
+		declarer.allGrouping(applyOnSource,
+				HeartBeatSpout.buildHeartBeatStreamId(applyOnSource));
 	}
 
 	@Override
@@ -95,7 +106,8 @@ public class NTupleFilter extends AbstractNode implements ProducerNode, NTupleFi
 
 	@Override
 	public boolean validate() throws InvalidNodeConfigurationException {
-		if (!groupOn.equals("subject") || !groupOn.equals("object") || !groupOn.equals("predicate")) {
+		if (!groupOn.equals("subject") || !groupOn.equals("object")
+				|| !groupOn.equals("predicate")) {
 			throw new InvalidNodeConfigurationException(
 					"The TripleFilterBolt can group the source stream only by 'subject', 'object' or 'predicate'");
 		}
@@ -112,8 +124,9 @@ public class NTupleFilter extends AbstractNode implements ProducerNode, NTupleFi
 	}
 
 	/**
-	 * The group on is optional. If no group on is defined a local or shuffle grouping is used to distribute the
-	 * triples. The group on indicates how to group the incoming stream from the triple source.
+	 * The group on is optional. If no group on is defined a local or shuffle
+	 * grouping is used to distribute the triples. The group on indicates how to
+	 * group the incoming stream from the triple source.
 	 * 
 	 * @return
 	 */

@@ -22,7 +22,7 @@
 	<nTupleFilter applyOnSource="tickerSource" id="NTupleFilter_TickerPRC">
 		<conditions>
 		    <!-- Constant conditions restrict the value of a certain field. -->
-			<constantCondition restriction="PRC" item="predicate" /> 
+			<constantCondition restriction="Sales" item="4" /> 
 			<variableCondition>
 			<field>1</field>
 			<field>2</field>

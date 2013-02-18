@@ -20,7 +20,7 @@ import backtype.storm.tuple.Tuple;
  * @author Thomas Scharrenbach
  * 
  */
-@XmlRootElement
+@XmlRootElement(name = "variableCondition")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class VariableNTupleCondition implements NTupleCondition {
 
