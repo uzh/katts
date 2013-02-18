@@ -43,6 +43,6 @@ public interface Source extends Serializable {
 	 * @return Next triple in the file.
 	 * @throws Exception
 	 */
-	public List<String> getNextTriple() throws Exception;
+	public List<String> getNextTuple() throws Exception;
 
 }

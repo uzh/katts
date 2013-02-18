@@ -26,11 +26,13 @@ import ch.uzh.ddis.katts.query.processor.aggregate.AggregateConfiguration;
 import ch.uzh.ddis.katts.query.processor.aggregate.Partitioner;
 import ch.uzh.ddis.katts.query.processor.aggregate.SumConfiguration;
 import ch.uzh.ddis.katts.query.processor.filter.ExpressionFilter;
+import ch.uzh.ddis.katts.query.processor.filter.NTupleFilter;
 import ch.uzh.ddis.katts.query.processor.filter.TripleFilter;
 import ch.uzh.ddis.katts.query.processor.function.ExpressionFunction;
 import ch.uzh.ddis.katts.query.processor.join.OneFieldJoin;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.source.FileSource;
+import ch.uzh.ddis.katts.query.source.NTupleFileSource;
 
 /**
  * The query class is the root element of a query structure. It contains a list of nodes. Each node is linked by
@@ -46,13 +48,13 @@ public class Query implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	@XmlElementRefs({ @XmlElementRef(type = FileSource.class), @XmlElementRef(type = ExpressionFunction.class),
+	@XmlElementRefs({ @XmlElementRef(type = FileSource.class), @XmlElementRef(type = NTupleFileSource.class), @XmlElementRef(type = ExpressionFunction.class),
 			@XmlElementRef(type = Partitioner.class), @XmlElementRef(type = OneFieldJoin.class),
-			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class),
-			@XmlElementRef(type = UnionConfiguration.class), @XmlElementRef(type = AggregateConfiguration.class),
-			@XmlElementRef(type = SystemOutput.class), @XmlElementRef(type = TripleFilter.class),
-			@XmlElementRef(type = ExpressionFilter.class), @XmlElementRef(type = FileOutput.class),
-			@XmlElementRef(type = HeartBeat.class), @XmlElementRef(type = Termination.class), })
+			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class), 
+			@XmlElementRef(type = UnionConfiguration.class), @XmlElementRef(type = SystemOutput.class),
+			@XmlElementRef(type = TripleFilter.class), @XmlElementRef(type = NTupleFilter.class), @XmlElementRef(type = ExpressionFilter.class),
+			@XmlElementRef(type = FileOutput.class), @XmlElementRef(type = HeartBeat.class),
+			@XmlElementRef(type = Termination.class), })
 	private List<Node> nodes = new ArrayList<Node>();
 
 	@XmlTransient

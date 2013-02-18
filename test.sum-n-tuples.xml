@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query xmlns="http://uzh.ch/ddis/katts/query">
+
+	<!-- Send a heart beat every 100 milliseconds. -->
+	<heartBeat interval="100" />
+
+	<!-- Before the query is deployed the data files are copied to all nodes 
+		with rsync. -->
+	<nTupleFileSource id="tickerSource">
+		<files>
+			<file csvFieldDelimiter="," mimeType="text/comma-separated-values"
+				path="data/test.sum.n-tuples">
+				<fields>
+					<field from="1" to="x" />
+				</fields>
+			</file>
+		</files>
+		<numberOfFields>5</numberOfFields>
+	</nTupleFileSource>
+
+	<!-- Filter on an n-tuple -->
+	<nTupleFilter applyOnSource="tickerSource" id="NTupleFilter_TickerPRC">
+		<conditions>
+		    <!-- Constant conditions restrict the value of a certain field. -->
+			<constantCondition restriction="Sales" item="4" /> 
+			<variableCondition>
+			<field>1</field>
+			<field>2</field>
+			<field>3</field>
+			</variableCondition>
+		</conditions>
+		<!-- In this section, the binding of an n-tuple to variable names is defined. -->
+		<produces>
+		    <!-- The id of the stream the bindings are emitted to. -->
+			<stream id="tickerPrice">
+			    <!-- List of variables for the binding -->
+				<variable type="xs:double" name="ticker_price"
+					referencesTo="3" />
+				<variable type="xs:string" name="ticker_id" referencesTo="0" />
+			</stream>
+		</produces>
+	</nTupleFilter>
+
+	<fileOutput filePath="data/output.csv" id="fileOutput">
+		<consumes>
+			<stream maxBufferSize="5" streamId="tickerPrice">
+				<shuffleGrouping />
+			</stream>
+		</consumes>
+	</fileOutput>
+
+	<termination />
+
+</query>
