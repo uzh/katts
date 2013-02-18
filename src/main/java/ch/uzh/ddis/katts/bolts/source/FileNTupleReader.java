@@ -66,6 +66,39 @@ public class FileNTupleReader implements IRichBolt {
 	private long numberRead = 0;
 
 	private int numberOfFields;
+	
+	/**
+	 * Converts a string into a proper Java object.
+	 * <p/>
+	 * The order in which we try to convert the values is: Long - Double - Date - String.
+	 * 
+	 * @param value
+	 *            the string value to convert into an object.
+	 * @return the created object.
+	 */
+	public Object convertStringToObject(String value) {
+		Object result = value;
+
+		try {
+			result = this.isoFormat.parseDateTime(value).toDate();
+		} catch (IllegalArgumentException e) {
+			// so it's also not a date either
+		}
+
+		try {
+			result = Double.valueOf(value);
+		} catch (NumberFormatException e) {
+			// so it's not a double
+		}
+
+		try {
+			result = Long.valueOf(value);
+		} catch (NumberFormatException e) {
+			// so it's not a long
+		}
+
+		return result;
+	}
 
 	/**
 	 * This method reads the next tuple from the file source.
@@ -119,7 +152,9 @@ public class FileNTupleReader implements IRichBolt {
 		if (date != null && !nTuple.contains(null)) {
 			// currently the start and end date are equal
 			tuple.add(date);
-			tuple.addAll(nTuple.subList(1, nTuple.size()));
+			for(String value : nTuple.subList(1, nTuple.size())) {
+				tuple.add(convertStringToObject(value));				
+			}
 
 			// We emit on the default stream, since we do not want multiple
 			// streams!
