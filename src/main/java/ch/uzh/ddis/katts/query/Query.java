@@ -50,19 +50,11 @@ public class Query implements Serializable {
 
 	@XmlElementRefs({ @XmlElementRef(type = FileSource.class), @XmlElementRef(type = NTupleFileSource.class), @XmlElementRef(type = ExpressionFunction.class),
 			@XmlElementRef(type = Partitioner.class), @XmlElementRef(type = OneFieldJoin.class),
-<<<<<<< HEAD
-			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class),
-			@XmlElementRef(type = UnionConfiguration.class), @XmlElementRef(type = AggregateConfiguration.class),
-			@XmlElementRef(type = SystemOutput.class), @XmlElementRef(type = TripleFilter.class),
-			@XmlElementRef(type = ExpressionFilter.class), @XmlElementRef(type = FileOutput.class),
-			@XmlElementRef(type = HeartBeat.class), @XmlElementRef(type = Termination.class), })
-=======
 			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class), 
 			@XmlElementRef(type = UnionConfiguration.class), @XmlElementRef(type = SystemOutput.class),
 			@XmlElementRef(type = TripleFilter.class), @XmlElementRef(type = NTupleFilter.class), @XmlElementRef(type = ExpressionFilter.class),
 			@XmlElementRef(type = FileOutput.class), @XmlElementRef(type = HeartBeat.class),
 			@XmlElementRef(type = Termination.class), })
->>>>>>> Added basic support for n-tuples. Filter conditions need still to be
 	private List<Node> nodes = new ArrayList<Node>();
 
 	@XmlTransient
