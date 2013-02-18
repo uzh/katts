@@ -10,8 +10,8 @@ import ch.uzh.ddis.katts.query.AbstractNode;
  * @author Thomas Hunziker
  * 
  */
+@SuppressWarnings("serial")
 public abstract class AbstractSource extends AbstractNode implements Source {
 
-	private static final long serialVersionUID = 1L;
 
 }

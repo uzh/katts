@@ -107,7 +107,7 @@ public class FileTripleReader implements IRichBolt {
 
 		List<String> triple = null;
 		try {
-			triple = source.getNextTriple();
+			triple = source.getNextTuple();
 		} catch (Exception e) {
 			throw new RuntimeException(String.format("Unable to read next triple because: %1s", e.getMessage()), e);
 		}

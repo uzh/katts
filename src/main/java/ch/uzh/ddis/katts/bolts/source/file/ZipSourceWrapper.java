@@ -38,8 +38,8 @@ public class ZipSourceWrapper implements Source {
 	}
 
 	@Override
-	public List<String> getNextTriple() throws Exception {
-		return component.getNextTriple();
+	public List<String> getNextTuple() throws Exception {
+		return component.getNextTuple();
 	}
 	
 }

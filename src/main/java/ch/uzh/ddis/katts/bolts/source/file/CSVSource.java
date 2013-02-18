@@ -25,7 +25,7 @@ public class CSVSource implements Source{
 	private File file;
 	
 	@Override
-	public List<String> getNextTriple() throws Exception {
+	public List<String> getNextTuple() throws Exception {
 		String[] line = csvReader.readNext();
 		if (line == null) {
 			return null;

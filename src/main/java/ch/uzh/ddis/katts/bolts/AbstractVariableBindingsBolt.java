@@ -103,7 +103,8 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 		for (StreamConsumer stream : streamConsumers) {
 			if (stream.getStream() == null) {
 				throw new NullPointerException(
-						"The given consumer stream is not linked back to the producing stream. Check if there is a bolt that consums a stream, which is not defined.");
+						String.format("The given consumer stream '%s' is not linked back to the producing stream. " +
+								"Check if there is a bolt that consums a stream, which is not defined.", stream.getNode().getId()));
 			}
 			streamConsumer.put(stream.getStream().getId(), stream);
 		}

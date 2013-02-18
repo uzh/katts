@@ -4,10 +4,16 @@
 	<!-- Send a heart beat every 100 milliseconds. -->
 	<heartBeat interval="100" />
 
-	<!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
+	<!-- Before the query is deployed the data files are copied to all nodes 
+		with rsync. -->
 	<fileSource id="tickerSource">
 		<files>
-			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="data/test.sum.triples" />
+			<file csvFieldDelimiter="," mimeType="text/comma-separated-values"
+				path="data/test.sum.triples">
+				<fields>
+					<field from="1" to="x" />
+				</fields>
+			</file>
 		</files>
 	</fileSource>
 
@@ -18,7 +24,8 @@
 		</conditions>
 		<produces>
 			<stream id="tickerPrice">
-				<variable type="xs:double" name="ticker_price" referencesTo="object" />
+				<variable type="xs:double" name="ticker_price"
+					referencesTo="object" />
 				<variable type="xs:string" name="ticker_id" referencesTo="subject" />
 			</stream>
 		</produces>
@@ -29,7 +36,8 @@
 		</conditions>
 		<produces>
 			<stream id="tickerCompanyName">
-				<variable type="xs:string" name="company_name" referencesTo="object" />
+				<variable type="xs:string" name="company_name"
+					referencesTo="object" />
 				<variable type="xs:string" name="ticker_id" referencesTo="subject" />
 			</stream>
 		</produces>
@@ -40,24 +48,27 @@
 		</conditions>
 		<produces>
 			<stream id="tickerSymbol">
-				<variable type="xs:string" name="ticker_symbol" referencesTo="object" />
+				<variable type="xs:string" name="ticker_symbol"
+					referencesTo="object" />
 				<variable type="xs:string" name="ticker_id" referencesTo="subject" />
 			</stream>
 		</produces>
 	</tripleFilter>
 	<tripleFilter applyOnSource="tickerSource" id="TripleFilter_DEPARTMENT">
-    <conditions>
-      <condition restriction="DEPARTMENT" item="predicate" /> <!-- ticker symbol -->
-    </conditions>
-    <produces>
-      <stream id="tickerDepartment">
-        <variable type="xs:string" name="ticker_department" referencesTo="object" />
-        <variable type="xs:string" name="ticker_id" referencesTo="subject" />
-      </stream>
-    </produces>
-  </tripleFilter>
+		<conditions>
+			<condition restriction="DEPARTMENT" item="predicate" /> <!-- ticker symbol -->
+		</conditions>
+		<produces>
+			<stream id="tickerDepartment">
+				<variable type="xs:string" name="ticker_department"
+					referencesTo="object" />
+				<variable type="xs:string" name="ticker_id" referencesTo="subject" />
+			</stream>
+		</produces>
+	</tripleFilter>
 
-	<oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="Ticker_Join">
+	<oneFieldJoin maxBufferSize="20" joinPrecision="20000"
+		joinOn="ticker_id" id="Ticker_Join">
 		<consumes>
 			<stream maxBufferSize="5" streamId="tickerSymbol">
 				<variableGrouping>
@@ -75,21 +86,26 @@
 				</variableGrouping>
 			</stream>
 			<stream maxBufferSize="5" streamId="tickerDepartment">
-        <variableGrouping>
-          <groupOn variableName="ticker_id" />
-        </variableGrouping>
-      </stream>
+				<variableGrouping>
+					<groupOn variableName="ticker_id" />
+				</variableGrouping>
+			</stream>
 		</consumes>
 		<produces>
 			<stream id="tickerStream">
-				<variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" />
-				<variable type="xs:double" name="ticker_price" referencesTo="ticker_price" />
-				<variable type="xs:string" name="company_name" referencesTo="company_name" />
-				<variable type="xs:string" name="ticker_department" referencesTo="ticker_department" />
+				<variable type="xs:string" name="ticker_symbol"
+					referencesTo="ticker_symbol" />
+				<variable type="xs:double" name="ticker_price"
+					referencesTo="ticker_price" />
+				<variable type="xs:string" name="company_name"
+					referencesTo="company_name" />
+				<variable type="xs:string" name="ticker_department"
+					referencesTo="ticker_department" />
 			</stream>
 		</produces>
 	</oneFieldJoin>
 
+<<<<<<< HEAD
   <computeSum field="ticker_price" as="teh_sum" groupBy="ticker_symbol,ticker_department" parallelism="1">
     <consumes>
       <stream maxBufferSize="5" streamId="tickerStream">
@@ -104,6 +120,23 @@
       </stream>
     </produces>
   </computeSum>
+=======
+	<sum field="ticker_price" as="teh_sum" groupBy="ticker_symbol,ticker_department"
+		parallelism="1">
+		<consumes>
+			<stream maxBufferSize="5" streamId="tickerStream">
+				<variableGrouping>
+					<groupOn variableName="ticker_symbol" />
+				</variableGrouping>
+			</stream>
+		</consumes>
+		<produces>
+			<stream id="summedTickerStream" inheritFrom="tickerStream">
+				<variable type="xs:long" name="ticker_sum" referencesTo="teh_sum" />
+			</stream>
+		</produces>
+	</sum>
+>>>>>>> Added basic support for n-tuples. Filter conditions need still to be
 
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>
