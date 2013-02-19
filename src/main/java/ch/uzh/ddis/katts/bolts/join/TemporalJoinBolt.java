@@ -101,8 +101,8 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		this.joinCondition.prepare(config, this.incomingStreamIds);
 
 		// Create and configure the eviction rules
-		this.evictionRuleManager = new EvictionRuleManager(this.configuration.getBeforeEvictionRules(),
-				this.configuration.getAfterEvictionRules(), this.joinCondition, this.incomingStreamIds);
+		this.evictionRuleManager = new EvictionRuleManager(this.configuration.getEvictBefore(),
+				this.configuration.getEvictAfter(), this.joinCondition, this.incomingStreamIds);
 	}
 
 	@Override

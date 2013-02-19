@@ -49,20 +49,6 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 	private JoinConditionConfiguration joinCondition = null;
 
 	/**
-	 * @return all the eviction rules that need to be executed <b>before</b> the join happens.
-	 */
-	public List<EvictionRuleConfiguration> getBeforeEvictionRules() {
-		return this.evictBefore;
-	}
-
-	/**
-	 * @return all the eviction rules that need to be executed <b>after</b> the join happens.
-	 */
-	public List<EvictionRuleConfiguration> getAfterEvictionRules() {
-		return this.evictAfter;
-	}
-
-	/**
 	 * @return a list of all join conditions that have to be met, in order for a variable binding set to be emitted.
 	 */
 	public JoinConditionConfiguration getJoinCondition() {
@@ -76,5 +62,37 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 	@Override
 	public Bolt createBoltInstance() {
 		return new TemporalJoinBolt(this);
+	}
+
+	/**
+	 * {@link TemporalJoinConfiguration#evictBefore}
+	 * @return the evictBefore
+	 */
+	public List<EvictionRuleConfiguration> getEvictBefore() {
+		return evictBefore;
+	}
+
+	/**
+	 * {@link TemporalJoinConfiguration#evictBefore}
+	 * @param evictBefore the evictBefore to set
+	 */
+	public void setEvictBefore(List<EvictionRuleConfiguration> evictBefore) {
+		this.evictBefore = evictBefore;
+	}
+
+	/**
+	 * {@link TemporalJoinConfiguration#evictAfter}
+	 * @return the evictAfter
+	 */
+	public List<EvictionRuleConfiguration> getEvictAfter() {
+		return evictAfter;
+	}
+
+	/**
+	 * {@link TemporalJoinConfiguration#evictAfter}
+	 * @param evictAfter the evictAfter to set
+	 */
+	public void setEvictAfter(List<EvictionRuleConfiguration> evictAfter) {
+		this.evictAfter = evictAfter;
 	}
 }
