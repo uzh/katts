@@ -48,13 +48,23 @@ public class Query implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	@XmlElementRefs({ @XmlElementRef(type = FileSource.class), @XmlElementRef(type = NTupleFileSource.class), @XmlElementRef(type = ExpressionFunction.class),
-			@XmlElementRef(type = Partitioner.class), @XmlElementRef(type = OneFieldJoin.class),
-			@XmlElementRef(type = TemporalJoinConfiguration.class), @XmlElementRef(type = SumConfiguration.class), 
-			@XmlElementRef(type = UnionConfiguration.class), @XmlElementRef(type = SystemOutput.class),
-			@XmlElementRef(type = TripleFilter.class), @XmlElementRef(type = NTupleFilter.class), @XmlElementRef(type = ExpressionFilter.class),
-			@XmlElementRef(type = FileOutput.class), @XmlElementRef(type = HeartBeat.class),
-			@XmlElementRef(type = Termination.class), })
+	@XmlElementRefs({ @XmlElementRef(type = AggregateConfiguration.class),//
+			@XmlElementRef(type = ExpressionFilter.class),//
+			@XmlElementRef(type = ExpressionFunction.class), //
+			@XmlElementRef(type = FileSource.class), //
+			@XmlElementRef(type = FileOutput.class), //
+			@XmlElementRef(type = HeartBeat.class),//
+			@XmlElementRef(type = NTupleFileSource.class), //
+			@XmlElementRef(type = NTupleFilter.class), //
+			@XmlElementRef(type = SumConfiguration.class), //
+			@XmlElementRef(type = SystemOutput.class),//
+			@XmlElementRef(type = TemporalJoinConfiguration.class), //
+			@XmlElementRef(type = Termination.class), //
+			@XmlElementRef(type = TripleFilter.class), //
+			@XmlElementRef(type = OneFieldJoin.class), //
+			@XmlElementRef(type = Partitioner.class), //
+			@XmlElementRef(type = UnionConfiguration.class), //
+	})
 	private List<Node> nodes = new ArrayList<Node>();
 
 	@XmlTransient
