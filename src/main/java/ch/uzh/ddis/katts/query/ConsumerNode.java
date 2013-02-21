@@ -23,6 +23,9 @@ public interface ConsumerNode extends Node {
 	 */
 	public List<StreamConsumer> getConsumers();
 
+	public void appendConsumer(StreamConsumer consumer);
+
+	
 	/**
 	 * This method creates an instance of the bolt class this configuration object is holding the configuration
 	 * information for. A new instance will be returned each time this method is called.
