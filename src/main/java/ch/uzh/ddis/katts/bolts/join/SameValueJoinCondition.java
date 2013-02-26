@@ -48,7 +48,7 @@ public class SameValueJoinCondition extends AbstractJoinCondition {
 		castConfiguration = (SameValueJoinConditionConfiguration) configuration;
 
 		if (castConfiguration.getJoinFields() == null) {
-			throw new IllegalArgumentException("Missing join field 'joinOn' in configuration: " + configuration);
+			throw new IllegalArgumentException("Missing join field 'onFields' in configuration: " + configuration);
 		}
 
 		this.joinFields = ImmutableList.copyOf(castConfiguration.getJoinFields().split(","));
