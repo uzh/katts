@@ -39,6 +39,7 @@ public class SameValueJoinCondition extends AbstractJoinCondition {
 	@Override
 	public void prepare(JoinConditionConfiguration configuration, Set<String> streamIds) {
 		SameValueJoinConditionConfiguration castConfiguration;
+		ImmutableList.Builder<String> builder;
 
 		if (!(configuration instanceof SameValueJoinConditionConfiguration)) {
 			throw new IllegalStateException("An object of type " + configuration.getClass()
@@ -51,7 +52,11 @@ public class SameValueJoinCondition extends AbstractJoinCondition {
 			throw new IllegalArgumentException("Missing join field 'onFields' in configuration: " + configuration);
 		}
 
-		this.joinFields = ImmutableList.copyOf(castConfiguration.getJoinFields().split(","));
+		builder = ImmutableList.builder();
+		for (String fieldName : castConfiguration.getJoinFields().split(",")) {
+			builder.add(fieldName.trim());
+		}
+		this.joinFields = builder.build();
 		this.joinCache = new HashMap<String, HashMultimap<ImmutableList<Object>, SimpleVariableBindings>>();
 		this.streamIds = streamIds;
 
