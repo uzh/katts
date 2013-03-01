@@ -23,11 +23,11 @@ import backtype.storm.testing.MockedSources;
 import backtype.storm.testing.TestJob;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
 import ch.uzh.ddis.katts.bolts.source.DummySpout;
 import ch.uzh.ddis.katts.query.processor.join.EvictionRuleConfiguration;
 import ch.uzh.ddis.katts.query.processor.join.SameValueJoinConditionConfiguration;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
+import ch.uzh.ddis.katts.query.stream.Producers;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
@@ -64,15 +64,7 @@ public class TemporalJoinBoltTest {
 				Config conf = new Config();
 				conf.setNumWorkers(numberOfWorkers);
 
-				Stream leftStream = new Stream();
-				leftStream.setId("leftStream");
-				StreamConsumer leftConsumer = new StreamConsumer();
-				leftConsumer.setStream(leftStream);
-				Stream rightStream = new Stream();
-				rightStream.setId("rightStream");
-				StreamConsumer rightConsumer = new StreamConsumer();
-				rightConsumer.setStream(rightStream);
-				
+				// build configuration
 				SameValueJoinConditionConfiguration svjcc = new SameValueJoinConditionConfiguration();
 				svjcc.setJoinFields("ticker");
 				TemporalJoinConfiguration tjc = new TemporalJoinConfiguration();
@@ -83,23 +75,42 @@ public class TemporalJoinBoltTest {
 				onlyAllowSameTime.setFrom("*");
 				onlyAllowSameTime.setCondition("#from.endDate lt #on.startDate");
 				tjc.setEvictBefore(Arrays.asList(onlyAllowSameTime));
+				TemporalJoinBolt tjb = new TemporalJoinBolt(tjc);
+								
+				
+				// incoming streams
+				Stream leftStream = new Stream();
+				leftStream.setId("leftStream");
+				StreamConsumer leftConsumer = new StreamConsumer();
+				leftConsumer.setStream(leftStream);
+				Stream rightStream = new Stream();
+				rightStream.setId("rightStream");
+				StreamConsumer rightConsumer = new StreamConsumer();
+				rightConsumer.setStream(rightStream);
+
+				// outgoing stream
+				Stream outgoingStream = new Stream();
+				outgoingStream.setId("outgoingStream");
+				Producers outgoingProducer = new Producers(null);
+				outgoingProducer.add(outgoingStream);
+				
+				tjb.setConsumerStreams(Arrays.asList(leftConsumer, rightConsumer));
+				tjb.setStreams(outgoingProducer);
 				
 				// build the test topology
 				builder = new TopologyBuilder();
-				builder.setSpout("leftSpout", new DummySpout(leftFields));
-				builder.setSpout("rightSpout", new DummySpout(rightFields));
-				TemporalJoinBolt tjb = new TemporalJoinBolt(tjc);
-				tjb.setConsumerStreams(Arrays.asList(leftConsumer, rightConsumer));
+				builder.setSpout("leftSpout", new DummySpout("leftStream", leftFields));
+				builder.setSpout("rightSpout", new DummySpout("rightStream", rightFields));
 				builder.setBolt("tjcBolt", tjb) //
-						.fieldsGrouping("leftSpout", new Fields("ticker")) // attach left spout
-						.fieldsGrouping("rightSpout", new Fields("ticker")); // attach right spout
+						.fieldsGrouping("leftSpout", "leftStream", new Fields("ticker")) // attach left spout
+						.fieldsGrouping("rightSpout", "rightStream", new Fields("ticker")); // attach right spout
 				StormTopology topology = builder.createTopology();
-
 
 				// prepare the mock data
 				MockedSources mockedSources = new MockedSources();
 				mockedSources.addMockData(
-						"leftSpout", "leftStream", //
+						"leftSpout",
+						"leftStream", //
 						convertToValues(leftFields,
 								parseString("sequenceNumber=0,startDate=2001-01-01,ticker=HCI,name=Holy Cows Inc.")),
 						convertToValues(leftFields,
@@ -109,7 +120,8 @@ public class TemporalJoinBoltTest {
 						convertToValues(leftFields,
 								parseString("sequenceNumber=3,startDate=2001-01-04,ticker=HCI,name=Holy Cows Inc.")));
 				mockedSources.addMockData(
-						"rightSpout", "rightStream", //
+						"rightSpout",
+						"rightStream", //
 						convertToValues(rightFields,
 								parseString("sequenceNumber=0,startDate=2001-01-01,ticker=HCI,price=1.0D")),
 						convertToValues(rightFields,
@@ -118,7 +130,7 @@ public class TemporalJoinBoltTest {
 								parseString("sequenceNumber=2,startDate=2001-01-03,ticker=HCI,price=3.0D")),
 						convertToValues(rightFields,
 								parseString("sequenceNumber=3,startDate=2001-01-04,ticker=HCI,price=4.0D")));
-				
+
 				CompleteTopologyParam completeTopologyParam = new CompleteTopologyParam();
 				completeTopologyParam.setMockedSources(mockedSources);
 				completeTopologyParam.setStormConf(conf);
@@ -126,24 +138,26 @@ public class TemporalJoinBoltTest {
 				 * TODO
 				 */
 				Map result = Testing.completeTopology(cluster, topology, completeTopologyParam);
-
-				
+				System.out.println(result.toString());
 				Testing.readTuples(result, "leftSpout");
+				System.out.println(result.toString());
 				Testing.readTuples(result, "rightSpout");
+				System.out.println(result.toString());
 				Testing.readTuples(result, "tjcBolt");
-				
+				System.out.println(result.toString());
+
 				assertTrue(true);
-				
+
 				// check whether the result is right
-//				 assertTrue(Testing.multiseteq(new Values(new Values("nathan"), new Values("bob"), new Values("joey"),
-//				 new Values("nathan")), Testing.readTuples(result, "1")));
-//				 assertTrue(Testing.multiseteq(new Values(new Values("nathan", 1), new Values("nathan", 2), new
-//				 Values(
-//				 "bob", 1), new Values("joey", 1)), Testing.readTuples(result, "2")));
-//				 assertTrue(Testing.multiseteq(new Values(new Values(1), new Values(2), new Values(3), new Values(4)),
-//				 Testing.readTuples(result, "3")));
-//				 assertTrue(Testing.multiseteq(new Values(new Values(1), new Values(2), new Values(3), new Values(4)),
-//				 Testing.readTuples(result, "4")));
+				// assertTrue(Testing.multiseteq(new Values(new Values("nathan"), new Values("bob"), new Values("joey"),
+				// new Values("nathan")), Testing.readTuples(result, "1")));
+				// assertTrue(Testing.multiseteq(new Values(new Values("nathan", 1), new Values("nathan", 2), new
+				// Values(
+				// "bob", 1), new Values("joey", 1)), Testing.readTuples(result, "2")));
+				// assertTrue(Testing.multiseteq(new Values(new Values(1), new Values(2), new Values(3), new Values(4)),
+				// Testing.readTuples(result, "3")));
+				// assertTrue(Testing.multiseteq(new Values(new Values(1), new Values(2), new Values(3), new Values(4)),
+				// Testing.readTuples(result, "4")));
 			}
 
 		});
