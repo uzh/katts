@@ -51,7 +51,7 @@ public class AggregateBolt extends AbstractSynchronizedBolt {
 	}
 
 	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
 		AggregatorConfiguration<?>[] configs;
@@ -111,17 +111,21 @@ public class AggregateBolt extends AbstractSynchronizedBolt {
 				}, this.configuration.isOnlyIfChanged(), this.configuration.getAggregators().toArray(configs));
 
 		if (this.configuration.getGroupBy() != null) {
-			this.groupByFieldNames = ImmutableList.copyOf(this.configuration.getGroupBy().split(","));
+			ImmutableList.Builder<String> builder = ImmutableList.builder();
+			for (String fieldName : this.configuration.getGroupBy().split(",")) {
+				builder.add(fieldName.trim());
+			}
+			this.groupByFieldNames = builder.build();
 		}
 	}
 
 	@Override
 	protected void setLowestCurrentHeartBeat(Date value) {
 		super.setLowestCurrentHeartBeat(value);
-		
+
 		this.aggregatorManager.advanceInTime(value.getTime());
 	}
-	
+
 	@Override
 	public void execute(Event event) {
 		SimpleVariableBindings bindings = new SimpleVariableBindings(event.getTuple());
