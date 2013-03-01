@@ -191,11 +191,72 @@ public class AggregatorManagerTest {
 		// Add 3.0 to the sum. since we're only looking at a 1 second window, this did not change the value
 		// of the sum (it is still 3), so this should not trigger an update -> the lastUpdate should not have changed.
 		manager.incorporateValue(groupByKey,
-				parseString("startDate=2001-01-01T00:00:02,ticker=HHH,department=sales,price=3.0D"));
-		manager.advanceInTime(ISO_FORMAT.parseMillis("2001-01-01T00:00:03"));
+				parseString("startDate=2001-01-01T00:00:03,ticker=HHH,department=sales,price=3.0D"));
+		manager.advanceInTime(ISO_FORMAT.parseMillis("2001-01-01T00:00:04"));
 		synchronized (resultTable) {
 			Assert.assertEquals(3.0D, ((Double) resultTable.get(groupByKey, "total_price")).doubleValue(), 0.01D);
 			Assert.assertFalse(lastUpdate.equals(lastUpdateDates[1]));
 		}
 	}
+
+	@Test
+	public void testNoWindow() throws Exception {
+		AggregatorManager manager;
+		AggregatorManager.Callback callback;
+		DatatypeFactory datatypeFactory = DatatypeFactory.newInstance();
+		SumAggregatorConfiguration sumConfig;
+		List<AggregatorConfiguration<?>> aggregatorConfigList;
+		final ImmutableList<String> groupByKey;
+		final Table<ImmutableList<Object>, String, Object> resultTable = HashBasedTable.create();
+		final Date[] lastUpdateDates = new Date[2]; // start- and end date
+		Date lastUpdate;
+
+		sumConfig = new SumAggregatorConfiguration();
+		sumConfig.setOf("price");
+		sumConfig.setAs("total_price");
+		aggregatorConfigList = new ArrayList<AggregatorConfiguration<?>>();
+		aggregatorConfigList.add(sumConfig);
+
+		groupByKey = ImmutableList.of("HHH", "sales");
+
+		callback = new Callback() {
+
+			@Override
+			public void callback(Table<ImmutableList<Object>, String, Object> aggregateValues, Date startDate,
+					Date endDate) {
+				synchronized (resultTable) {
+					if (aggregateValues.contains(groupByKey, "total_price")) {
+						resultTable.putAll(aggregateValues);
+						lastUpdateDates[0] = startDate;
+						lastUpdateDates[1] = endDate;
+					}
+				}
+			}
+		};
+
+		manager = new AggregatorManager(null, // window size
+				datatypeFactory.newDuration("PT1S"), // update interval
+				callback, // this method will be called when there are
+				true, // onlyIfChanged
+				sumConfig // aggregator list
+		);
+
+		manager.incorporateValue(groupByKey,
+				parseString("startDate=2001-01-01T00:00:01,ticker=HHH,department=sales,price=3.0D"));
+		manager.advanceInTime(ISO_FORMAT.parseMillis("2001-01-01T00:00:02")); // simulate heartbeat
+		// We should have gotten the sum for HHH-sales during the first second back (written in the result table)
+		synchronized (resultTable) {
+			Assert.assertEquals(3.0D, ((Double) resultTable.get(groupByKey, "total_price")).doubleValue(), 0.01D);
+			lastUpdate = lastUpdateDates[1];
+		}
+		// Add 3.0 to the sum
+		manager.incorporateValue(groupByKey,
+				parseString("startDate=2001-01-01T00:00:02,ticker=HHH,department=sales,price=3.0D"));
+		manager.advanceInTime(ISO_FORMAT.parseMillis("2001-01-01T00:00:03")); // simulate heartbeat
+		// since we don't have a window, the sum should now be 6
+		synchronized (resultTable) {
+			Assert.assertEquals(6.0D, ((Double) resultTable.get(groupByKey, "total_price")).doubleValue(), 0.01D);
+		}
+	}
+
 }

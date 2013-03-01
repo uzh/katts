@@ -112,12 +112,22 @@ public class AggregatorManager {
 		 * Compute the duration, during which a bucket is going to stay active. This value is the greates common divisor
 		 * (GCD) of the windowSize and the updateInterval.
 		 */
-		this.windowSize = windowSize.getTimeInMillis(currentDate);
-		this.updateInterval = updateInterval.getTimeInMillis(currentDate);
-		this.bucketDuration = BigInteger.valueOf(this.windowSize).gcd(BigInteger.valueOf(this.updateInterval))
-				.longValue();
-		this.numberOfBuckets = Long.valueOf(this.windowSize / this.bucketDuration).intValue();
+		if (updateInterval == null) {
+			this.updateInterval = 0;
+		} else {
+			this.updateInterval = updateInterval.getTimeInMillis(currentDate);
+		}
 
+		if (windowSize == null) { // if we have no window
+			this.windowSize = 0L;
+			this.bucketDuration = 0L;
+			this.numberOfBuckets = 1;
+		} else {
+			this.windowSize = windowSize.getTimeInMillis(currentDate);
+			this.bucketDuration = BigInteger.valueOf(this.windowSize).gcd(BigInteger.valueOf(this.updateInterval))
+					.longValue();
+			this.numberOfBuckets = Long.valueOf(this.windowSize / this.bucketDuration).intValue();
+		}
 		this.bucketTimes = new long[this.numberOfBuckets];
 		this.bucketTimes[0] = -1; // set a marker to initialize the bucket time upon first usage
 
@@ -150,15 +160,16 @@ public class AggregatorManager {
 	 *            the variable bindings object that has been received.
 	 */
 	public void incorporateValue(ImmutableList<? extends Object> groupByKey, SimpleVariableBindings bindings) {
-
+		long currentDate = bindings.getEndDate();
 
 		// check if we have to switch buckets or propagate updates using the callback
-		advanceInTime(bindings.getEndDate());
-		
+		advanceInTime(currentDate);
+
 		// add value to aggregator
 		for (Aggregator<?> aggregator : this.aggregators.get(groupByKey)) {
 			aggregator.extractAndIncorporateValue(bindings, this.currentBucketIndex);
 		}
+
 	}
 
 	/**
@@ -169,55 +180,74 @@ public class AggregatorManager {
 	 *            the time up to which the state of the datastructures should be advanced.
 	 */
 	public void advanceInTime(long currentTime) {
-	
-		/*
-		 * When this method is called for the first time, the first bucket will have no time set. In that case
-		 * we initialize the value to be the current processing time as given by currenttime.
-		 */
-		if (this.bucketTimes[this.currentBucketIndex] < 0) {
-			this.bucketTimes[this.currentBucketIndex] = currentTime;
-		}
-		
-		while (currentTime >= this.bucketTimes[this.currentBucketIndex] + this.bucketDuration) {
-			long newBucketTime;
+		if (this.windowSize == 0) {
+			if (this.lastUpdateSent + this.updateInterval < currentTime) {
+				// in non-windowed mode, we don't need to reset anything. We just send out update if necessary
+				sendCurrentAggregateValues(0L, currentTime - 1);
+				this.lastUpdateSent = currentTime - 1;
+			}
+		} else {
+			/*
+			 * When this method is called for the first time, the first bucket will have no time set. In that case we
+			 * initialize the value to be the current processing time as given by currenttime.
+			 */
+			if (this.bucketTimes[this.currentBucketIndex] < 0) {
+				this.bucketTimes[this.currentBucketIndex] = currentTime;
+			}
 
-			// check if we need to send an update
-			if ((this.lastUpdateSent + updateInterval) < (this.bucketTimes[this.currentBucketIndex] + this.bucketDuration)) {
-				long startDate;
-				long endDate;
-				Table<ImmutableList<Object>, String, Object> aggregates = HashBasedTable.create();
+			while (currentTime >= this.bucketTimes[this.currentBucketIndex] + this.bucketDuration) {
+				long newBucketTime;
 
+				// check if we need to send an update
+				if ((this.lastUpdateSent + updateInterval) < (this.bucketTimes[this.currentBucketIndex] + this.bucketDuration)) {
+					long startDate = this.bucketTimes[computeBucketIndexBefore(this.currentBucketIndex)];
+					long endDate = startDate + AggregatorManager.this.windowSize;
+					sendCurrentAggregateValues(startDate, endDate);
+					this.lastUpdateSent = endDate;
+				}
+
+				// compute the time for the next bucket
+				newBucketTime = this.bucketTimes[this.currentBucketIndex] + this.bucketDuration;
+
+				// move the pointer to the next bucket
+				this.currentBucketIndex = computeBucketIndexAfter(this.currentBucketIndex);
+
+				// reset the bucket at the (now new) current index
+				this.bucketTimes[this.currentBucketIndex] = newBucketTime;
 				for (ImmutableList<Object> groupByKey : this.aggregators.keySet()) {
 					for (Aggregator<?> aggregator : aggregators.get(groupByKey)) {
-						Object lastSentValue = this.lastSentAggregates.get(groupByKey, aggregator.getName());
-						Object currentValue = aggregator.computeCurrentValue();
-
-						if (!onlyReportIfValuesChanged || !currentValue.equals(lastSentValue)) {
-							this.lastSentAggregates.put(groupByKey, aggregator.getName(), currentValue);
-							aggregates.put(groupByKey, aggregator.getName(), currentValue);
-						}
+						aggregator.resetBucket(this.currentBucketIndex);
 					}
-				}
-
-				startDate = this.bucketTimes[computeBucketIndexBefore(this.currentBucketIndex)];
-				endDate = startDate + AggregatorManager.this.windowSize;
-				this.callback.callback(aggregates, new Date(startDate), new Date(endDate));
-			}
-
-			// compute the time for the next bucket
-			newBucketTime = this.bucketTimes[this.currentBucketIndex] + this.bucketDuration;
-
-			// move the pointer to the next bucket
-			this.currentBucketIndex = computeBucketIndexAfter(this.currentBucketIndex);
-
-			// reset the bucket at the (now new) current index
-			this.bucketTimes[this.currentBucketIndex] = newBucketTime;
-			for (ImmutableList<Object> groupByKey : this.aggregators.keySet()) {
-				for (Aggregator<?> aggregator : aggregators.get(groupByKey)) {
-					aggregator.resetBucket(this.currentBucketIndex);
 				}
 			}
 		}
+	}
+
+	/**
+	 * Emits the current aggregator values by calling the callback method for all the aggregate values that need to be
+	 * emitted according to the configuration of "onlyReportIfValuesChanged" and the data that has last been sent.
+	 * 
+	 * @param startDate
+	 *            the date that has to be used as the date since when the aggregates have been built.
+	 * @param endDate
+	 *            the date that has to be used as the date up until when the data has been aggregated.
+	 */
+	private void sendCurrentAggregateValues(long startDate, long endDate) {
+		Table<ImmutableList<Object>, String, Object> aggregates = HashBasedTable.create();
+
+		for (ImmutableList<Object> groupByKey : this.aggregators.keySet()) {
+			for (Aggregator<?> aggregator : aggregators.get(groupByKey)) {
+				Object lastSentValue = this.lastSentAggregates.get(groupByKey, aggregator.getName());
+				Object currentValue = aggregator.computeCurrentValue();
+
+				if (!onlyReportIfValuesChanged || !currentValue.equals(lastSentValue)) {
+					this.lastSentAggregates.put(groupByKey, aggregator.getName(), currentValue);
+					aggregates.put(groupByKey, aggregator.getName(), currentValue);
+				}
+			}
+		}
+
+		this.callback.callback(aggregates, new Date(startDate), new Date(endDate));
 	}
 
 	/**
