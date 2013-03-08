@@ -21,9 +21,19 @@ public class DummySpout extends BaseRichSpout {
 
 	public static final Object EXHAUSTED_MARK = "End Of Mock Input";
 	
+	private String streamName;
 	private Fields fields;
 
-	public DummySpout(Fields fields) {
+	/**
+	 * Creates a new dummy spout with one stream (named streamname) having the fields <code>fields</code>.
+	 * 
+	 * This class supports only one outoing stream at the moment.
+	 * 
+	 * @param streamName
+	 * @param fields
+	 */
+	public DummySpout(String streamName, Fields fields) {
+		this.streamName = streamName;
 		this.fields = fields;
 	}
 
@@ -34,10 +44,10 @@ public class DummySpout extends BaseRichSpout {
 	@Override
 	public void nextTuple() {
 	}
-
+	
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(fields);
+		declarer.declareStream(this.streamName, fields);
 		// declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this.getConfiguration().getId()),
 		// HeartBeatSpout.getHeartBeatFields());
 	}
