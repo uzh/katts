@@ -62,5 +62,9 @@ public class VariableNTupleCondition implements NTupleCondition {
 	public void setFields(List<String> fields) {
 		this.fields = fields;
 	}
+	
+	public void addField(String field) {
+		this.fields.add(field);
+	}
 
 }

@@ -19,4 +19,5 @@ public interface ProducerNode extends Node {
 	 */
 	public List<Stream> getProducers();
 
+	public void appendProducer(Stream producer);
 }
