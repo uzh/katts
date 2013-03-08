@@ -3,7 +3,7 @@
 
 	<groupId>ch.uzh.ifi.ddis.katts</groupId>
 	<artifactId>katts</artifactId>
-	<version>1.0.3</version>
+	<version>1.0.3-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>katts</name>
@@ -14,9 +14,9 @@
 	</properties>
 
 	<scm>
-		<connection>scm:git:git@github.com:lorenzfischer/katts.git</connection>
+		<connection>scpexe:git:git@github.com:lorenzfischer/katts.git</connection>
 		<url>scm:git://git@github.com:lorenzfischer/katts.git</url>
-		<developerConnection>scm:git:git@github.com:lorenzfischer/katts.git</developerConnection>
+		<developerConnection>scpexe:git:git@github.com:lorenzfischer/katts.git</developerConnection>
 	</scm>
 
 	<distributionManagement>
