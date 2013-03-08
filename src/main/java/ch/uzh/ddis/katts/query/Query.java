@@ -100,7 +100,7 @@ public class Query implements Serializable {
 			if (n instanceof ProducerNode) {
 				ProducerNode pn = (ProducerNode) n;
 				for (Stream s : pn.getProducers()) {
-					if (s.isOutputStream()) {
+					if (s.isOutputFlag()) {
 						outputStreamsList.add(s);
 					}
 				}
