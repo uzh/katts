@@ -38,6 +38,9 @@ public class ExpressionFilter extends AbstractProcessor implements ExpressionFil
 		bolt.setConfiguration(this);
 		return bolt;
 	}
+	
+	
+
 
 	@XmlAttribute(name = "expression", required = true)
 	public String getExpression() {

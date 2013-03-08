@@ -38,6 +38,7 @@ public class OneFieldJoin extends AbstractProcessor implements OneFieldJoinConfi
 		bolt.setConfiguration(this);
 		return bolt;
 	}
+	
 
 	@XmlIDREF
 	@XmlAttribute(name = "joinOn", required = true)

@@ -73,6 +73,7 @@ public class SumConfiguration extends AbstractProcessor {
 	public Bolt createBoltInstance() {
 		return new SumBolt(this);
 	}
+	
 
 	/**
 	 * @return the field

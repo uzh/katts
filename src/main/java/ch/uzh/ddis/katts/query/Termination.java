@@ -6,7 +6,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import backtype.storm.topology.BoltDeclarer;
-import ch.uzh.ddis.katts.TopologyBuilder;
+import backtype.storm.topology.TopologyBuilder;
 import ch.uzh.ddis.katts.bolts.TerminationBolt;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
@@ -73,6 +73,7 @@ public class Termination implements Node {
 		}
 		
 	}
+	
 
 	@Override
 	@XmlTransient

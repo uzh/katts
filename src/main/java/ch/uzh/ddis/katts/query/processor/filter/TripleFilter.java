@@ -10,12 +10,11 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import backtype.storm.topology.BoltDeclarer;
+import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
-import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.bolts.filter.TripleFilterBolt;
 import ch.uzh.ddis.katts.bolts.filter.TripleFilterConfiguration;
 import ch.uzh.ddis.katts.query.AbstractNode;
-import ch.uzh.ddis.katts.query.Node;
 import ch.uzh.ddis.katts.query.ProducerNode;
 import ch.uzh.ddis.katts.query.source.FileSource;
 import ch.uzh.ddis.katts.query.source.Source;
@@ -97,6 +96,7 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		}
 		return true;
 	}
+	
 
 	@XmlTransient
 	public String getApplyOnSource() {

@@ -25,5 +25,6 @@ public class UnionConfiguration extends AbstractProcessor {
 	public Bolt createBoltInstance() {
 		return new UnionBolt(this);
 	}
+	
 
 }

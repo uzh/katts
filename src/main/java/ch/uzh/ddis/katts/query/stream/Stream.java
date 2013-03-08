@@ -40,6 +40,9 @@ public class Stream implements Serializable {
 	@XmlTransient
 	private VariableList variables = new VariableList();
 
+	@XmlAttribute(name="output")
+	private boolean outputStream = false;
+
 	@XmlTransient
 	private Stream inheritFrom = null;
 
@@ -138,6 +141,20 @@ public class Stream implements Serializable {
 	@Override
 	public int hashCode() {
 		return this.getId().hashCode();
+	}
+
+	/**
+	 * @return the outputStream
+	 */
+	public boolean isOutputStream() {
+		return outputStream;
+	}
+
+	/**
+	 * @param outputStream the outputStream to set
+	 */
+	public void setOutputStream(boolean outputStream) {
+		this.outputStream = outputStream;
 	}
 
 }
