@@ -16,9 +16,10 @@ import ch.uzh.ddis.katts.query.stream.grouping.ShuffleGrouping;
 import ch.uzh.ddis.katts.query.stream.grouping.VariableGrouping;
 
 /**
- * This class is the consuming part of a {@link Stream}. The {@link ConsumerNode} can define by this class which stream
- * should be consumed and how the stream should be grouped (see {@link Grouping}). Additionally some configuration on
- * how the stream should be processed can be defined.
+ * This class is the consuming part of a {@link Stream}. The
+ * {@link ConsumerNode} can define by this class which stream should be consumed
+ * and how the stream should be grouped (see {@link Grouping}). Additionally
+ * some configuration on how the stream should be processed can be defined.
  * 
  * @author Thomas Hunziker
  * 
@@ -28,7 +29,8 @@ public class StreamConsumer implements Serializable {
 	@XmlTransient
 	private static final long serialVersionUID = 1L;
 
-	@XmlElementRefs({ @XmlElementRef(type = AllGrouping.class), @XmlElementRef(type = ShuffleGrouping.class),
+	@XmlElementRefs({ @XmlElementRef(type = AllGrouping.class),
+			@XmlElementRef(type = ShuffleGrouping.class),
 			@XmlElementRef(type = VariableGrouping.class), })
 	private Grouping grouping = new ShuffleGrouping();
 
@@ -41,6 +43,12 @@ public class StreamConsumer implements Serializable {
 
 	@XmlTransient
 	private long bufferTimeout = -1;
+
+	/**
+	 * This flag indicates whether this stream consumer
+	 */
+	@XmlAttribute(name = "isInput")
+	private boolean isInput = false;
 
 	@XmlTransient
 	public Stream getStream() {

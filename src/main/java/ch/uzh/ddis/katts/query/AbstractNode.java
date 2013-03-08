@@ -4,8 +4,8 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
 
 import backtype.storm.topology.BoltDeclarer;
+import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.utils.Utils;
-import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.query.source.Source;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
@@ -65,8 +65,21 @@ public abstract class AbstractNode implements Node {
 	 * @return
 	 */
 	public int getDeclaredParallelism(TopologyBuilder builder) {
-		return this.getParallelism() > 0 ? this.getParallelism() : Math.round((float) builder.getParallelism()
-				* builder.getParallelizationWeightByNode(this));
+		int parallelism = this.getParallelism();
+		if (parallelism > 0) {
+			return parallelism;
+		}
+		// TODO: ugly hack: disentangle this from Topologybuilder.
+		else {
+			if (builder instanceof ch.uzh.ddis.katts.TopologyBuilder) {
+				ch.uzh.ddis.katts.TopologyBuilder kattsBuilder = (ch.uzh.ddis.katts.TopologyBuilder) builder;
+				return Math.round((float) kattsBuilder.getParallelism()
+						* kattsBuilder.getParallelizationWeightByNode(this));
+
+			} else {
+				throw new RuntimeException();
+			}
+		}
 	}
 
 	@Override
