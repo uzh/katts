@@ -3,7 +3,7 @@
 
 	<groupId>ch.uzh.ifi.ddis.katts</groupId>
 	<artifactId>katts</artifactId>
-	<version>1.0.4-SNAPSHOT</version>
+	<version>1.0.3-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>katts</name>
@@ -22,14 +22,14 @@
 	<distributionManagement>
 		<!-- The DDIS Maven2 repository for SNAPSHOT versions -->
 		<snapshotRepository>
-			<id>ifi-private-snapshots</id>
+			<id>ifi-private</id>
 			<url>https://maven.ifi.uzh.ch/maven2/content/repositories/private-snapshots</url>
 			<name>ifi Internal Snapshot Repository</name>
 			<uniqueVersion>true</uniqueVersion>
 		</snapshotRepository>
 		<!-- The DDIS Maven2 repository for releases -->
 		<repository>
-			<id>ifi-private-releases</id>
+			<id>ifi-private</id>
 			<url>https://maven.ifi.uzh.ch/maven2/content/repositories/private-releases</url>
 			<name>ifi Internal Release Repository</name>
 			<uniqueVersion>false</uniqueVersion>
