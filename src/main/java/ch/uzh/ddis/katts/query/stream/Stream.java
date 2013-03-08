@@ -40,7 +40,7 @@ public class Stream implements Serializable {
 	@XmlTransient
 	private VariableList variables = new VariableList();
 
-	@XmlAttribute(name="output")
+	@XmlTransient
 	private boolean outputFlag = false;
 
 	@XmlTransient
