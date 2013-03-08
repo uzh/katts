@@ -41,7 +41,7 @@ public class Stream implements Serializable {
 	private VariableList variables = new VariableList();
 
 	@XmlAttribute(name="output")
-	private boolean outputStream = false;
+	private boolean outputFlag = false;
 
 	@XmlTransient
 	private Stream inheritFrom = null;
@@ -146,15 +146,15 @@ public class Stream implements Serializable {
 	/**
 	 * @return the outputStream
 	 */
-	public boolean isOutputStream() {
-		return outputStream;
+	public boolean isOutputFlag() {
+		return this.outputFlag;
 	}
 
 	/**
 	 * @param outputStream the outputStream to set
 	 */
-	public void setOutputStream(boolean outputStream) {
-		this.outputStream = outputStream;
+	public void setOutputFlag(boolean outputFlag) {
+		this.outputFlag = outputFlag;
 	}
 
 }
