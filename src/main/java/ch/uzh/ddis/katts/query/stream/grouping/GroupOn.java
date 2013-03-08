@@ -9,8 +9,6 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import org.jboss.marshalling.SerializabilityChecker;
-
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**

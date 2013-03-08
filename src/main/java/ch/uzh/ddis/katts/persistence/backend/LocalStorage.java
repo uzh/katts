@@ -3,10 +3,6 @@ package ch.uzh.ddis.katts.persistence.backend;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.infinispan.Cache;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
-
 /**
  * This class provides a local storage implementation of a storage backend. It stores the data in a simple hashmap. The
  * data is not backed up in the cluster.
