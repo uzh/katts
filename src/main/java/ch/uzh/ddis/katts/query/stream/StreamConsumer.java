@@ -77,41 +77,36 @@ public class StreamConsumer implements Serializable {
 		this.node = node;
 	}
 
-	// /**
-	// * This method returns the buffer timeout. (See {@link
-	// StreamConsumer#getBufferTimeout()}) But this method returns
-	// * instead of -2 the default value. This method should be used for
-	// retrieving the timeout value to use in the bolt
-	// * code.
-	// *
-	// * @return The number of milliseconds an event is queued in the buffer. -1
-	// indicates an infinite timeout.
-	// */
-	// @XmlTransient
-	// // public long getRealBufferTimout() {
-	// //
-	// // long timeout = getBufferTimeout();
-	// //
-	// // if (timeout == -2) {
-	// // return this.getNode().getQuery().getDefaultBufferTimeout();
-	// // } else {
-	// // return timeout;
-	// // }
-	// // }
-	//
-	// /**
-	// * The buffer timeout defines the number of milliseconds an event is
-	// stored in the buffer. The timeout is defined
-	// * relative to the event time and not to the system time.
-	// *
-	// * @return The number of milliseconds an event is queued in the buffer. -1
-	// indicates an infinite timeout and -2
-	// * indicates the default timeout.
-	// */
-	// @XmlAttribute(name = "bufferTimeout")
-	// public long getBufferTimeout() {
-	// return bufferTimeout;
-	// }
+//	/**
+//	 * This method returns the buffer timeout. (See {@link StreamConsumer#getBufferTimeout()}) But this method returns
+//	 * instead of -2 the default value. This method should be used for retrieving the timeout value to use in the bolt
+//	 * code.
+//	 * 
+//	 * @return The number of milliseconds an event is queued in the buffer. -1 indicates an infinite timeout.
+//	 */
+//	@XmlTransient
+////	public long getRealBufferTimout() {
+////
+////		long timeout = getBufferTimeout();
+////
+////		if (timeout == -2) {
+////			return this.getNode().getQuery().getDefaultBufferTimeout();
+////		} else {
+////			return timeout;
+////		}
+////	}
+//
+//	/**
+//	 * The buffer timeout defines the number of milliseconds an event is stored in the buffer. The timeout is defined
+//	 * relative to the event time and not to the system time.
+//	 * 
+//	 * @return The number of milliseconds an event is queued in the buffer. -1 indicates an infinite timeout and -2
+//	 *         indicates the default timeout.
+//	 */
+//	@XmlAttribute(name = "bufferTimeout")
+//	public long getBufferTimeout() {
+//		return bufferTimeout;
+//	}
 
 	public void setBufferTimeout(long bufferTimeout) {
 		this.bufferTimeout = bufferTimeout;

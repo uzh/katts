@@ -73,7 +73,6 @@ public class Termination implements Node {
 		}
 		
 	}
-	
 
 	@Override
 	@XmlTransient

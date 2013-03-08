@@ -96,7 +96,6 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		}
 		return true;
 	}
-	
 
 	@XmlTransient
 	public String getApplyOnSource() {

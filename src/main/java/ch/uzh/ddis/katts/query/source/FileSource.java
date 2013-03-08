@@ -39,7 +39,6 @@ public class FileSource extends AbstractSource implements FileTripleReaderConfig
 	public boolean validate() {
 		return true;
 	}
-	
 
 	@Override
 	public IRichBolt getBolt() {

@@ -50,7 +50,7 @@ public class NTupleFileSource extends AbstractSource implements
 	public boolean validate() {
 		return true;
 	}
-	
+
 	@Override
 	public IRichBolt getBolt() {
 		FileNTupleReader reader = new FileNTupleReader();

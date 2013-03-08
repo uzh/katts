@@ -120,7 +120,7 @@ public class AggregateConfiguration extends AbstractProcessor {
 	public Bolt createBoltInstance() {
 		return new AggregateBolt(this);
 	}
-	
+
 	/**
 	 * {@link AggregateConfiguration#groupBy}
 	 * 

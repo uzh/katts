@@ -105,7 +105,6 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 		bolt.setConfiguration(this);
 		return bolt;
 	}
-	
 
 	@Override
 	public Variable getPartitionOn() {

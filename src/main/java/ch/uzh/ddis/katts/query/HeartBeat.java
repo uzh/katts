@@ -43,7 +43,6 @@ public class HeartBeat implements Node, HeartBeatConfiguration {
 	public boolean validate() throws InvalidNodeConfigurationException {
 		return true;
 	}
-	
 
 	@Override
 	public int getParallelism() {

@@ -63,7 +63,6 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 	public Bolt createBoltInstance() {
 		return new TemporalJoinBolt(this);
 	}
-<<<<<<< HEAD
 
 	/**
 	 * {@link TemporalJoinConfiguration#evictBefore}
@@ -96,7 +95,4 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 	public void setEvictAfter(List<EvictionRuleConfiguration> evictAfter) {
 		this.evictAfter = evictAfter;
 	}
-=======
-	
->>>>>>> Compatibility with ViSTA-TV engine.
 }

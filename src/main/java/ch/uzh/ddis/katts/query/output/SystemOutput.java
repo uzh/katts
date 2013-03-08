@@ -24,13 +24,11 @@ public class SystemOutput extends AbstractOutput implements SystemOutputConfigur
 	public boolean validate() {
 		return true;
 	}
-	
-	
+
 	@Override
 	public Bolt createBoltInstance() {
 		SystemOutputBolt bolt = new SystemOutputBolt();
 
 		return bolt;
 	}
-	
 }

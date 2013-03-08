@@ -38,7 +38,6 @@ public class ExpressionFunction extends AbstractProcessor implements ExpressionF
 		bolt.setConfiguration(this);
 		return bolt;
 	}
-	
 
 	@XmlAttribute(name = "expression", required = true)
 	public String getExpression() {

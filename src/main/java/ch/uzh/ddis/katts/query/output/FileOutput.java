@@ -40,7 +40,6 @@ public class FileOutput extends AbstractOutput implements FileOutputConfiguratio
 		bolt.setConfiguration(this);
 		return bolt;
 	}
-	
 
 	@Override
 	public String getFilePath() {
