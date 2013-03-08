@@ -14,9 +14,9 @@
 	</properties>
 
 	<scm>
-		<connection>scpexe:git:git@github.com:lorenzfischer/katts.git</connection>
+		<connection>scp:git:git@github.com:lorenzfischer/katts.git</connection>
 		<url>scm:git://git@github.com:lorenzfischer/katts.git</url>
-		<developerConnection>scpexe:git:git@github.com:lorenzfischer/katts.git</developerConnection>
+		<developerConnection>scp:git:git@github.com:lorenzfischer/katts.git</developerConnection>
 	</scm>
 
 	<distributionManagement>
