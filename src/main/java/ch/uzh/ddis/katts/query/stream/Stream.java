@@ -48,6 +48,8 @@ public class Stream implements Serializable {
 
 	@XmlTransient
 	private Duration eventTimeOverlapping = null;
+	
+	private Boolean outputFlag = false;
 
 	public Stream() throws DatatypeConfigurationException {
 		if (getEventTimeOverlapping() == null) {
@@ -138,6 +140,23 @@ public class Stream implements Serializable {
 	@Override
 	public int hashCode() {
 		return this.getId().hashCode();
+	}
+
+	/**
+	 * {@link Stream#outputFlag}
+	 * @return the outputFlag
+	 */
+	@XmlElement
+	public Boolean isOutputFlag() {
+		return outputFlag;
+	}
+
+	/**
+	 * {@link Stream#outputFlag}
+	 * @param outputFlag the outputFlag to set
+	 */
+	public void setOutputFlag(Boolean outputFlag) {
+		this.outputFlag = outputFlag;
 	}
 
 }
