@@ -41,6 +41,9 @@ public class Stream implements Serializable {
 	private VariableList variables = new VariableList();
 
 	@XmlTransient
+	private boolean outputFlag = false;
+
+	@XmlTransient
 	private Stream inheritFrom = null;
 
 	@XmlTransient
@@ -48,8 +51,6 @@ public class Stream implements Serializable {
 
 	@XmlTransient
 	private Duration eventTimeOverlapping = null;
-	
-	private Boolean outputFlag = false;
 
 	public Stream() throws DatatypeConfigurationException {
 		if (getEventTimeOverlapping() == null) {
@@ -143,19 +144,16 @@ public class Stream implements Serializable {
 	}
 
 	/**
-	 * {@link Stream#outputFlag}
-	 * @return the outputFlag
+	 * @return the outputStream
 	 */
-	@XmlElement
-	public Boolean isOutputFlag() {
-		return outputFlag;
+	public boolean isOutputFlag() {
+		return this.outputFlag;
 	}
 
 	/**
-	 * {@link Stream#outputFlag}
-	 * @param outputFlag the outputFlag to set
+	 * @param outputStream the outputStream to set
 	 */
-	public void setOutputFlag(Boolean outputFlag) {
+	public void setOutputFlag(boolean outputFlag) {
 		this.outputFlag = outputFlag;
 	}
 
