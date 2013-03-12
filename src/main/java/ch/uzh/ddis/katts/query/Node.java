@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import javax.xml.bind.annotation.XmlTransient;
 
-import ch.uzh.ddis.katts.TopologyBuilder;
+import backtype.storm.topology.TopologyBuilder;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 
 /**
@@ -25,7 +25,7 @@ public interface Node extends Serializable {
 	 * 
 	 * @return Unique Id in the topology
 	 */
-	public String getId();
+	String getId();
 
 	/**
 	 * This method is called, to check if this node is configured well.
@@ -33,7 +33,7 @@ public interface Node extends Serializable {
 	 * @return
 	 * @throws InvalidNodeConfigurationException
 	 */
-	public boolean validate() throws InvalidNodeConfigurationException;
+	boolean validate() throws InvalidNodeConfigurationException;
 
 	/**
 	 * This method returns the parallelism for this node.
@@ -45,14 +45,14 @@ public interface Node extends Serializable {
 	 * 
 	 * @return
 	 */
-	public int getParallelism();
+	int getParallelism();
 
 	/**
 	 * This method is called whenever the topology is build.
 	 * 
 	 * @param topology
 	 */
-	public void createTopology(TopologyBuilder topology);
+	void createTopology(TopologyBuilder topology);
 
 	/**
 	 * This method returns the {@link Query} XML element. This is a reverse linking mechanism.
@@ -60,7 +60,7 @@ public interface Node extends Serializable {
 	 * @return The query object, which is associate with this node.
 	 */
 	@XmlTransient
-	public Query getQuery();
+	Query getQuery();
 
 	/**
 	 * With this method the linked {@link Query} can be set.
@@ -69,6 +69,6 @@ public interface Node extends Serializable {
 	 *            The query object, which is related to this node.
 	 * @return
 	 */
-	public void setQuery(Query query);
-
+	void setQuery(Query query);
+	
 }

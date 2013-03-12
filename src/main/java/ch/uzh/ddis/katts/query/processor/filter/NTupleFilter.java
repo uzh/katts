@@ -13,8 +13,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import backtype.storm.topology.BoltDeclarer;
+import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
-import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.bolts.filter.NTupleFilterBolt;
 import ch.uzh.ddis.katts.bolts.filter.NTupleFilterConfiguration;
 import ch.uzh.ddis.katts.query.AbstractNode;

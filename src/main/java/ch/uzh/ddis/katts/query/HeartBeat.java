@@ -6,7 +6,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import ch.uzh.ddis.katts.TopologyBuilder;
+import backtype.storm.topology.TopologyBuilder;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatConfiguration;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;

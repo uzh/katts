@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import ch.uzh.ddis.katts.query.output.FileOutput;
 import ch.uzh.ddis.katts.query.output.SystemOutput;
+import ch.uzh.ddis.katts.query.processor.Processor;
 import ch.uzh.ddis.katts.query.processor.UnionConfiguration;
 import ch.uzh.ddis.katts.query.processor.aggregate.AggregateConfiguration;
 import ch.uzh.ddis.katts.query.processor.aggregate.Partitioner;
@@ -33,6 +34,8 @@ import ch.uzh.ddis.katts.query.processor.join.OneFieldJoin;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.source.FileSource;
 import ch.uzh.ddis.katts.query.source.NTupleFileSource;
+import ch.uzh.ddis.katts.query.stream.Stream;
+import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
 /**
  * The query class is the root element of a query structure. It contains a list of nodes. Each node is linked by
@@ -70,12 +73,41 @@ public class Query implements Serializable {
 	@XmlTransient
 	private long defaultBufferTimeout = -1;
 
+	private List<Stream> outputStreamsList;
+
+	private List<StreamConsumer> inputStreamsList;
+
 	/**
-	 * This method checks in a recursive manner if the given query is valid.
+	 * Determines the output streams.
 	 * 
 	 * @return
 	 */
 	public Query validate() {
+
+		final List<Node> nodesList = getNodes();
+		final List<Stream> outputStreamsList = new ArrayList<Stream>();
+		final List<StreamConsumer> inputStreamsList = new ArrayList<StreamConsumer>();
+		// determine input and output nodes
+		for (Node n : nodesList) {
+			// Input
+			if (n instanceof Processor) {
+				Processor proc = (Processor) n;
+				for (StreamConsumer s : proc.getConsumers()) {
+					inputStreamsList.add(s);
+				}
+			}
+			// Output
+			if (n instanceof ProducerNode) {
+				ProducerNode pn = (ProducerNode) n;
+				for (Stream s : pn.getProducers()) {
+					if (s.isOutputFlag()) {
+						outputStreamsList.add(s);
+					}
+				}
+			}
+		}
+		setInputStreamsList(inputStreamsList);
+		setOutputStreamsList(outputStreamsList);
 
 		// TODO: Implement this method.
 
@@ -240,6 +272,44 @@ public class Query implements Serializable {
 	 */
 	public static JAXBContext getJAXBContext() throws JAXBException {
 		return JAXBContext.newInstance("ch.uzh.ddis.katts.query");
+	}
+
+	/**
+	 * @return the outputStreamsList
+	 */
+	public List<Stream> getOutputStreamsList() {
+		return outputStreamsList;
+	}
+
+	/**
+	 * @param outputStreamsList
+	 *            the outputStreamsList to set
+	 */
+	public void setOutputStreamsList(List<Stream> outputStreamsList) {
+		this.outputStreamsList = outputStreamsList;
+	}
+
+	/**
+	 * @return the defaultBufferTimeout
+	 */
+	public long getDefaultBufferTimeout() {
+		return defaultBufferTimeout;
+	}
+
+	/**
+	 * @param defaultBufferTimeout
+	 *            the defaultBufferTimeout to set
+	 */
+	public void setDefaultBufferTimeout(long defaultBufferTimeout) {
+		this.defaultBufferTimeout = defaultBufferTimeout;
+	}
+
+	public List<StreamConsumer> getInputStreamsList() {
+		return this.inputStreamsList;
+	}
+
+	public void setInputStreamsList(List<StreamConsumer> inputStreamsList) {
+		this.inputStreamsList = inputStreamsList;
 	}
 
 }
