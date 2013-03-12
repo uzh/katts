@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import backtype.storm.topology.BoltDeclarer;
 import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.bolts.TerminationBolt;
-import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
+import ch.uzh.ddis.katts.query.output.Output;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
@@ -63,11 +63,8 @@ public class Termination implements Node {
 //		}
 		
 		for (Node node : this.getQuery().getNodes()) {
-			
-			// TODO: Workaround to allow termination based on the output of the temporal join
-			if (node instanceof TemporalJoinConfiguration) {
-				
-				// Since this is a source, we need only to attach the heart beat stream to it.
+			// We connect this bolt to all heart beat streams of all output nodes.
+			if (node instanceof Output) {
 				boltDeclarer.allGrouping(node.getId(), HeartBeatSpout.buildHeartBeatStreamId(node.getId()));
 			}
 		}
