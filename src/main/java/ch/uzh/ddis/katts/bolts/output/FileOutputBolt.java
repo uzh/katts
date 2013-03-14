@@ -17,6 +17,7 @@ import ch.uzh.ddis.katts.bolts.AbstractVariableBindingsBolt;
 import ch.uzh.ddis.katts.bolts.Event;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
+import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
  * This Bolt writes all the input streams into a file. This is convenient way to store the output data of a query.
@@ -105,6 +106,13 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		/*
+		 * Even output bolts need to pass on the heartbeat, so the TerminationBolt
+		 * can react. 
+		 */
+		declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this
+				.getConfiguration().getId()), HeartBeatSpout
+				.getHeartBeatFields());
 	}
 
 	@Override

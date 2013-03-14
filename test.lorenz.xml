@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <query xmlns="http://uzh.ch/ddis/katts/query">
+    
+    <!-- Send a heart beat every 100 milliseconds. -->
+    <heartBeat interval="100" />
+    
     <fileSource id="8897655727763874851">
         <files>
             <!--  <file csvFieldDelimiter="," 
@@ -12,7 +16,7 @@
                   path="data/triples-sample.1000.csv"/> -->
             <file csvFieldDelimiter="," 
                   mimeType="text/comma-separated-values" 
-                  path="data/2001_7ticker_wrds_crsp.sorted.triples"/>      
+                  path="data/2001_5contracts.sorted.triples"/>      
         </files>
     </fileSource>
     
@@ -78,7 +82,7 @@
         </evictBefore>
         
         <!-- join condition -->
-        <sameValue onField="ticker_id"/>
+        <sameValue onFields="ticker_id"/>
         
         <!-- <joinCondition>
              <sameValue onField="ticker_id"/>
@@ -187,5 +191,8 @@
             </stream>
         </consumes>
     </fileOutput>
+    
+    <!-- we stop as soon as any heartbeat output by any fileOutput bolt is greater than the current time -->
+    <termination/>
 </query>
 
