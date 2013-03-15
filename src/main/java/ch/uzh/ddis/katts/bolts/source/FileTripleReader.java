@@ -115,6 +115,14 @@ public class FileTripleReader implements IRichBolt {
 		if (triple == null) {
 			logger.info(String.format("End of file is reached in component %1s at date %2s. Line: %3s", this
 					.getConfiguration().getId(), currentRealTimeDate.toString(), numberRead));
+			
+			/*
+			 * TODO: this is a dirty hack: by setting the process date to the year 292278994, the next
+			 * heartbeat that gets sent down the processing chain will tell the TerminationBolt, that we
+			 * reached the end of the file.
+			 */
+			currentRealTimeDate = new Date(Long.MAX_VALUE); // set the current date 
+			
 			return false;
 		}
 
