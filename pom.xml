@@ -81,26 +81,26 @@
 		</dependency>
 		
 		<!-- used by the evaluation package -->
-		  <dependency>
-      <groupId>com.google.gdata</groupId>
-      <artifactId>gdata-core</artifactId>
-      <version>1.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.gdata</groupId>
-      <artifactId>gdata-spreadsheet</artifactId>
-      <version>3.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.gdata</groupId>
-      <artifactId>gdata-spreadsheet-meta</artifactId>
-      <version>3.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>2.1</version>
-    </dependency>
+		<dependency>
+			<groupId>com.google.gdata</groupId>
+			<artifactId>gdata-core</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.gdata</groupId>
+			<artifactId>gdata-spreadsheet</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.gdata</groupId>
+			<artifactId>gdata-spreadsheet-meta</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.1</version>
+		</dependency>
 
 		<!-- <dependency> <groupId>org.infinispan</groupId> <artifactId>infinispan-core</artifactId> <version>5.1.5.FINAL</version> 
 			</dependency> <dependency> <groupId>ch.qos.logback</groupId> <artifactId>logback-core</artifactId> <version>1.0.0</version> 
@@ -206,6 +206,16 @@
 				<enabled>true</enabled>
 				<updatePolicy>never</updatePolicy>
 			</snapshots>
+		</repository>
+		
+		<!--
+			Dirty workaround for missing maven repo for google libs:
+			Copied the libraries into the project folder and linking to it locally.
+		-->
+		<repository>
+			<id>project.local</id>
+			<name>project</name>
+			<url>file:${project.basedir}/repo</url>
 		</repository>
 	</repositories>
 </project>
