@@ -8,6 +8,7 @@ import org.apache.thrift7.protocol.TProtocol;
 import org.apache.thrift7.transport.TFramedTransport;
 import org.apache.thrift7.transport.TSocket;
 import org.apache.thrift7.transport.TTransport;
+import org.apache.thrift7.transport.TTransportException;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -21,7 +22,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
  * @author Thomas Hunziker
  *
  */
-class Evaluation {
+public class Evaluation {
 	
 	public static void main(String[] args) throws IOException, TException {
 
@@ -65,6 +66,13 @@ class Evaluation {
 			}
 		}
 		
+		collectAndStoreStats(googleSpreadSheetName, googleUsername, googlePassword, jobName, nimbusHost, thriftPort);
+		
+	}
+
+
+	public static void collectAndStoreStats(String googleSpreadSheetName, String googleUsername, String googlePassword,
+			String jobName, String nimbusHost, int thriftPort) throws TTransportException {
 		// Create Thrift Client
 		TTransport transport = new TFramedTransport(new TSocket(nimbusHost, thriftPort));
 		TProtocol protocol = new TBinaryProtocol(transport);
@@ -80,7 +88,6 @@ class Evaluation {
 		aggregator.aggregateMessagePerHost();
 		
 		aggregator.sendFinishSignal();
-		
 	}
 	
 	

@@ -190,6 +190,7 @@ public final class Recorder implements TerminationWatcher {
 		
 		String identifier = getHostIdentifier();
 		
+		// TODO: is this still in use??
 		try {
 			zooKeeper.create(KATTS_MONITORING_FINISHED_ZK_ROOT_PATH + "/" + identifier, new byte[0], Ids.OPEN_ACL_UNSAFE,
 					CreateMode.PERSISTENT);

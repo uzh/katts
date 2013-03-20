@@ -59,6 +59,7 @@ public class TerminationMonitor implements Watcher {
 			throw new RuntimeException("Could not create ZooKeeper instance.", e1);
 		}
 		try {
+			// tell zookeeper, that we want to be informed about changes to this value
 			zooKeeper.exists(KATTS_TERMINATION_ZK_PATH, this);
 		} catch (KeeperException e) {
 			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
