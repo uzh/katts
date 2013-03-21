@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query xmlns="http://uzh.ch/ddis/katts/query">
+
+    <!-- Send every three second a heart beat. -->
+    <heartBeat interval="500" />
+
+
+    <!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
+    <fileSource id="tickerSource">
+        <files>
+            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" 
+                path="$KATTS_JOB_FOLDER/data/2001_all_wrds_crsp.sorted.relevant.triples.gz" />
+            <!--<file csvFieldDelimiter="," mimeType="text/comma-separated-values" 
+                path="$KATTS_JOB_FOLDER/data/2001_7ticker_wrds_crsp.sorted.triples" />-->
+<!--            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="/home/hunziker/Masterarbeit/2001_all_wrds_crsp.sorted.triples.gz" /> -->
+        </files>
+    </fileSource>
+
+    <fileSource id="contractSource">
+        <files>
+            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" 
+                path="$KATTS_JOB_FOLDER/data/2001_All_Contracts_Full_20120618.sorted.relevant.triples.gz" />
+            <!--<file csvFieldDelimiter="," mimeType="text/comma-separated-values" 
+                path="$KATTS_JOB_FOLDER/data/2001_5contracts.sorted.triples" /> -->
+<!--            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" path="/home/hunziker/Masterarbeit/2001_All_Contracts_Full_20120618.sorted.triples.gz" /> -->
+        </files>
+    </fileSource>
+
+
+    <!-- Pre-Filters for the ticker data -->
+    <tripleFilter groupOn="subject" applyOnSource="tickerSource" id="TripleFilter_TickerPRC">
+        <conditions>
+            <condition restriction="PRC" item="predicate" /> <!-- ticker price -->
+        </conditions>
+        <produces>
+            <stream id="tickerPrice">
+                <variable type="xs:double" name="ticker_price" referencesTo="object" />
+                <variable type="xs:string" name="ticker_id" referencesTo="subject" />
+            </stream>
+        </produces>
+    </tripleFilter>
+    <tripleFilter groupOn="subject" applyOnSource="tickerSource" id="TripleFilter_TickerCOMNAM">
+        <conditions>
+            <condition restriction="COMNAM" item="predicate" /> <!-- company name -->
+        </conditions>
+        <produces>
+            <stream id="tickerCompanyName">
+                <variable type="xs:string" name="company_name" referencesTo="object" />
+                <variable type="xs:string" name="ticker_id" referencesTo="subject" />
+            </stream>
+        </produces>
+    </tripleFilter>
+    <tripleFilter groupOn="subject" applyOnSource="tickerSource" id="TripleFilter_TICKER">
+        <conditions>
+            <condition restriction="TICKER" item="predicate" /> <!-- ticker symbol -->
+        </conditions>
+        <produces>
+            <stream id="tickerSymbol">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="object" />
+                <variable type="xs:string" name="ticker_id" referencesTo="subject" />
+            </stream>
+        </produces>
+    </tripleFilter>
+
+    <!-- Pre-Filters for contract data -->
+    <tripleFilter groupOn="subject" applyOnSource="contractSource" id="TripleFilter_ContractAgency">
+        <conditions>
+            <condition restriction="agencyid" item="predicate" /> <!-- agency -->
+        </conditions>
+        <produces>
+            <stream id="contractAgency">
+                <variable type="xs:string" name="agency_name" referencesTo="object" />
+                <variable type="xs:string" name="contract_id" referencesTo="subject" />
+            </stream>
+        </produces>
+    </tripleFilter>
+    <tripleFilter groupOn="subject" applyOnSource="contractSource" id="TripleFilter_ContractAmount">
+        <conditions>
+            <condition restriction="obligatedamount" item="predicate" /> <!-- contract amount -->
+        </conditions>
+        <produces>
+            <stream id="contractAmount">
+                <variable type="xs:double" name="contract_amount" referencesTo="object" />
+                <variable type="xs:string" name="contract_id" referencesTo="subject" />
+            </stream>
+        </produces>
+    </tripleFilter>
+    <tripleFilter groupOn="subject" applyOnSource="contractSource" id="TripleFilter_ContractCompany">
+        <conditions>
+            <condition restriction="vendorname" item="predicate" /> <!-- Contractor -->
+        </conditions>
+        <produces>
+            <stream id="contractCompany">
+                <variable type="xs:string" name="company_name" referencesTo="object" />
+                <variable type="xs:string" name="contract_id" referencesTo="subject" />
+            </stream>
+        </produces>
+    </tripleFilter>
+    <tripleFilter groupOn="subject" applyOnSource="contractSource" id="TripleFilter_SignedDate">
+        <conditions>
+            <condition restriction="signeddate" item="predicate" /> <!-- Signed Date -->
+        </conditions>
+        <produces>
+            <stream id="contractSignedDate">
+                <variable type="xs:string" name="signed_date" referencesTo="object" />
+                <variable type="xs:string" name="contract_id" referencesTo="subject" />
+            </stream>
+        </produces>
+    </tripleFilter>
+
+    <!-- Join the ticker data together -->
+<!--    <temporalJoin id="TemporalJoin_Ticker"> -->
+<!--        <consumes> -->
+<!--            <stream maxBufferSize="5" streamId="tickerSymbol"> -->
+<!--                <variableGrouping> -->
+<!--                    <groupOn variableName="ticker_id" /> -->
+<!--                </variableGrouping> -->
+<!--            </stream> -->
+<!--            <stream maxBufferSize="5" streamId="tickerPrice"> -->
+<!--                <variableGrouping> -->
+<!--                    <groupOn variableName="ticker_id" /> -->
+<!--                </variableGrouping> -->
+<!--            </stream> -->
+<!--            <stream maxBufferSize="5" streamId="tickerCompanyName"> -->
+<!--                <variableGrouping> -->
+<!--                    <groupOn variableName="ticker_id" /> -->
+<!--                </variableGrouping> -->
+<!--            </stream> -->
+<!--        </consumes> -->
+
+<!--        <evictBefore> -->
+<!--            <evict from="*" on="*" if="#from.endDate lt #on.startDate" /> -->
+<!--        </evictBefore> -->
+
+<!--        <sameValue onField="ticker_id" /> -->
+
+<!--        <evictAfter> -->
+<!--        </evictAfter> -->
+
+<!--        <produces> -->
+<!--            <stream id="tickerStream"> -->
+<!--                <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" /> -->
+<!--                <variable type="xs:double" name="ticker_price" referencesTo="ticker_price" /> -->
+<!--                <variable type="xs:string" name="company_name" referencesTo="company_name" /> -->
+<!--            </stream> -->
+<!--        </produces> -->
+<!--    </temporalJoin> -->
+
+  
+    <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="ticker_id" id="Ticker_Join">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerSymbol">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id" />
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="tickerPrice">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id" />
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="tickerCompanyName">
+                <variableGrouping>
+                    <groupOn variableName="ticker_id" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream id="tickerStream">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" />
+                <variable type="xs:double" name="ticker_price" referencesTo="ticker_price" />
+                <variable type="xs:string" name="company_name" referencesTo="company_name" />
+            </stream>
+        </produces>
+    </oneFieldJoin>
+
+
+    <!-- Join together contract data -->
+<!--    <temporalJoin id="TemporalJoin_Contract"> -->
+<!--        <consumes> -->
+<!--            <stream maxBufferSize="5" streamId="contractAgency"> -->
+<!--                <variableGrouping> -->
+<!--                    <groupOn variableName="contract_id" /> -->
+<!--                </variableGrouping> -->
+<!--            </stream> -->
+<!--            <stream maxBufferSize="5" streamId="contractAmount"> -->
+<!--                <variableGrouping> -->
+<!--                    <groupOn variableName="contract_id" /> -->
+<!--                </variableGrouping> -->
+<!--            </stream> -->
+<!--            <stream maxBufferSize="5" streamId="contractCompany"> -->
+<!--                <variableGrouping> -->
+<!--                    <groupOn variableName="contract_id" /> -->
+<!--                </variableGrouping> -->
+<!--            </stream> -->
+<!--        </consumes> -->
+
+<!--        <evictBefore> -->
+<!--            <evict from="*" on="*" if="#from.endDate lt #on.startDate" /> -->
+<!--        </evictBefore> -->
+
+<!--        <sameValue onField="contract_id" /> -->
+
+<!--        <evictAfter> -->
+<!--        </evictAfter> -->
+
+<!--        <produces> -->
+<!--            <stream id="contractStream"> -->
+<!--                <variable type="xs:string" name="contract_id" referencesTo="contract_id" /> -->
+<!--                <variable type="xs:double" name="contract_amount" referencesTo="contract_amount" /> -->
+<!--                <variable type="xs:string" name="company_name" referencesTo="company_name" /> -->
+<!--                <variable type="xs:string" name="contract_agency" referencesTo="agency_name" /> -->
+<!--            </stream> -->
+<!--        </produces> -->
+<!--    </temporalJoin> -->
+
+    <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="contract_id" id="Contract_Join">
+        <consumes>
+            <stream maxBufferSize="5" streamId="contractAgency">
+                <variableGrouping>
+                    <groupOn variableName="contract_id" />
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="contractAmount">
+                <variableGrouping>
+                    <groupOn variableName="contract_id" />
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="contractCompany">
+                <variableGrouping>
+                    <groupOn variableName="contract_id" />
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="contractSignedDate">
+                <variableGrouping>
+                    <groupOn variableName="contract_id" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream id="contractStream">
+                <variable type="xs:string" name="contract_id" referencesTo="contract_id" />
+                <variable type="xs:double" name="contract_amount" referencesTo="contract_amount" />
+                <variable type="xs:string" name="company_name" referencesTo="company_name" />
+                <variable type="xs:string" name="contract_agency" referencesTo="agency_name" />
+                <variable type="xs:string" name="signed_date" referencesTo="signed_date" />
+            </stream>
+        </produces>
+    </oneFieldJoin>
+
+    <partitioner slideSize="P1D" windowSize="P20D" partitionOn="ticker_symbol" aggregateOn="ticker_price" id="Partitioner">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStream">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStream" id="tickerStreamMinMax">
+                <variable type="xs:double" name="ticker_min" referencesTo="min" />
+                <variable type="xs:double" name="ticker_max" referencesTo="max" />
+            </stream>
+        </produces>
+        <components>
+            <minPartitioner />
+            <maxPartitioner />
+        </components>
+    </partitioner>
+
+
+
+    <expressionFunction expression="#ticker_max / #ticker_min" id="expressionFunction">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStreamMinMax">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStreamMinMax" id="tickerStreamfct">
+                <variable type="xs:double" name="ticker_fct" referencesTo="result" />
+            </stream>
+        </produces>
+    </expressionFunction>
+
+
+
+    <expressionFilter expression="#ticker_fct > 2" id="expressionFilter">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStreamfct">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStreamfct" id="filteredTickerStream" />
+        </produces>
+    </expressionFilter>
+
+    <!-- Join together ticker and contract data -->
+    <temporalJoin id="TemporalJoin_TickerAndContractData">
+        <consumes>
+            <stream maxBufferSize="5" streamId="contractStream">
+                <variableGrouping>
+                    <groupOn variableName="company_name" />
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="filteredTickerStream">
+                <variableGrouping>
+                    <groupOn variableName="company_name" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+
+        <evictBefore>
+            <!-- Evict old intervals -->
+            <evict from="filteredTickerStream" on="filteredTickerStream" if="#from.endDate lt #on.endDate" />
+            <!-- When we receive bindings on the aggregated ticker stream, we can remove all contracts that are older than the start date of the aggregated value, 
+                that we've just received. -->
+            <evict from="contractStream" on="filteredTickerStream" if="#from.endDate lt #on.startDate" />
+            <!-- When we receive bindings on the contract stream, we can remove all aggregated value bindings that are older than the contract item, that we've 
+                just received. -->
+            <evict from="filteredTickerStream" on="contractStream" if="#from.startDate lt #on.startDate" />
+            <!-- When we receive a contract value, we can remove all contracts that are more than 20 days old. -->
+            <evict from="contractStream" on="contractStream" if="(#from.endDate + 20 * 24 * 3600 * 1000) lt #on.startDate" />
+        </evictBefore>
+
+        <sameValue onFields="company_name" />
+
+        <produces>
+            <stream id="tickerAndContractStream">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" />
+                <variable type="xs:string" name="company_name" referencesTo="company_name" />
+                <variable type="xs:string" name="ticker_fct" referencesTo="ticker_fct" />
+                <variable type="xs:string" name="signed_date" referencesTo="signed_date" />
+                <variable type="xs:string" name="contract_id" referencesTo="contract_id" />
+            </stream>
+        </produces>
+    </temporalJoin>
+
+
+    <fileOutput filePath="$KATTS_JOB_FOLDER/data/output.csv" id="fileOutput">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerAndContractStream">
+                <shuffleGrouping />
+            </stream>
+        </consumes>
+    </fileOutput>
+
+    <!-- <fileOutput filePath="$KATTS_JOB_FOLDER/data/output.contractStream.csv" id="fileOutputDebug1">
+        <consumes>
+            <stream maxBufferSize="5" streamId="contractStream">
+                <shuffleGrouping />
+            </stream>
+        </consumes>
+    </fileOutput>
+    <fileOutput filePath="$KATTS_JOB_FOLDER/data/output.filteredTickerStream.csv" id="fileOutputDebug2">
+        <consumes>
+            <stream maxBufferSize="5" streamId="filteredTickerStream">
+                <shuffleGrouping />
+            </stream>
+        </consumes>
+    </fileOutput>
+    <fileOutput filePath="$KATTS_JOB_FOLDER/data/output.tickerStream.csv" id="fileOutputDebug3">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStream">
+                <shuffleGrouping />
+            </stream>
+        </consumes>
+    </fileOutput> -->
+
+    <termination />
+
+</query>
