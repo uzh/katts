@@ -29,8 +29,10 @@ public class TaskMonitor extends BaseTaskHook {
 
 	@Override
 	public void emit(EmitInfo info) {
-		for (Integer taskId : info.outTasks) {
-			recorder.recordMessageSending(thisTaskId, taskId);
+		if (!info.stream.equals("heartbeat")) {
+			for (Integer taskId : info.outTasks) {
+				recorder.recordMessageSending(thisTaskId, taskId);
+			}
 		}
 	}
 

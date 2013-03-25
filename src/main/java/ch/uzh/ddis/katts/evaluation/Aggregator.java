@@ -1,9 +1,11 @@
 package ch.uzh.ddis.katts.evaluation;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.thrift7.TException;
 import org.apache.thrift7.protocol.TProtocol;
@@ -17,8 +19,6 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.generated.ExecutorSpecificStats;
-import backtype.storm.generated.ExecutorSummary;
 import backtype.storm.generated.Nimbus;
 import backtype.storm.generated.Nimbus.Client;
 import backtype.storm.generated.Nimbus.Client.Factory;
@@ -42,6 +42,8 @@ class Aggregator {
 
 	private final Logger log = LoggerFactory.getLogger(StarterMonitor.class);
 
+	private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+
 	private String jobName;
 	private ZooKeeper zooKeeper;
 	private TProtocol protocol;
@@ -49,14 +51,13 @@ class Aggregator {
 
 	private TaskResolver taskResolver;
 
-	private GoogleSpreadsheet googleSpreadsheet;
+	private GoogleSpreadsheetHelper googleSpreadsheet;
 
 	private TopologySummary topologySummary = null;
 	private StormTopology topology = null;
 	private TopologyInfo topologyInfo = null;
 
-	@SuppressWarnings("rawtypes")
-	private Map conf;
+	private Map<?,?> conf;
 
 	public static final String KATTS_EVALUATION_COMPLETED_ZK_PATH = "/katts_evaluation_completed";
 
@@ -92,6 +93,9 @@ class Aggregator {
 		long totalRemoteMessages = 0;
 		long totalLocalMessages = 0;
 		long totalMessages = 0;
+		Map<String, Object> data = new HashMap<String, Object>();
+		long startTime = Long.valueOf(readValueFromZK(StarterMonitor.KATTS_STARTING_TIME_ZK_PATH));
+		long endTime = Long.valueOf(readValueFromZK(TerminationMonitor.KATTS_TERMINATION_ZK_PATH));
 
 		SankeyNetworkDataCollector sankeyHosts = new SankeyNetworkDataCollector();
 		SankeyNetworkDataCollector sankeyTasks = new SankeyNetworkDataCollector();
@@ -152,26 +156,26 @@ class Aggregator {
 		}
 
 		// Get total emitted tuples by spouts
-		List<ExecutorSummary> executors = this.topologyInfo.get_executors();
+		//List<ExecutorSummary> executors = this.topologyInfo.get_executors();
 		long numberOfMessagesEmittedBySpouts = 0;
-		for (ExecutorSummary executor : executors) {
-			try {
-			ExecutorSpecificStats specific = executor.get_stats().get_specific();
-				if (specific.get_spout() != null) {
-					Map<String, Long> result = executor.get_stats().get_emitted().get(":all-time");
-					Entry<String, Long> entry = result.entrySet().iterator().next();
-					numberOfMessagesEmittedBySpouts += (long) entry.getValue();
-				}
-
-				if (specific.get_bolt() != null) {
-				}
-
-			} catch (RuntimeException e) {
-				// Ignore this exception. This exception can occur because the executor is not a spout
-				log.warn("Could not read spout stats", e);
-			}
-
-		}
+		// for (ExecutorSummary executor : executors) {
+		// try {
+		// ExecutorSpecificStats specific = executor.get_stats().get_specific();
+		// if (specific.get_spout() != null) {
+		// Map<String, Long> result = executor.get_stats().get_emitted().get(":all-time");
+		// Entry<String, Long> entry = result.entrySet().iterator().next();
+		// numberOfMessagesEmittedBySpouts += (long) entry.getValue();
+		// }
+		//
+		// if (specific.get_bolt() != null) {
+		// }
+		//
+		// } catch (RuntimeException e) {
+		// // Ignore this exception. This exception can occur because the executor is not a spout
+		// log.warn("Could not read spout stats", e);
+		// }
+		//
+		// }
 
 		int numberOfNodes;
 		try {
@@ -182,32 +186,36 @@ class Aggregator {
 		long numberOfProcessors = (Long) conf.get(TopologyBuilder.NUMBERS_OF_PROCESSORS);
 		long numberOfProcessorsPerNode = 0;
 		try {
+			if (numberOfNodes == 0) {
+				numberOfNodes = 1;
+			}
 			numberOfProcessorsPerNode = numberOfProcessors / numberOfNodes;
 		} catch (Exception e) {
 			log.error(e.getMessage());
 		}
 
-		JobData job = new JobData();
+		data.put("job-name", jobName);
+		data.put("start-date", this.df.format(new Date(startTime)));
+		data.put("end-date", this.df.format(new Date(endTime)));
+		data.put("duration", (endTime - startTime) / 1000);
+		data.put("total-messages-processed", totalMessages);
+		data.put("total-remote-messages", totalRemoteMessages);
+		data.put("total-local-messages", totalLocalMessages);
+		data.put("number-of-nodes", numberOfNodes);
+		data.put("number-of-processors", numberOfProcessors);
+		data.put("number-of-processors-per-node", numberOfProcessorsPerNode);
+		data.put("expected-number-of-tasks", (Long) conf.get(TopologyBuilder.KATTS_EXPECTED_NUMBER_OF_EXECUTORS));
+		data.put("factor-of-threads-per-processor", (Double) conf.get(TopologyBuilder.KATTS_FACTOR_OF_THREADS_CONFIG));
+		data.put("number-of-triples-processed", numberOfMessagesEmittedBySpouts); // that's wrong! no?
+		data.put("sankey-tasks-json", sankeyTasks.toJson());
+		data.put("sankey-components-json", sankeyComponents.toJson());
+		data.put("sankey-hosts-json", sankeyHosts.toJson());
 
-		job.setJobName(this.jobName);
-		job.setExpectedNumberOfTasks((Long) conf.get(TopologyBuilder.KATTS_EXPECTED_NUMBER_OF_EXECUTORS));
-		job.setJobEnd(Long.valueOf(readValueFromZK(TerminationMonitor.KATTS_TERMINATION_ZK_PATH)));
-		job.setJobStart(Long.valueOf(readValueFromZK(StarterMonitor.KATTS_STARTING_TIME_ZK_PATH)));
-		job.setNumberOfNodes(numberOfNodes);
-		job.setNumberOfProcessors(numberOfProcessors);
-		job.setNumberOfProcessorsPerNode(numberOfProcessorsPerNode);
+		// data.put("number-of-tuples-outputed", jobData.getNumberOfTuplesOutputed());
 		// job.setNumberOfTuplesOutputed(Long.valueOf(readValueFromZK(TerminationMonitor.KATTS_TUPLES_OUTPUTTED_ZK_PATH)));
-		job.setTotalLocalMessages(totalLocalMessages);
-		job.setTotalRemoteMessages(totalRemoteMessages);
-		job.setTotalMessages(totalMessages);
-		job.setFactorOfThreadsPerProcessor((Double) conf.get(TopologyBuilder.KATTS_FACTOR_OF_THREADS_CONFIG));
-		job.setNumberOfTriplesProcessed(numberOfMessagesEmittedBySpouts);
-		job.setSankeyDataComponents(sankeyComponents.toJson());
-		job.setSankeyDataHosts(sankeyHosts.toJson());
-		job.setSankeyDataTasks(sankeyTasks.toJson());
 
 		try {
-			googleSpreadsheet.addRow(job);
+			googleSpreadsheet.addRow(data);
 		} catch (Exception e) {
 			log.error("Error while trying to write to Google spreadsheet", e);
 		}
@@ -264,18 +272,17 @@ class Aggregator {
 		}
 
 		private void checkIfFinished() {
-			synchronized (isFinished) {
-				List<String> children = null;
-				try {
-					children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, this);
-				} catch (KeeperException e) {
-					throw new RuntimeException("Can't access the monitoring finish znode.", e);
-				} catch (InterruptedException e) {
-					throw new RuntimeException("Can't access the monitoring finish znode, the thread was interrupted.",
-							e);
-				}
+			List<String> children = null;
+			try {
+				children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, this);
+			} catch (KeeperException e) {
+				throw new RuntimeException("Can't access the monitoring finish znode.", e);
+			} catch (InterruptedException e) {
+				throw new RuntimeException("Can't access the monitoring finish znode, the thread was interrupted.", e);
+			}
 
-				if (children.size() >= this.supervisorSize) {
+			if (children.size() >= this.supervisorSize) {
+				synchronized (isFinished) {
 					isFinished = true;
 					isFinished.notify();
 				}
@@ -369,7 +376,7 @@ class Aggregator {
 	private void getStormConfig() {
 
 		try {
-			conf = (Map) JSONValue.parse(client.getTopologyConf(this.topologyInfo.get_id()));
+			conf = (Map<?,?>) JSONValue.parse(client.getTopologyConf(this.topologyInfo.get_id()));
 		} catch (NotAliveException e1) {
 			throw new RuntimeException(
 					"Could not read the topology configuration, because the topology seems not to be active.", e1);
@@ -379,11 +386,11 @@ class Aggregator {
 
 	}
 
-	public GoogleSpreadsheet getGoogleSpreadsheet() {
+	public GoogleSpreadsheetHelper getGoogleSpreadsheet() {
 		return googleSpreadsheet;
 	}
 
-	public void setGoogleSpreadsheet(GoogleSpreadsheet googleSpreadsheet) {
+	public void setGoogleSpreadsheet(GoogleSpreadsheetHelper googleSpreadsheet) {
 		this.googleSpreadsheet = googleSpreadsheet;
 	}
 

@@ -35,8 +35,6 @@ public class Evaluation {
 		String googleUsername = null;
 		String googlePassword = null;
 		String jobName = null;
-		String zooKeeperServer = "localhost";
-		String zooKeeperPort = "2181";
 		String nimbusHost = "localhost";
 		int thriftPort = 6627;
 		
@@ -81,7 +79,7 @@ public class Evaluation {
 		Aggregator aggregator = new Aggregator(protocol, jobName);
 		
 		if (googleSpreadSheetName != null && googleUsername != null && googlePassword != null) {
-			GoogleSpreadsheet spreadsheet = new GoogleSpreadsheet(googleUsername, googlePassword, googleSpreadSheetName);
+			GoogleSpreadsheetHelper spreadsheet = new GoogleSpreadsheetHelper(googleUsername, googlePassword, googleSpreadSheetName);
 			aggregator.setGoogleSpreadsheet(spreadsheet);
 		}
 
