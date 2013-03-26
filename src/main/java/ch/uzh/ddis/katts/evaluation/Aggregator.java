@@ -2,10 +2,13 @@ package ch.uzh.ddis.katts.evaluation;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.thrift7.TException;
 import org.apache.thrift7.protocol.TProtocol;
@@ -57,7 +60,7 @@ class Aggregator {
 	private StormTopology topology = null;
 	private TopologyInfo topologyInfo = null;
 
-	private Map<?,?> conf;
+	private Map<?, ?> conf;
 
 	public static final String KATTS_EVALUATION_COMPLETED_ZK_PATH = "/katts_evaluation_completed";
 
@@ -75,14 +78,17 @@ class Aggregator {
 	}
 
 	public void aggregateMessagePerHost() {
-
-		// Since the monitoring data is written, when the query is completed, we need to wait until this data is written
-		// to ZooKeeper.
-		waitForMonitoringData();
-
 		List<String> children = null;
+
 		try {
-			children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, false);
+			if (zooKeeper.exists(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, false) != null) {
+				/*
+				 * Since the monitoring data is written, when the query is completed, we need to wait until this data is
+				 * written to ZooKeeper.
+				 */
+				waitForMonitoringData();
+				children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, false);
+			}
 		} catch (KeeperException e) {
 			throw new RuntimeException("Could not load the monitoring message records from ZooKeeper.", e);
 		} catch (InterruptedException e) {
@@ -90,6 +96,7 @@ class Aggregator {
 					"Could not load the monitoring message records from ZooKeeper, because the thread was interrupted.",
 					e);
 		}
+		
 		long totalRemoteMessages = 0;
 		long totalLocalMessages = 0;
 		long totalMessages = 0;
@@ -101,62 +108,64 @@ class Aggregator {
 		SankeyNetworkDataCollector sankeyTasks = new SankeyNetworkDataCollector();
 		SankeyNetworkDataCollector sankeyComponents = new SankeyNetworkDataCollector();
 
-		for (String child : children) {
+		if (children != null) {
+			for (String child : children) {
 
-			String[] splits = child.split("___");
-			String senderTaskId = splits[0];
-			String receiverTaskId = splits[1];
-			String messagesSent = null;
+				String[] splits = child.split("___");
+				String senderTaskId = splits[0];
+				String receiverTaskId = splits[1];
+				String messagesSent = null;
 
-			String sourceHost = taskResolver.getHostnameByTask(senderTaskId);
-			String destinationHost = taskResolver.getHostnameByTask(receiverTaskId);
+				String sourceHost = taskResolver.getHostnameByTask(senderTaskId);
+				String destinationHost = taskResolver.getHostnameByTask(receiverTaskId);
 
-			String sourceComponent = taskResolver.getComponentIdByTask(senderTaskId);
-			String destinationComponent = taskResolver.getComponentIdByTask(receiverTaskId);
+				String sourceComponent = taskResolver.getComponentIdByTask(senderTaskId);
+				String destinationComponent = taskResolver.getComponentIdByTask(receiverTaskId);
 
-			if (sourceHost == null) {
-				sourceHost = "undefined-host-name";
+				if (sourceHost == null) {
+					sourceHost = "undefined-host-name";
+				}
+
+				if (destinationHost == null) {
+					destinationHost = "undefined-host-name";
+				}
+
+				if (sourceComponent == null) {
+					sourceComponent = "undefined-component";
+				}
+
+				if (destinationComponent == null) {
+					destinationComponent = "undefined-component";
+				}
+
+				try {
+					messagesSent = new String(zooKeeper.getData(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH + "/"
+							+ child, false, null));
+				} catch (KeeperException e) {
+					throw new RuntimeException("Could not read the message cound from the znode.", e);
+				} catch (InterruptedException e) {
+					throw new RuntimeException(
+							"Could not read the message cound from the znode, because the thread was interrupted.", e);
+				}
+
+				long messageCount = Long.valueOf(messagesSent);
+
+				// Build sankey maps
+				sankeyTasks.updateEdgeWeights(senderTaskId, receiverTaskId, messageCount);
+				sankeyHosts.updateEdgeWeights(sourceHost, destinationHost, messageCount);
+				sankeyComponents.updateEdgeWeights(sourceComponent, destinationComponent, messageCount);
+
+				if (sourceHost.equals(destinationHost)) {
+					totalLocalMessages = totalLocalMessages + messageCount;
+				} else {
+					totalRemoteMessages = totalRemoteMessages + messageCount;
+				}
+				totalMessages = totalMessages + messageCount;
 			}
-
-			if (destinationHost == null) {
-				destinationHost = "undefined-host-name";
-			}
-
-			if (sourceComponent == null) {
-				sourceComponent = "undefined-component";
-			}
-
-			if (destinationComponent == null) {
-				destinationComponent = "undefined-component";
-			}
-
-			try {
-				messagesSent = new String(zooKeeper.getData(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH + "/"
-						+ child, false, null));
-			} catch (KeeperException e) {
-				throw new RuntimeException("Could not read the message cound from the znode.", e);
-			} catch (InterruptedException e) {
-				throw new RuntimeException(
-						"Could not read the message cound from the znode, because the thread was interrupted.", e);
-			}
-
-			long messageCount = Long.valueOf(messagesSent);
-
-			// Build sankey maps
-			sankeyTasks.updateEdgeWeights(senderTaskId, receiverTaskId, messageCount);
-			sankeyHosts.updateEdgeWeights(sourceHost, destinationHost, messageCount);
-			sankeyComponents.updateEdgeWeights(sourceComponent, destinationComponent, messageCount);
-
-			if (sourceHost.equals(destinationHost)) {
-				totalLocalMessages = totalLocalMessages + messageCount;
-			} else {
-				totalRemoteMessages = totalRemoteMessages + messageCount;
-			}
-			totalMessages = totalMessages + messageCount;
 		}
 
 		// Get total emitted tuples by spouts
-		//List<ExecutorSummary> executors = this.topologyInfo.get_executors();
+		// List<ExecutorSummary> executors = this.topologyInfo.get_executors();
 		long numberOfMessagesEmittedBySpouts = 0;
 		// for (ExecutorSummary executor : executors) {
 		// try {
@@ -231,31 +240,26 @@ class Aggregator {
 
 		MonitoringFinishedWaiter waiter = new MonitoringFinishedWaiter(supervisorSize);
 
-		List<String> children = null;
-		try {
-			children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, waiter);
-		} catch (KeeperException e) {
-			throw new RuntimeException("Cant access the znode for monitoring finished barrier.", e);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(
-					"Cant access the znode for monitoring finished barrier, because the thread was interrupted.", e);
-		}
-
-		if (children.size() >= supervisorSize) {
-			return;
-		} else {
-			waiter.run();
-		}
-
+		waiter.waitUntilFinished();
 	}
 
-	private class MonitoringFinishedWaiter implements Watcher, Runnable {
+	private class MonitoringFinishedWaiter implements Watcher {
 
-		private Boolean isFinished = new Boolean(false);
+		private Lock lock = new ReentrantLock();
 		private int supervisorSize = 0;
 
 		public MonitoringFinishedWaiter(int supervisorSize) {
 			this.supervisorSize = supervisorSize;
+			this.lock.lock(); // block calls, to waitUntilFinished();
+			try { // attach watcher
+				zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, this);
+			} catch (KeeperException e) {
+				throw new RuntimeException("Can't access the monitoring finish znode.", e);
+			} catch (InterruptedException e) {
+				throw new RuntimeException("Can't access the monitoring finish znode, the thread was interrupted.", e);
+			}
+			checkIfFinished(); // check if we should already release the lock
+
 		}
 
 		@Override
@@ -274,7 +278,7 @@ class Aggregator {
 		private void checkIfFinished() {
 			List<String> children = null;
 			try {
-				children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, this);
+				children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, null);
 			} catch (KeeperException e) {
 				throw new RuntimeException("Can't access the monitoring finish znode.", e);
 			} catch (InterruptedException e) {
@@ -282,23 +286,12 @@ class Aggregator {
 			}
 
 			if (children.size() >= this.supervisorSize) {
-				synchronized (isFinished) {
-					isFinished = true;
-					isFinished.notify();
-				}
+				this.lock.unlock();
 			}
 		}
 
-		@Override
-		public void run() {
-			synchronized (isFinished) {
-				try {
-					isFinished.wait();
-				} catch (InterruptedException e) {
-					throw new RuntimeException("Can't wait for finishing the monitoring, the thread was interrupted.",
-							e);
-				}
-			}
+		public void waitUntilFinished() {
+			this.lock.lock();
 		}
 
 	}
@@ -376,7 +369,7 @@ class Aggregator {
 	private void getStormConfig() {
 
 		try {
-			conf = (Map<?,?>) JSONValue.parse(client.getTopologyConf(this.topologyInfo.get_id()));
+			conf = (Map<?, ?>) JSONValue.parse(client.getTopologyConf(this.topologyInfo.get_id()));
 		} catch (NotAliveException e1) {
 			throw new RuntimeException(
 					"Could not read the topology configuration, because the topology seems not to be active.", e1);

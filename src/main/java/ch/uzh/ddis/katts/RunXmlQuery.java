@@ -112,7 +112,6 @@ public class RunXmlQuery {
 		}
 
 		if (monitoring) {
-
 			List<String> hookClass = new ArrayList<String>();
 			hookClass.add("ch.uzh.ddis.katts.monitoring.TaskMonitor");
 			conf.put(Config.TOPOLOGY_AUTO_TASK_HOOKS, hookClass);
