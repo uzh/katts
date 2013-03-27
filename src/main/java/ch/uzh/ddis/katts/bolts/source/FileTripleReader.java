@@ -206,7 +206,7 @@ public class FileTripleReader implements IRichBolt {
 	 * 
 	 * @param sourceIndex
 	 */
-	private void buildSources(int sourceIndex) {
+	protected void buildSources(int sourceIndex) {
 		File file = configuration.getFiles().get(sourceIndex);
 		if (file.getMimeType().equals("text/comma-separated-values")) {
 			source = new CSVSource();
@@ -252,6 +252,38 @@ public class FileTripleReader implements IRichBolt {
 
 	@Override
 	public void cleanup() {
+	}
+
+	/**
+	 * {@link FileTripleReader#source}
+	 * @return the source
+	 */
+	protected Source getSource() {
+		return source;
+	}
+
+	/**
+	 * {@link FileTripleReader#source}
+	 * @param source the source to set
+	 */
+	protected void setSource(Source source) {
+		this.source = source;
+	}
+
+	/**
+	 * {@link FileTripleReader#starterMonitor}
+	 * @param starterMonitor the starterMonitor to set
+	 */
+	protected void setStarterMonitor(StarterMonitor starterMonitor) {
+		this.starterMonitor = starterMonitor;
+	}
+
+	/**
+	 * {@link FileTripleReader#collector}
+	 * @param collector the collector to set
+	 */
+	protected void setCollector(OutputCollector collector) {
+		this.collector = collector;
 	}
 
 }
