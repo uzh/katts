@@ -79,13 +79,13 @@ class Aggregator {
 		List<String> children = null;
 
 		try {
-			if (zooKeeper.exists(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, false) != null) {
+			if (zooKeeper.exists(Recorder.MESSAGE_RECORDER_PATH, false) != null) {
 				/*
 				 * Since the monitoring data only starts to be sent to zookeeper after the query is completed, we need
 				 * to wait until this data is written to ZooKeeper.
 				 */
 				waitForMonitoringData();
-				children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, false);
+				children = zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_PATH, false);
 			}
 		} catch (KeeperException e) {
 			throw new RuntimeException("Could not load the monitoring message records from ZooKeeper.", e);
@@ -137,7 +137,7 @@ class Aggregator {
 				}
 
 				try {
-					messagesSent = new String(zooKeeper.getData(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH + "/"
+					messagesSent = new String(zooKeeper.getData(Recorder.MESSAGE_RECORDER_PATH + "/"
 							+ child, false, null));
 				} catch (KeeperException e) {
 					throw new RuntimeException("Could not read the message cound from the znode.", e);
@@ -267,7 +267,7 @@ class Aggregator {
 			this.supervisorSize = supervisorSize;
 
 			try { // attach watcher
-				zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, this);
+				zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_FINISHED_PATH, this);
 			} catch (KeeperException e) {
 				throw new RuntimeException("Can't access the monitoring finish znode.", e);
 			} catch (InterruptedException e) {
@@ -293,7 +293,7 @@ class Aggregator {
 		private void checkIfFinished() {
 			List<String> children = null;
 			try {
-				children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, null);
+				children = zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_FINISHED_PATH, null);
 			} catch (KeeperException e) {
 				throw new RuntimeException("Can't access the monitoring finish znode.", e);
 			} catch (InterruptedException e) {

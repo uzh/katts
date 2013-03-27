@@ -35,9 +35,18 @@ public final class Recorder implements TerminationWatcher {
 
 	private static Recorder instance;
 
-	public static final String KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH = "/katts_message_monitoring";
-	public static final String KATTS_STORM_CONFIGURATION_ZK_PATH = "/katts_storm_configuration";
-	public static final String KATTS_MONITORING_FINISHED_ZK_ROOT_PATH = "/katts_monitoring_finished";
+	/**
+	 * For each host there is a subdirecory in this path containing all the sending data for that host.
+	 */
+	public static final String MESSAGE_RECORDER_PATH = "/message_recorder";
+	//public static final String KATTS_STORM_CONFIGURATION_ZK_PATH = "/katts_storm_configuration";
+	
+	/**
+	 * Whenever all the data for one host has fully been written into zookeeper, we write the name
+	 * of said host into this folder. Therefore, if there is an entry for each supervisor host
+	 * in this path, we can safely assume that all data has been stored in zookeeper.
+	 */
+	public static final String MESSAGE_RECORDER_FINISHED_PATH = "/message_recorder_finished";
 
 	private String monitoringPath;
 	private String topologyName;
@@ -73,7 +82,7 @@ public final class Recorder implements TerminationWatcher {
 	private void createMonitoringRoot() {
 
 		try {
-			zooKeeper.create(KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
+			zooKeeper.create(MESSAGE_RECORDER_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
 					CreateMode.PERSISTENT);
 		} catch (KeeperException e) {
 			if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
@@ -93,7 +102,7 @@ public final class Recorder implements TerminationWatcher {
 
 		// Write the root path for the monitoring termination barrier
 		try {
-			zooKeeper.create(KATTS_MONITORING_FINISHED_ZK_ROOT_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
+			zooKeeper.create(MESSAGE_RECORDER_FINISHED_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
 					CreateMode.PERSISTENT);
 		} catch (KeeperException e) {
 			if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
@@ -176,7 +185,7 @@ public final class Recorder implements TerminationWatcher {
 			String receiver = ((Integer) keys[1]).toString();
 			String count = Long.toString((Long) messageCounter.get(next));
 
-			String path = new StringBuilder().append(KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH).append("/").append(sender)
+			String path = new StringBuilder().append(MESSAGE_RECORDER_PATH).append("/").append(sender)
 					.append("___").append(receiver).toString();
 
 			try {
@@ -190,9 +199,8 @@ public final class Recorder implements TerminationWatcher {
 		
 		String identifier = getHostIdentifier();
 		
-		// TODO: is this still in use??
 		try {
-			zooKeeper.create(KATTS_MONITORING_FINISHED_ZK_ROOT_PATH + "/" + identifier, new byte[0], Ids.OPEN_ACL_UNSAFE,
+			zooKeeper.create(MESSAGE_RECORDER_FINISHED_PATH + "/" + identifier, new byte[0], Ids.OPEN_ACL_UNSAFE,
 					CreateMode.PERSISTENT);
 		} catch (KeeperException e) {
 			throw new RuntimeException(String.format("Can't create the finish ZooKeeper entry for host '%1s'.", identifier), e);
