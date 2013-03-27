@@ -19,7 +19,7 @@
   stroke-opacity: .5;
 }
 </style>
-
+<title>components45hb</title>
 <body>
 <p id="chart">
 <script type="text/javascript" src="http://d3js.org/d3.v2.min.js"></script>
@@ -51,7 +51,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-graph = JSON.parse('{"nodes":[{"name":"TripleFilter_ContractAmount"},{"name":"Contract_Join"},{"name":"TripleFilter_ContractCompany"},{"name":"TripleFilter_SignedDate"},{"name":"TemporalJoin_TickerAndContractData"},{"name":"Ticker_Join"},{"name":"Partitioner"},{"name":"fileOutput"},{"name":"termination_bolt"},{"name":"TripleFilter_TickerPRC"},{"name":"contractSource"},{"name":"heartbeat"},{"name":"tickerSource"},{"name":"TripleFilter_ContractAgency"},{"name":"expressionFunction"},{"name":"TripleFilter_TickerCOMNAM"},{"name":"expressionFilter"},{"name":"TripleFilter_TICKER"}],"links":[{"source":12,"value":64060,"target":9},{"source":7,"value":6,"target":8},{"source":16,"value":164,"target":4},{"source":10,"value":865,"target":0},{"source":1,"value":29,"target":4},{"source":10,"value":865,"target":2},{"source":11,"value":6,"target":12},{"source":3,"value":29,"target":1},{"source":17,"value":1656,"target":5},{"source":14,"value":1640,"target":16},{"source":15,"value":1656,"target":5},{"source":2,"value":29,"target":1},{"source":12,"value":64060,"target":17},{"source":5,"value":1648,"target":6},{"source":6,"value":1640,"target":14},{"source":12,"value":64060,"target":15},{"source":0,"value":29,"target":1},{"source":13,"value":29,"target":1},{"source":11,"value":6,"target":10},{"source":10,"value":865,"target":13},{"source":4,"value":38,"target":7},{"source":9,"value":1648,"target":5},{"source":10,"value":865,"target":3}]}');
+graph = JSON.parse('{"nodes":[{"name":"expressionFunction"},{"name":"expressionFilter"},{"name":"Contract_Join"},{"name":"TemporalJoin_TickerAndContractData"},{"name":"Ticker_Join"},{"name":"Partitioner"},{"name":"fileOutput"},{"name":"TripleFilter_SignedDate"},{"name":"termination_bolt"},{"name":"TripleFilter_ContractCompany"},{"name":"TripleFilter_ContractAmount"},{"name":"TripleFilter_ContractAgency"},{"name":"tickerSource"},{"name":"TripleFilter_TICKER"},{"name":"contractSource"},{"name":"heartbeat"},{"name":"TripleFilter_TickerCOMNAM"},{"name":"TripleFilter_TickerPRC"}],"links":[{"source":6,"value":88,"target":8},{"source":1,"value":112371,"target":3},{"source":2,"value":462539,"target":3},{"source":14,"value":2564426,"target":10},{"source":15,"value":88,"target":12},{"source":7,"value":372823,"target":2},{"source":13,"value":1198578,"target":4},{"source":16,"value":1223160,"target":4},{"source":0,"value":1164798,"target":1},{"source":9,"value":358221,"target":2},{"source":12,"value":5804981,"target":13},{"source":4,"value":1244622,"target":5},{"source":5,"value":1542625,"target":0},{"source":10,"value":344359,"target":2},{"source":11,"value":343871,"target":2},{"source":15,"value":88,"target":14},{"source":17,"value":1155104,"target":4},{"source":14,"value":2564426,"target":11},{"source":3,"value":2452,"target":6}]}');
 
   sankey
       .nodes(graph.nodes)

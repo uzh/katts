@@ -29,11 +29,6 @@ class TripleReaderThread implements Runnable, Serializable {
 
 	@Override
 	public void run() {
-		while (true) {
-			if (!bolt.nextTuple()) {
-				// when we got no new result, we sleep to prevent blocking the processor.
-				Utils.sleep(10000);
-			}
-		}
+		while (bolt.nextTuple()); // we just race through the data as fast as possible
 	}
 }

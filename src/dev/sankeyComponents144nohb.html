@@ -19,7 +19,7 @@
   stroke-opacity: .5;
 }
 </style>
-
+<title>components144nohb</title>
 <body>
 <p id="chart">
 <script type="text/javascript" src="http://d3js.org/d3.v2.min.js"></script>
@@ -51,7 +51,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-graph = JSON.parse('{"nodes":[{"name":"TripleFilter_ContractAmount"},{"name":"Contract_Join"},{"name":"TripleFilter_ContractCompany"},{"name":"TripleFilter_SignedDate"},{"name":"TemporalJoin_TickerAndContractData"},{"name":"Ticker_Join"},{"name":"Partitioner"},{"name":"fileOutput"},{"name":"termination_bolt"},{"name":"TripleFilter_TickerPRC"},{"name":"contractSource"},{"name":"heartbeat"},{"name":"tickerSource"},{"name":"TripleFilter_ContractAgency"},{"name":"expressionFunction"},{"name":"TripleFilter_TickerCOMNAM"},{"name":"expressionFilter"},{"name":"TripleFilter_TICKER"}],"links":[{"source":12,"value":64060,"target":9},{"source":7,"value":6,"target":8},{"source":16,"value":164,"target":4},{"source":10,"value":865,"target":0},{"source":1,"value":29,"target":4},{"source":10,"value":865,"target":2},{"source":11,"value":6,"target":12},{"source":3,"value":29,"target":1},{"source":17,"value":1656,"target":5},{"source":14,"value":1640,"target":16},{"source":15,"value":1656,"target":5},{"source":2,"value":29,"target":1},{"source":12,"value":64060,"target":17},{"source":5,"value":1648,"target":6},{"source":6,"value":1640,"target":14},{"source":12,"value":64060,"target":15},{"source":0,"value":29,"target":1},{"source":13,"value":29,"target":1},{"source":11,"value":6,"target":10},{"source":10,"value":865,"target":13},{"source":4,"value":38,"target":7},{"source":9,"value":1648,"target":5},{"source":10,"value":865,"target":3}]}');
+graph = JSON.parse('{"nodes":[{"name":"Ticker_Join"},{"name":"Partitioner"},{"name":"TripleFilter_SignedDate"},{"name":"Contract_Join"},{"name":"TemporalJoin_TickerAndContractData"},{"name":"expressionFilter"},{"name":"expressionFunction"},{"name":"TripleFilter_TickerPRC"},{"name":"TripleFilter_ContractCompany"},{"name":"fileOutput"},{"name":"TripleFilter_ContractAgency"},{"name":"contractSource"},{"name":"TripleFilter_TICKER"},{"name":"tickerSource"},{"name":"TripleFilter_TickerCOMNAM"},{"name":"TripleFilter_ContractAmount"}],"links":[{"source":5,"value":3396,"target":4},{"source":3,"value":71134,"target":4},{"source":2,"value":75950,"target":3},{"source":12,"value":213592,"target":0},{"source":6,"value":624730,"target":5},{"source":8,"value":75677,"target":3},{"source":14,"value":218072,"target":0},{"source":0,"value":201626,"target":1},{"source":15,"value":71107,"target":3},{"source":13,"value":5804893,"target":14},{"source":10,"value":80189,"target":3},{"source":7,"value":213565,"target":0},{"source":4,"value":64,"target":9},{"source":11,"value":2564338,"target":2}]}');
 
   sankey
       .nodes(graph.nodes)
