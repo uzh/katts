@@ -2,13 +2,11 @@ package ch.uzh.ddis.katts.evaluation;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.thrift7.TException;
 import org.apache.thrift7.protocol.TProtocol;
@@ -81,13 +79,13 @@ class Aggregator {
 		List<String> children = null;
 
 		try {
-			if (zooKeeper.exists(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, false) != null) {
+			if (zooKeeper.exists(Recorder.MESSAGE_RECORDER_PATH, false) != null) {
 				/*
-				 * Since the monitoring data is written, when the query is completed, we need to wait until this data is
-				 * written to ZooKeeper.
+				 * Since the monitoring data only starts to be sent to zookeeper after the query is completed, we need
+				 * to wait until this data is written to ZooKeeper.
 				 */
 				waitForMonitoringData();
-				children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, false);
+				children = zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_PATH, false);
 			}
 		} catch (KeeperException e) {
 			throw new RuntimeException("Could not load the monitoring message records from ZooKeeper.", e);
@@ -96,7 +94,7 @@ class Aggregator {
 					"Could not load the monitoring message records from ZooKeeper, because the thread was interrupted.",
 					e);
 		}
-		
+
 		long totalRemoteMessages = 0;
 		long totalLocalMessages = 0;
 		long totalMessages = 0;
@@ -139,7 +137,7 @@ class Aggregator {
 				}
 
 				try {
-					messagesSent = new String(zooKeeper.getData(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH + "/"
+					messagesSent = new String(zooKeeper.getData(Recorder.MESSAGE_RECORDER_PATH + "/"
 							+ child, false, null));
 				} catch (KeeperException e) {
 					throw new RuntimeException("Could not read the message cound from the znode.", e);
@@ -230,7 +228,14 @@ class Aggregator {
 		}
 	}
 
-	private void waitForMonitoringData() {
+	/**
+	 * This method blocks until all monitoring data has been written into Zookeeper before returning.
+	 * 
+	 * @throws InterruptedException
+	 *             if the thread that entered this method is interrupted by some external event (for example when the
+	 *             current java vm gets shutdown early).
+	 */
+	private void waitForMonitoringData() throws InterruptedException {
 		int supervisorSize = 0;
 		try {
 			supervisorSize = this.client.getClusterInfo().get_supervisors_size();
@@ -245,14 +250,24 @@ class Aggregator {
 
 	private class MonitoringFinishedWaiter implements Watcher {
 
-		private Lock lock = new ReentrantLock();
-		private int supervisorSize = 0;
+		/**
+		 * We use a CountDownLatch with a count of 1, which we will decrease by one as soon as we have the data of all
+		 * hosts in zookeeper. All threads entering {@link #waitUntilFinished()} will be blocked until this count is
+		 * decreased to one.
+		 */
+		private CountDownLatch latch = new CountDownLatch(1);
+
+		/**
+		 * We need to wait until all supervisors have written their log data into zookeeper. This number specifies for
+		 * how many entries we need to wait.
+		 */
+		private int supervisorSize;
 
 		public MonitoringFinishedWaiter(int supervisorSize) {
 			this.supervisorSize = supervisorSize;
-			this.lock.lock(); // block calls, to waitUntilFinished();
+
 			try { // attach watcher
-				zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, this);
+				zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_FINISHED_PATH, this);
 			} catch (KeeperException e) {
 				throw new RuntimeException("Can't access the monitoring finish znode.", e);
 			} catch (InterruptedException e) {
@@ -278,7 +293,7 @@ class Aggregator {
 		private void checkIfFinished() {
 			List<String> children = null;
 			try {
-				children = zooKeeper.getChildren(Recorder.KATTS_MESSAGE_MONITORING_ZK_ROOT_PATH, null);
+				children = zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_FINISHED_PATH, null);
 			} catch (KeeperException e) {
 				throw new RuntimeException("Can't access the monitoring finish znode.", e);
 			} catch (InterruptedException e) {
@@ -286,12 +301,19 @@ class Aggregator {
 			}
 
 			if (children.size() >= this.supervisorSize) {
-				this.lock.unlock();
+				latch.countDown();
 			}
 		}
 
-		public void waitUntilFinished() {
-			this.lock.lock();
+		/**
+		 * This method blocks until all monitoring data has been written into Zookeeper before returning.
+		 * 
+		 * @throws InterruptedException
+		 *             if the thread that entered this method is interrupted by some external event (for example when
+		 *             the current java vm gets shutdown early).
+		 */
+		public void waitUntilFinished() throws InterruptedException {
+			this.latch.await();
 		}
 
 	}
