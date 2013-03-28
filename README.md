@@ -11,11 +11,12 @@ Revision History
 1.0.4             dummy release (tom)
 1.0.5             dummy release (lorenz)
 1.1.0             include evaluation and waiter projects into the main project - no heartbeat
+
 1.1.1-SNAPSHOT    no heartbeat
 1.1.2-SNAPSHOT    heartbeat     
 1.1.3-SNAPSHOT    heartbeat
                   new cachedFileSource     
-1.1.0             include evaluation and waiter projects into the main project
+
 
 1.1.5-SNAPSHOT    counts with heartbeat       
 1.1.6-SNAPSHOT    counts without heartbeat    

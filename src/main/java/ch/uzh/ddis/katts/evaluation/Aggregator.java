@@ -137,8 +137,8 @@ class Aggregator {
 				}
 
 				try {
-					messagesSent = new String(zooKeeper.getData(Recorder.MESSAGE_RECORDER_PATH + "/"
-							+ child, false, null));
+					messagesSent = new String(zooKeeper.getData(Recorder.MESSAGE_RECORDER_PATH + "/" + child, false,
+							null));
 				} catch (KeeperException e) {
 					throw new RuntimeException("Could not read the message cound from the znode.", e);
 				} catch (InterruptedException e) {
@@ -299,7 +299,8 @@ class Aggregator {
 			} catch (InterruptedException e) {
 				throw new RuntimeException("Can't access the monitoring finish znode, the thread was interrupted.", e);
 			}
-
+			System.out.println(String.format("waiting for results: %d of %d arrived, already.", children.size(),
+					this.supervisorSize));
 			if (children.size() >= this.supervisorSize) {
 				latch.countDown();
 			}
