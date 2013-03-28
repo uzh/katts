@@ -3,8 +3,8 @@
     
     <!-- Send a heart beat every 100 milliseconds. -->
     <heartBeat interval="100" />
-    
-    <fileSource id="8897655727763874851">
+                                               
+    <cachedFileSource id="8897655727763874851" parallelism="3" blockSize="2">
         <files>
             <!--  <file csvFieldDelimiter="," 
                   mimeType="text/comma-separated-values" 
@@ -18,7 +18,7 @@
                   mimeType="text/comma-separated-values" 
                   path="data/2001_5contracts.sorted.triples"/>      
         </files>
-    </fileSource>
+    </cachedFileSource>
     
     
     

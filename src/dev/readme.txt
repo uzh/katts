@@ -16,5 +16,9 @@ random traffic: 1083329
 partitioned traffic: 593933
 improvement: 1.82399193175
 
+./compare_distributions.py 12 sendgraph288wohb.json sendgraph288wohb.metis.part.12
+random traffic: 1270411
+partitioned traffic: 729033
+improvement: 1.74259738585
 
 For this topology, it would could only speedup things by a factor of 1.5 using 6 machines and 1.3 using 12 machines
