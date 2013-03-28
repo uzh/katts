@@ -32,3 +32,9 @@ Revision History
                   
 1.1.11-SNAPSHOT   - counts with heartbeat 
                   - fast and the furious                  
+
+1.1.12-SNAPSHOT   - counts with heartbeat 
+                  - add watcher over and over again
+                  
+1.1.13-SNAPSHOT   - counts without heartbeat 
+                  

@@ -1,8 +1,11 @@
 #!/usr/bin/python
 #
 # This script compares the partitioning of nodes computed by Metis with a random distribution. The script
-# takes two attributes, the first being the json file containing the sending behavior of the tasks and the
-# second being the partitioning as it was computed by Metis.
+# takes three arguments: the first being the number of servers to simulate, the second being
+# the json file containing the sending behavior of the tasks, and the third being the partitioning as it 
+# was computed by Metis. Example:
+#
+#       ./compare_distributions.py 12 sendgraph.json sendgraph.metis.part.12
 #
 
 import sys
