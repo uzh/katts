@@ -293,7 +293,8 @@ class Aggregator {
 		private void checkIfFinished() {
 			List<String> children = null;
 			try {
-				children = zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_FINISHED_PATH, null);
+				// TODO this is probably adding the same watcher over and over again...
+				children = zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_FINISHED_PATH, this);
 			} catch (KeeperException e) {
 				throw new RuntimeException("Can't access the monitoring finish znode.", e);
 			} catch (InterruptedException e) {
