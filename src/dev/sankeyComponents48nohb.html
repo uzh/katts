@@ -19,8 +19,8 @@
   stroke-opacity: .5;
 }
 </style>
-
-<body title="snakey">
+<title>components45nohb</title>
+<body>
 <p id="chart">
 <script type="text/javascript" src="http://d3js.org/d3.v2.min.js"></script>
 <script type="text/javascript" src="https://raw.github.com/d3/d3-plugins/master/sankey/sankey.js"></script>
@@ -51,7 +51,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-graph = JSON.parse('{"nodes":[{"name":"Ticker_Join"},{"name":"Partitioner"},{"name":"expressionFilter"},{"name":"TemporalJoin_TickerAndContractData"},{"name":"expressionFunction"},{"name":"Contract_Join"},{"name":"TripleFilter_ContractCompany"},{"name":"fileOutput"},{"name":"TripleFilter_ContractAgency"},{"name":"TripleFilter_TICKER"},{"name":"TripleFilter_TickerPRC"},{"name":"TripleFilter_ContractAmount"},{"name":"TripleFilter_SignedDate"},{"name":"TripleFilter_TickerCOMNAM"}],"links":[{"source":2,"value":26123,"target":3},{"source":5,"value":639421,"target":3},{"source":12,"value":641639,"target":5},{"source":9,"value":1923033,"target":0},{"source":4,"value":1897820,"target":2},{"source":6,"value":639421,"target":5},{"source":13,"value":1961286,"target":0},{"source":0,"value":1906427,"target":1},{"source":1,"value":1897820,"target":4},{"source":11,"value":641639,"target":5},{"source":8,"value":641639,"target":5},{"source":3,"value":199,"target":7},{"source":10,"value":1920574,"target":0}]}');
+graph = JSON.parse('{"nodes":[{"name":"Ticker_Join"},{"name":"Partitioner"},{"name":"expressionFilter"},{"name":"TemporalJoin_TickerAndContractData"},{"name":"expressionFunction"},{"name":"Contract_Join"},{"name":"TripleFilter_ContractCompany"},{"name":"fileOutput"},{"name":"contractSource"},{"name":"TripleFilter_SignedDate"},{"name":"TripleFilter_ContractAgency"},{"name":"TripleFilter_ContractAmount"},{"name":"tickerSource"},{"name":"TripleFilter_TICKER"},{"name":"TripleFilter_TickerPRC"},{"name":"TripleFilter_TickerCOMNAM"}],"links":[{"source":12,"value":5804893,"target":14},{"source":2,"value":26100,"target":3},{"source":5,"value":639421,"target":3},{"source":8,"value":2564338,"target":6},{"source":8,"value":2564338,"target":11},{"source":9,"value":641639,"target":5},{"source":13,"value":1923033,"target":0},{"source":15,"value":1961286,"target":0},{"source":4,"value":1897820,"target":2},{"source":6,"value":639421,"target":5},{"source":12,"value":5804893,"target":13},{"source":0,"value":1906428,"target":1},{"source":1,"value":1897820,"target":4},{"source":11,"value":641639,"target":5},{"source":12,"value":5804893,"target":15},{"source":10,"value":641639,"target":5},{"source":14,"value":1920574,"target":0},{"source":3,"value":198,"target":7},{"source":8,"value":2564338,"target":9},{"source":8,"value":2564338,"target":10}]}');
 
   sankey
       .nodes(graph.nodes)

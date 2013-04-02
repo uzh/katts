@@ -16,22 +16,33 @@ public class TaskMonitor extends BaseTaskHook {
 
 	private Recorder recorder;
 	private int thisTaskId;
-
+	
+	/**
+	 * We use this variable to selectively record messages. If it is true, the {@link #emit(EmitInfo)} method
+	 * will record the messages of this task, otherwise messages will be ignored.
+	 */
+	private boolean recordMessages;
+	
 	@Override
 	public void prepare(Map stormConf, TopologyContext context) {
 
 		String topologyId = context.getStormId();
 
-		thisTaskId = context.getThisTaskId();
-		recorder = Recorder.getInstance(stormConf, topologyId);
+		this.thisTaskId = context.getThisTaskId();
+		this.recorder = Recorder.getInstance(stormConf, topologyId);
 
+		// only record messages that are not from a "source" component
+		this.recordMessages = !context.getThisComponentId().toLowerCase().contains("source");
+		
+		System.out.println(context.getThisComponentId());
+		
 	}
 
 	@Override
 	public void emit(EmitInfo info) {
-		if (!info.stream.contains("heartbeat")) {
+		if (this.recordMessages && !info.stream.contains("heartbeat")) {
 			for (Integer taskId : info.outTasks) {
-				recorder.recordMessageSending(thisTaskId, taskId);
+				this.recorder.recordMessageSending(this.thisTaskId, taskId);
 			}
 		}
 	}

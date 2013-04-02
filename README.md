@@ -37,4 +37,7 @@ Revision History
                   - add watcher over and over again
                   
 1.1.13-SNAPSHOT   - counts without heartbeat 
+
+1.1.15-SNAPSHOT   - counts without heartbeat
+                  - counts without sources
                   
