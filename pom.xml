@@ -3,7 +3,7 @@
 
 	<groupId>ch.uzh.ifi.ddis.katts</groupId>
 	<artifactId>katts</artifactId>
-	<version>1.1.15-SNAPSHOT</version>
+	<version>1.2.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>katts</name>
@@ -79,7 +79,12 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.4</version>
 		</dependency>
-		
+		<dependency>
+      <groupId>com.twitter.common.zookeeper</groupId>
+      <artifactId>map</artifactId>
+      <version>0.0.29</version>
+    </dependency>
+    
 		<!-- used by the evaluation package -->
 		<dependency>
 			<groupId>com.google.gdata</groupId>
@@ -119,6 +124,7 @@
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
+				<filtering>true</filtering> <!-- replace instances of ${variableName} with the correpsonding values. -->
 			</resource>
 
 			<!-- include jaxb index files -->
@@ -189,6 +195,10 @@
 			<id>twitter4j</id>
 			<url>http://twitter4j.org/maven2</url>
 		</repository>
+		<repository>
+      <id>twitter-commons</id> <!-- has zookeepermap -->
+      <url>http://maven.twttr.com/</url>
+    </repository>
 		<repository>
 			<id>EclipseLink Repo</id>
 			<url>http://www.eclipse.org/downloads/download.php?r=1&amp;nf=1&amp;file=/rt/eclipselink/maven.repo</url>

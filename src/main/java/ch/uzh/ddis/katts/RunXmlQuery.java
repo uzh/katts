@@ -1,9 +1,11 @@
 package ch.uzh.ddis.katts;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.xml.bind.JAXBException;
 
@@ -15,6 +17,7 @@ import backtype.storm.generated.StormTopology;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.monitoring.VmMonitor;
 import ch.uzh.ddis.katts.query.Query;
+import ch.uzh.ddis.katts.utils.EvalInfo;
 
 /**
  * This is the main class from which a query is executed from. This class is called by Storm to build the topology.
@@ -33,6 +36,7 @@ public class RunXmlQuery {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		Properties kattsProperties; // the contents of the katts.properties file
 
 		if (args.length == 0 || args[0] == null) {
 			System.out.println(getUsageMessage());
@@ -48,6 +52,7 @@ public class RunXmlQuery {
 		int numberOfProcessors = 10;
 		int numberOfWorkers = 1000;
 		float factorOfThreadsPerProcessor = 1.1f;
+		String evalNotes = "";
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("--monitoring-record-interval")) {
@@ -71,6 +76,9 @@ public class RunXmlQuery {
 			} else if (args[i].equalsIgnoreCase("--factor-of-threads-per-processor")) {
 				i++;
 				factorOfThreadsPerProcessor = Float.valueOf(args[i]);
+			} else if (args[i].equalsIgnoreCase("--eval-notes")) {
+				i++;
+				evalNotes = args[i];
 			} else if (args[i].startsWith("--")) {
 				i++;
 				// Unknown parameter, ignore it.
@@ -101,6 +109,19 @@ public class RunXmlQuery {
 
 		Config conf = new Config();
 		conf.setNumWorkers(numberOfWorkers);
+
+		// read properties file
+		kattsProperties = new Properties();
+		try {
+			kattsProperties.load(RunXmlQuery.class.getResourceAsStream("/katts.properties"));
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			System.exit(0); // if we can't read the properties file, something must be wrong with the build
+		}
+
+		// add some information values to the config that are useful for the evaluation of the system
+		EvalInfo.storePrefixedVariable(conf, "katts-version", kattsProperties.get("katts-version").toString());
+		EvalInfo.storePrefixedVariable(conf, "eval-notes", evalNotes);
 
 		// The max spout pending determines how many spout tuples can be pending. Pending means that the tuples is not
 		// yet failed or acked.

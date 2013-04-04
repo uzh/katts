@@ -32,6 +32,7 @@ import ch.uzh.ddis.katts.monitoring.Recorder;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.utils.Cluster;
+import ch.uzh.ddis.katts.utils.EvalInfo;
 
 /**
  * This class tasks the information from storm and zookeeper to build the aggreates that are pushed to the spreadsheet.
@@ -217,6 +218,13 @@ class Aggregator {
 		data.put("sankey-tasks-json", sankeyTasks.toJson());
 		data.put("sankey-components-json", sankeyComponents.toJson());
 		data.put("sankey-hosts-json", sankeyHosts.toJson());
+
+		// put all eval info into the spreadsheet as well
+		try {
+			data.putAll(EvalInfo.retrieveInfoFromZookeeper(zooKeeper));
+		} catch (Exception e) {
+			throw new RuntimeException("Couldn't read evaluation meta information from Zookeeper", e);
+		}
 
 		// data.put("number-of-tuples-outputed", jobData.getNumberOfTuplesOutputed());
 		// job.setNumberOfTuplesOutputed(Long.valueOf(readValueFromZK(TerminationMonitor.KATTS_TUPLES_OUTPUTTED_ZK_PATH)));

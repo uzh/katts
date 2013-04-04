@@ -41,3 +41,11 @@ Revision History
 1.1.15-SNAPSHOT   - counts without heartbeat
                   - counts without sources
                   
+1.1.16-SNAPSHOT   - store evaluation parameters in google spreadsheet
+                  - counts without heartbeat
+                  - counts without sources
+                  
+1.2.0             - store evaluation parameters in google spreadsheet
+                  - counts without heartbeat
+                  - counts with sources            
+                  

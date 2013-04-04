@@ -12,10 +12,11 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.ddis.katts.RunXmlQueryLocally;
 import ch.uzh.ddis.katts.utils.Cluster;
+import ch.uzh.ddis.katts.utils.EvalInfo;
 
 /**
- * This monitor is used to record, when the query execution starts. The start is identified by the first file reader start
- * reading.
+ * This monitor is used to record, when the query execution starts. The start is identified by the first file reader
+ * start reading.
  * 
  * @author Thomas Hunziker
  * 
@@ -30,6 +31,8 @@ public class StarterMonitor {
 	public static final String KATTS_STARTING_TIME_ZK_PATH = "/katts_starting_time";
 	private Logger logger = LoggerFactory.getLogger(StarterMonitor.class);
 
+	@SuppressWarnings("unchecked")
+	// for some reason the storm api uses untyped maps
 	private StarterMonitor(@SuppressWarnings("rawtypes") Map stormConf) {
 		stormConfiguration = stormConf;
 
@@ -37,6 +40,13 @@ public class StarterMonitor {
 			zooKeeper = Cluster.createZooKeeper(stormConfiguration);
 		} catch (IOException e) {
 			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the start time.", e);
+		}
+
+		// write evaluation info from storm configuration into zookeeper
+		try {
+			EvalInfo.persistInfoToZookeeper((Map<Object, Object>) stormConf, zooKeeper);
+		} catch (Exception e) {
+			throw new RuntimeException("Couldn't write evaluation info to ZooKeeper.", e);
 		}
 	}
 
