@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query xmlns="http://uzh.ch/ddis/katts/query">
+
+  <!-- Send a heart beat every 100 milliseconds. -->
+  <heartBeat interval="100" />
+
+  <!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
+  <fileSource id="weathersource">
+    <files>
+      <file csvFieldDelimiter=" " mimeType="text/comma-separated-values" path="data/charley_top1000.n5" />
+    </files>
+  </fileSource>
+
+  <!-- Pre-Filters for the ticker data -->
+  <tripleFilter applyOnSource="weathersource" groupOn="subject" id="TripleFilter_Sensor">
+    <conditions>
+      <condition restriction="om-owl:procedure" item="predicate" /> <!-- get sensor id -->
+    </conditions>
+    <produces>
+      <stream id="tfSensor">
+        <variable name="observation_id" referencesTo="subject" />
+        <variable name="sensor_id" referencesTo="object" />
+      </stream>
+    </produces>
+  </tripleFilter>
+  <tripleFilter applyOnSource="weathersource" groupOn="subject" id="TripleFilter_PropertyIsWindSpeed">
+    <conditions>
+      <condition restriction="om-owl:observedProperty" item="predicate" /> <!-- make sure its a wind measurement -->
+      <condition restriction="weather:WindSpeed" item="object" />
+    </conditions>
+    <produces>
+      <stream id="tfPropertyIsWindSpeed">
+        <variable name="observation_id" referencesTo="subject" />
+      </stream>
+    </produces>
+  </tripleFilter>
+  <tripleFilter applyOnSource="weathersource" groupOn="subject" id="TripleFilter_Result">
+    <conditions>
+      <condition restriction="om-owl:result" item="predicate" /> <!-- get result id -->
+    </conditions>
+    <produces>
+      <stream id="tfResult">
+        <variable name="observation_id" referencesTo="subject" />
+        <variable name="result_id" referencesTo="object" />
+      </stream>
+    </produces>
+  </tripleFilter>
+  
+  <tripleFilter applyOnSource="weathersource" groupOn="subject" id="TripleFilter_ResultValue">
+    <conditions>
+      <condition restriction="om-owl:floatValue" item="predicate" /> <!-- get value of result -->
+    </conditions>
+    <produces>
+      <stream id="tfResultValue">
+        <variable name="result_id" referencesTo="subject" />
+        <variable name="wind_speed" referencesTo="object" />
+      </stream>
+    </produces>
+  </tripleFilter>
+
+
+   
+  <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="observation_id" id="Join_Observation">
+    <consumes>
+      <stream maxBufferSize="5" streamId="tfSensor">
+        <variableGrouping>
+          <groupOn variableName="observation_id" />
+        </variableGrouping>
+      </stream>
+      <stream maxBufferSize="5" streamId="tfPropertyIsWindSpeed">
+        <variableGrouping>
+          <groupOn variableName="observation_id" />
+        </variableGrouping>
+      </stream>
+      <stream maxBufferSize="5" streamId="tfResult">
+        <variableGrouping>
+          <groupOn variableName="observation_id" />
+        </variableGrouping>
+      </stream>
+    </consumes>
+    <produces>
+      <stream id="jObservation">
+        <variable name="observation_id" referencesTo="observation_id" />
+        <variable name="sensor_id" referencesTo="sensor_id" />
+        <variable name="result_id" referencesTo="result_id" />
+      </stream>
+    </produces>
+  </oneFieldJoin>
+  
+  
+  
+  <oneFieldJoin maxBufferSize="20" joinPrecision="20000" joinOn="result_id" id="Join_Result">
+    <consumes>
+      <stream maxBufferSize="5" streamId="jObservation">
+        <variableGrouping>
+          <groupOn variableName="result_id" />
+        </variableGrouping>
+      </stream>
+      <stream maxBufferSize="5" streamId="tfResultValue">
+        <variableGrouping>
+          <groupOn variableName="result_id" />
+        </variableGrouping>
+      </stream>
+    </consumes>
+    <produces>
+      <stream id="jResult">
+        <variable name="sensor_id" referencesTo="sensor_id" />
+        <variable name="wind_speed" referencesTo="wind_speed" />
+      </stream>
+    </produces>
+  </oneFieldJoin>
+
+
+
+  <aggregate groupBy="sensor_id" windowSize="PT3H" every="PT10M" onlyIfChanged="false">
+    <consumes>
+      <stream maxBufferSize="5" streamId="jResult">
+        <variableGrouping>
+          <groupOn variableName="sensor_id" />
+        </variableGrouping>
+      </stream>
+    </consumes>
+    
+    <aggregators>
+      <min of="wind_speed" as="teh_min" />
+    </aggregators>
+    
+    <produces>
+      <stream id="minWindSpeedStream">
+        <variable name="sensor_id" referencesTo="sensor_id" />
+        <variable name="ticker_department" referencesTo="ticker_department" />
+        <variable name="min_wind_speed" referencesTo="teh_min" />
+      </stream>
+    </produces>
+  </aggregate>
+
+
+
+	<expressionFilter expression="#min_wind_speed lt 74" id="expressionFilter">
+		<consumes>
+			<stream maxBufferSize="5" streamId="minWindSpeedStream">
+				<variableGrouping>
+          <groupOn variableName="sensor_id" />
+        </variableGrouping>
+			</stream>
+		</consumes>
+		<produces>
+			<stream id="filteredMinWindSpeedStream" inheritFrom="minWindSpeedStream" />
+		</produces>
+	</expressionFilter>
+  
+    
+
+  <fileOutput filePath="data/output.csv" id="fileOutput">
+    <consumes>
+      <stream maxBufferSize="5" streamId="filteredMinWindSpeedStream">
+        <shuffleGrouping />
+      </stream>
+    </consumes>
+  </fileOutput>
+
+  <termination />
+
+</query>
