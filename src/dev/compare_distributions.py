@@ -11,6 +11,24 @@
 import sys
 import json
 
+"""
+Calculate mean and standard deviation of data x[]:
+    mean = {\sum_i x_i \over n}
+    std = sqrt(\sum_i (x_i - mean)^2 \over n-1)
+
+Copied from: http://www.physics.rutgers.edu/~masud/computing/WPark_recipes_in_python.html
+"""
+def meanstdv(x):
+    from math import sqrt
+    n, mean, std = len(x), 0, 0
+    for a in x:
+        mean = mean + a
+    mean = mean / float(n)
+    for a in x:
+        std = std + (a - mean)**2
+    std = sqrt(std / float(n-1))
+    return mean, std
+
 # abort if required options are missing
 if len(sys.argv) < 4:
     print("You need to specify the number of servers in the cluster, a json file, and the metis partition file.\n"
@@ -34,17 +52,39 @@ with open(sys.argv[3]) as metis_file:
         vertexId += 1
 
 # compute network traffic
-random_traffic = 0
+total_messages = 0
+uniform_traffic = 0
 partitioned_traffic = 0
+uniform_server_load = [0 for x in range(number_of_Servers)]
+partitioned_server_load = [0 for x in range(number_of_Servers)]
 for link in jLinks:
     sourceId = int(link['source'])
     targetId = int(link['target'])
     value = int(link['value'])
+    total_messages += value
     # random assignment
-    if (sourceId % number_of_Servers) != (targetId % number_of_Servers): random_traffic += value
+    if (sourceId % number_of_Servers) != (targetId % number_of_Servers): uniform_traffic += value
     # optimized assignment
     if task_assignment[sourceId] != task_assignment[targetId]: partitioned_traffic += value
+    # compute load
+    uniform_server_load[targetId % number_of_Servers] += value
+    partitioned_server_load[task_assignment[targetId]] += value
 
-print "random traffic: {0}\n" \
-      "partitioned traffic: {1}\n" \
-      "improvement: {2}".format(random_traffic, partitioned_traffic, float(1.0 * random_traffic / partitioned_traffic))
+print "total messages:      {0}\n" \
+      "uniform traffic:     {1}\n" \
+      "partitioned traffic: {2}\n" \
+      "improvement:         {3:.2%}".format(total_messages, uniform_traffic,
+                                        partitioned_traffic, 1.0 - float(1.0 * partitioned_traffic / uniform_traffic))
+
+(uniform_mean, uniform_stdv) = meanstdv(uniform_server_load)
+uniform_relstdv = uniform_stdv / uniform_mean
+(partitioned_mean, partitioned_stdv) = meanstdv(partitioned_server_load)
+partitioned_relstdv = partitioned_stdv / partitioned_mean
+
+print "uniform load:        {0}\n" \
+      "mean, stdv, relstdv: {1:.2f},{2:.2f},{3:.2%}\n" \
+      "partitioned load:    {4}\n" \
+      "mean, stdv, relstdv: {5:.2f},{6:.2f},{7:.2%}\n".format(uniform_server_load,
+                                       uniform_mean, uniform_stdv, uniform_relstdv,
+                                       partitioned_server_load,
+                                       partitioned_mean, partitioned_stdv, partitioned_relstdv)
