@@ -112,7 +112,8 @@ public class AggregateConfiguration extends AbstractProcessor {
 	@XmlAttribute(required = false)
 	private boolean onlyIfChanged;
 
-	@XmlElementRefs({ @XmlElementRef(type = SumAggregatorConfiguration.class) })
+	@XmlElementRefs({ @XmlElementRef(type = SumAggregatorConfiguration.class),
+			@XmlElementRef(type = MinAggregatorConfiguration.class) })
 	@XmlElementWrapper(name = "aggregators")
 	private List<AggregatorConfiguration<?>> aggregators = new ArrayList<AggregatorConfiguration<?>>();
 
