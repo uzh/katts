@@ -76,7 +76,7 @@ public class FileTripleReader implements IRichBolt {
 
 		try {
 			result = this.isoFormat.parseDateTime(value).toDate();
-		} catch (IllegalArgumentException e) {
+		} catch (RuntimeException e) {
 			// so it's also not a date either
 		}
 
@@ -134,7 +134,7 @@ public class FileTripleReader implements IRichBolt {
 			}
 			date = this.isoFormat.parseDateTime(dateStringValue).toDate();
 		} else {
-			date = new Date(Long.parseLong(dateStringValue));
+			date = new Date(Long.parseLong(dateStringValue.replaceAll("\"", "")));
 		}
 
 		List<Object> tuple = new ArrayList<Object>();
