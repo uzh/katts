@@ -287,7 +287,7 @@ public class AggregatorManagerTest {
 			}
 		};
 
-		manager = new AggregatorManager(datatypeFactory.newDuration("PT1S"), // window size
+		manager = new AggregatorManager(datatypeFactory.newDuration("PT2S"), // window size
 				datatypeFactory.newDuration("PT1S"), // update interval
 				callback, // this method will be called when there are
 				true, // onlyIfChanged
@@ -303,7 +303,7 @@ public class AggregatorManagerTest {
 		synchronized (resultTable) {
 			Assert.assertEquals(3.0D, ((Double) resultTable.get(groupByKey, "min_price")).doubleValue(), 0.01D);
 		}
-		
+		// TODO this test is somehow croocked..
 		// move one second more and now 1.0D should be the new minimum value
 		manager.incorporateValue(groupByKey,
 				parseString("startDate=2001-01-01T00:00:03,ticker=HHH,department=sales,price=2.0D"));
