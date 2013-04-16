@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import ch.uzh.ddis.katts.bolts.aggregate.AggregatorManager.Callback;
 import ch.uzh.ddis.katts.query.processor.aggregate.AggregatorConfiguration;
+import ch.uzh.ddis.katts.query.processor.aggregate.MinAggregatorConfiguration;
 import ch.uzh.ddis.katts.query.processor.aggregate.SumAggregatorConfiguration;
 
 import com.google.common.collect.HashBasedTable;
@@ -210,7 +211,7 @@ public class AggregatorManagerTest {
 		final Table<ImmutableList<Object>, String, Object> resultTable = HashBasedTable.create();
 		final Date[] lastUpdateDates = new Date[2]; // start- and end date
 		Date lastUpdate;
-
+		
 		sumConfig = new SumAggregatorConfiguration();
 		sumConfig.setOf("price");
 		sumConfig.setAs("total_price");
@@ -256,6 +257,58 @@ public class AggregatorManagerTest {
 		// since we don't have a window, the sum should now be 6
 		synchronized (resultTable) {
 			Assert.assertEquals(6.0D, ((Double) resultTable.get(groupByKey, "total_price")).doubleValue(), 0.01D);
+		}
+	}
+	
+	@Test
+	public void testMin() throws Exception {
+		AggregatorManager manager;
+		AggregatorManager.Callback callback;
+		DatatypeFactory datatypeFactory = DatatypeFactory.newInstance();
+		MinAggregatorConfiguration minConfig;
+		List<AggregatorConfiguration<?>> aggregatorConfigList;
+		ImmutableList<String> groupByKey;
+		final Table<ImmutableList<Object>, String, Object> resultTable = HashBasedTable.create();
+
+		minConfig = new MinAggregatorConfiguration();
+		minConfig.setOf("price");
+		minConfig.setAs("min_price");
+		aggregatorConfigList = new ArrayList<AggregatorConfiguration<?>>();
+		aggregatorConfigList.add(minConfig);
+
+		callback = new Callback() {
+
+			@Override
+			public void callback(Table<ImmutableList<Object>, String, Object> aggregateValues, Date startDate,
+					Date endDate) {
+				synchronized (resultTable) {
+					resultTable.putAll(aggregateValues);
+				}
+			}
+		};
+
+		manager = new AggregatorManager(datatypeFactory.newDuration("PT1S"), // window size
+				datatypeFactory.newDuration("PT1S"), // update interval
+				callback, // this method will be called when there are
+				true, // onlyIfChanged
+				minConfig // aggregator list
+		);
+
+		groupByKey = ImmutableList.of("HHH", "sales");
+		manager.incorporateValue(groupByKey,
+				parseString("startDate=2001-01-01T00:00:01,ticker=HHH,department=sales,price=3.0D"));
+		manager.incorporateValue(groupByKey,
+				parseString("startDate=2001-01-01T00:00:02,ticker=HHH,department=sales,price=1.0D"));
+		// We should have gotten the min for HHH-sales during the first second back (written in the result table)
+		synchronized (resultTable) {
+			Assert.assertEquals(3.0D, ((Double) resultTable.get(groupByKey, "min_price")).doubleValue(), 0.01D);
+		}
+		
+		// move one second more and now 1.0D should be the new minimum value
+		manager.incorporateValue(groupByKey,
+				parseString("startDate=2001-01-01T00:00:03,ticker=HHH,department=sales,price=2.0D"));
+		synchronized (resultTable) {
+			Assert.assertEquals(1.0D, ((Double) resultTable.get(groupByKey, "min_price")).doubleValue(), 0.01D);
 		}
 	}
 
