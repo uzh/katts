@@ -29,7 +29,7 @@ public class FileOutputBolt extends AbstractVariableBindingsBolt {
 
 	private static final long serialVersionUID = 1L;
 	private FileOutputConfiguration configuration;
-	private DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+	private DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd H:m:s");
 	private Logger logger = LoggerFactory.getLogger(FileOutputBolt.class);
 	private StreamConsumer stream;
 	private CSVWriter writer;

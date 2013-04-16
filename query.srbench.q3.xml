@@ -7,14 +7,14 @@
   <!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
   <fileSource id="weathersource">
     <files>
-      <file csvFieldDelimiter=" " mimeType="text/comma-separated-values" path="data/charley_top1000.n5" />
+      <file mimeType="text/n5" path="data/charley.top10k.n5" />
     </files>
   </fileSource>
 
   <!-- Pre-Filters for the ticker data -->
   <tripleFilter applyOnSource="weathersource" groupOn="subject" id="TripleFilter_Sensor">
     <conditions>
-      <condition restriction="om-owl:procedure" item="predicate" /> <!-- get sensor id -->
+      <condition restriction="&lt;om-owl:procedure&gt;" item="predicate" /> <!-- get sensor id -->
     </conditions>
     <produces>
       <stream id="tfSensor">
@@ -25,8 +25,8 @@
   </tripleFilter>
   <tripleFilter applyOnSource="weathersource" groupOn="subject" id="TripleFilter_PropertyIsWindSpeed">
     <conditions>
-      <condition restriction="om-owl:observedProperty" item="predicate" /> <!-- make sure its a wind measurement -->
-      <condition restriction="weather:WindSpeed" item="object" />
+      <condition restriction="&lt;om-owl:observedProperty&gt;" item="predicate" /> <!-- make sure its a wind measurement -->
+      <condition restriction="&lt;weather:_WindSpeed&gt;" item="object" />
     </conditions>
     <produces>
       <stream id="tfPropertyIsWindSpeed">
@@ -36,7 +36,7 @@
   </tripleFilter>
   <tripleFilter applyOnSource="weathersource" groupOn="subject" id="TripleFilter_Result">
     <conditions>
-      <condition restriction="om-owl:result" item="predicate" /> <!-- get result id -->
+      <condition restriction="&lt;om-owl:result&gt;" item="predicate" /> <!-- get result id -->
     </conditions>
     <produces>
       <stream id="tfResult">
@@ -48,7 +48,7 @@
   
   <tripleFilter applyOnSource="weathersource" groupOn="subject" id="TripleFilter_ResultValue">
     <conditions>
-      <condition restriction="om-owl:floatValue" item="predicate" /> <!-- get value of result -->
+      <condition restriction="&lt;om-owl:floatValue&gt;" item="predicate" /> <!-- get value of result -->
     </conditions>
     <produces>
       <stream id="tfResultValue">
@@ -128,7 +128,6 @@
     <produces>
       <stream id="minWindSpeedStream">
         <variable name="sensor_id" referencesTo="sensor_id" />
-        <variable name="ticker_department" referencesTo="ticker_department" />
         <variable name="min_wind_speed" referencesTo="teh_min" />
       </stream>
     </produces>
@@ -136,7 +135,7 @@
 
 
 
-	<expressionFilter expression="#min_wind_speed lt 74" id="expressionFilter">
+	<expressionFilter expression="#min_wind_speed lt 10" id="expressionFilter"> <!-- 74 -->
 		<consumes>
 			<stream maxBufferSize="5" streamId="minWindSpeedStream">
 				<variableGrouping>
