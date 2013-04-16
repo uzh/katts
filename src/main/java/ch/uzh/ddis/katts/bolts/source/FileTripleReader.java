@@ -21,6 +21,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import ch.uzh.ddis.katts.bolts.source.file.CSVSource;
 import ch.uzh.ddis.katts.bolts.source.file.GzipSourceWrapper;
+import ch.uzh.ddis.katts.bolts.source.file.N5Source;
 import ch.uzh.ddis.katts.bolts.source.file.Source;
 import ch.uzh.ddis.katts.bolts.source.file.ZipSourceWrapper;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
@@ -134,7 +135,7 @@ public class FileTripleReader implements IRichBolt {
 			}
 			date = this.isoFormat.parseDateTime(dateStringValue).toDate();
 		} else {
-			date = new Date(Long.parseLong(dateStringValue.replaceAll("\"", "")));
+			date = new Date(Long.parseLong(dateStringValue));
 		}
 
 		List<Object> tuple = new ArrayList<Object>();
@@ -210,6 +211,8 @@ public class FileTripleReader implements IRichBolt {
 		File file = configuration.getFiles().get(sourceIndex);
 		if (file.getMimeType().equals("text/comma-separated-values")) {
 			source = new CSVSource();
+		} else if (file.getMimeType().equals("text/n5")) {
+			source = new N5Source();
 		}
 
 		if (file.getPath().endsWith(".zip")) {

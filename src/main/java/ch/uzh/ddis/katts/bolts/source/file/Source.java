@@ -38,7 +38,7 @@ public interface Source extends Serializable {
 	public void setFileInputStream(InputStream inputStream);
 
 	/**
-	 * This method returns a triple given as a list of Strings.
+	 * This method returns a triple given as a list of Strings (startDate, subject, predicate, object).
 	 * 
 	 * @return Next triple in the file.
 	 * @throws Exception
