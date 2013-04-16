@@ -5,6 +5,9 @@ KATTS
 
 Revision History
 ================
+1.3.0             - support for n5 files as source
+                  - minAggregator
+
 1.2.0             - store evaluation parameters in google spreadsheet
                   - counts without heartbeat
                   - counts with sources   
