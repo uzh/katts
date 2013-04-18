@@ -12,17 +12,15 @@
 ./json2metis.py sendgraph48s_01to12.json > sendgraph48s_01to12.metis ;
 
 
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to01.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to02.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to03.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to04.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to05.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to06.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to07.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to08.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to09.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to10.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to11.metis 12 ;
-gpmetis -tpwgts=12.tpwgts sendgraph48s_01to12.metis 12 ;
-
-gpmetis -objtype=vol sendgraph48s_01to12.metis 12 ; python compare_distributions.py 12 sendgraph48s_01to12.json sendgraph48s_01to12.metis.part.12
+gpmetis -objtype=vol sendgraph48s_01to01.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to02.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to03.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to04.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to05.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to06.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to07.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to08.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to09.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to10.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to11.metis 12 ;
+gpmetis -objtype=vol sendgraph48s_01to12.metis 12 ;

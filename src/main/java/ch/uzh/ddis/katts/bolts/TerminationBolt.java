@@ -1,5 +1,7 @@
 package ch.uzh.ddis.katts.bolts;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
@@ -29,6 +31,8 @@ public class TerminationBolt extends AbstractBolt {
 	private TerminationMonitor monitor;
 	private Date lastProcessedDate = new Date();
 	private Logger logger = LoggerFactory.getLogger(TerminationBolt.class);
+	
+	private DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	@Override
 	public void executeRegularTuple(Tuple input) {
@@ -51,7 +55,7 @@ public class TerminationBolt extends AbstractBolt {
 			lastProcessedDate = new Date();
 		}
 
-		logger.info(String.format("Current Termination bolt heart beat time: %1s", streamDate.toString()));
+		logger.debug(String.format("Current Termination bolt heart beat time: %1s", formatter.format(streamDate)));
 		
 		return streamDate;
 	}

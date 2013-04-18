@@ -1,23 +1,15 @@
 package ch.uzh.ddis.katts.monitoring;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.util.Date;
 import java.util.Map;
 
 import org.apache.commons.collections.MapIterator;
 import org.apache.commons.collections.keyvalue.MultiKey;
-import org.apache.commons.collections.map.MultiKeyMap;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -25,11 +17,13 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.ddis.katts.utils.Cluster;
 
+import com.google.common.util.concurrent.AtomicLongMap;
+
 /**
  * This class records the data and stored it to the ZooKeeper.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 public final class Recorder implements TerminationWatcher {
 
@@ -39,12 +33,12 @@ public final class Recorder implements TerminationWatcher {
 	 * For each host there is a subdirecory in this path containing all the sending data for that host.
 	 */
 	public static final String MESSAGE_RECORDER_PATH = "/message_recorder";
-	//public static final String KATTS_STORM_CONFIGURATION_ZK_PATH = "/katts_storm_configuration";
-	
+	// public static final String KATTS_STORM_CONFIGURATION_ZK_PATH = "/katts_storm_configuration";
+
 	/**
-	 * Whenever all the data for one host has fully been written into zookeeper, we write the name
-	 * of said host into this folder. Therefore, if there is an entry for each supervisor host
-	 * in this path, we can safely assume that all data has been stored in zookeeper.
+	 * Whenever all the data for one host has fully been written into zookeeper, we write the name of said host into
+	 * this folder. Therefore, if there is an entry for each supervisor host in this path, we can safely assume that all
+	 * data has been stored in zookeeper.
 	 */
 	public static final String MESSAGE_RECORDER_FINISHED_PATH = "/message_recorder_finished";
 
@@ -54,7 +48,11 @@ public final class Recorder implements TerminationWatcher {
 	@SuppressWarnings("rawtypes")
 	private Map stormConfiguration;
 
-	private MultiKeyMap messageCounter = new MultiKeyMap();
+	/**
+	 * We record all messages in this map, as we will access this map from multiple threads in parallel, this the data
+	 * structure needs to support this.
+	 */
+	private AtomicLongMap<SrcDst> messageCounter = AtomicLongMap.create();
 
 	private ZooKeeper zooKeeper;
 	private Logger logger = LoggerFactory.getLogger(StarterMonitor.class);
@@ -82,8 +80,7 @@ public final class Recorder implements TerminationWatcher {
 	private void createMonitoringRoot() {
 
 		try {
-			zooKeeper.create(MESSAGE_RECORDER_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
-					CreateMode.PERSISTENT);
+			zooKeeper.create(MESSAGE_RECORDER_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 		} catch (KeeperException e) {
 			if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
 				logger.info("The root monitoring entry was already created.");
@@ -97,13 +94,12 @@ public final class Recorder implements TerminationWatcher {
 		}
 
 	}
-	
+
 	private void createFinishMonitorRoot() {
 
 		// Write the root path for the monitoring termination barrier
 		try {
-			zooKeeper.create(MESSAGE_RECORDER_FINISHED_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE,
-					CreateMode.PERSISTENT);
+			zooKeeper.create(MESSAGE_RECORDER_FINISHED_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 		} catch (KeeperException e) {
 			if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
 				logger.info("The root monitoring finish entry was already created.");
@@ -131,17 +127,9 @@ public final class Recorder implements TerminationWatcher {
 		return instance;
 	}
 
-	public synchronized void recordMessageSending(int sourceTask, int targetTask) {
-
-		Long counter = (Long) messageCounter.get(sourceTask, targetTask);
-		if (counter == null) {
-			counter = 1l;
-		} else {
-			counter++;
-		}
-
-		messageCounter.put(sourceTask, targetTask, counter);
-
+	public void recordMessageSending(int sourceTask, int targetTask) {
+		// AtomicLongMap is thread safe so we don't need to serialize here
+		this.messageCounter.incrementAndGet(new SrcDst(sourceTask, targetTask));
 	}
 
 	public synchronized void recordMemoryStats(long maxMemory, long allocatedMemory, long freeMemory) {
@@ -160,14 +148,12 @@ public final class Recorder implements TerminationWatcher {
 	@Override
 	public void terminated() {
 		writeCounts();
-		logger.info("Message counts are written to ZooKeeper");	
+		logger.info("Message counts are written to ZooKeeper");
 	}
 
 	private void writeCounts() {
-		MapIterator it = messageCounter.mapIterator();
-
 		ZooKeeper zooKeeper;
-		
+
 		try {
 			zooKeeper = Cluster.createZooKeeper(stormConfiguration);
 		} catch (IOException e) {
@@ -175,18 +161,14 @@ public final class Recorder implements TerminationWatcher {
 					e);
 		}
 
-		
-		
-		while (it.hasNext()) {
-			MultiKey next = (MultiKey) it.next();
-			Object[] keys = next.getKeys();
+		for (SrcDst key : this.messageCounter.asMap().keySet()) {
 
-			String sender = ((Integer) keys[0]).toString();
-			String receiver = ((Integer) keys[1]).toString();
-			String count = Long.toString((Long) messageCounter.get(next));
+			String sender = Integer.toString(key.srcId);
+			String receiver = Integer.toString(key.dstId);
+			String count = Long.toString(this.messageCounter.get(key));
 
-			String path = new StringBuilder().append(MESSAGE_RECORDER_PATH).append("/").append(sender)
-					.append("___").append(receiver).toString();
+			String path = new StringBuilder().append(MESSAGE_RECORDER_PATH).append("/").append(sender).append("___")
+					.append(receiver).toString();
 
 			try {
 				zooKeeper.create(path, count.getBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -196,42 +178,79 @@ public final class Recorder implements TerminationWatcher {
 				throw new RuntimeException("Can't write the message count out, because the thread was interrupted.", e);
 			}
 		}
-		
+
 		String identifier = getHostIdentifier();
-		
+
 		try {
 			zooKeeper.create(MESSAGE_RECORDER_FINISHED_PATH + "/" + identifier, new byte[0], Ids.OPEN_ACL_UNSAFE,
 					CreateMode.PERSISTENT);
 		} catch (KeeperException e) {
-			throw new RuntimeException(String.format("Can't create the finish ZooKeeper entry for host '%1s'.", identifier), e);
+			throw new RuntimeException(String.format("Can't create the finish ZooKeeper entry for host '%1s'.",
+					identifier), e);
 		} catch (InterruptedException e) {
-			throw new RuntimeException(
-					String.format("Can't create the finish ZooKeeper entry for host '%1s, because the thread was interrupted.'.", identifier), e);
+			throw new RuntimeException(String.format(
+					"Can't create the finish ZooKeeper entry for host '%1s, because the thread was interrupted.'.",
+					identifier), e);
 		}
-		
+
 	}
-	
+
 	/**
 	 * This method returns the nodes host on which this code is executed on.
 	 * 
 	 * @return
 	 */
 	private String getHostIdentifier() {
-		
+
 		try {
-			return  InetAddress.getLocalHost().getHostName();
+			return InetAddress.getLocalHost().getHostName();
 		} catch (UnknownHostException e) {
 			logger.info("Can't get hostname. Instead the IP address is used.");
 		}
-		
+
 		try {
 			return InetAddress.getLocalHost().getHostAddress();
 		} catch (UnknownHostException e) {
 			logger.info("Can't get ip address. Instead a random number is used.");
 		}
-		
+
 		SecureRandom random = new SecureRandom();
 		return Long.toString(random.nextLong());
+	}
+
+	/** Helper class used to concurrently record messages that are send from a "source" task to a "destination" task. */
+	private class SrcDst {
+		// both fields are final, so public access is ok
+		public final int srcId;
+		public final int dstId;
+
+		public SrcDst(int srcId, int dstId) {
+			this.srcId = srcId;
+			this.dstId = dstId;
+		}
+
+		@Override
+		public int hashCode() {
+			/*
+			 * This is from http://stackoverflow.com/questions/892618/create-a-hashcode-of-two-numbers TODO: read up on
+			 * efficient hash functions
+			 */
+			int hash = 23;
+			hash = hash * 31 + srcId;
+			hash = hash * 23 + dstId;
+			return hash;
+		}
+		@Override
+		public boolean equals(Object obj) {
+		    if ( this == obj ) return true; //check for self-comparison
+
+		    if ( obj instanceof SrcDst ) { // null is no instance, so that's checked also
+		    	SrcDst other = (SrcDst)obj;
+			    return this.srcId == other.srcId && this.dstId == other.dstId;
+		    } else {
+		    	return false;
+		    }
+		}		
 	}
 
 }

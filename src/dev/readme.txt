@@ -1,7 +1,34 @@
 This folder contains scripts and files for testing the effectiveness of partitioning the tasks using the Metis graph
 partitioner.
 
+# no volume did better this time??
+gpmetis srBenchQ3charley12-48Task.metis 12 ; ./compare_distributions.py 12 srBenchQ3charley12-48Task.json srBenchQ3charley12-48Task.metis.part.12
 
+total messages:      476330064
+uniform traffic:     438325165
+partitioned traffic: 417521650
+improvement:         4.75%
+uniform load:        [43182323, 41881784, 39226113, 38567323, 48364254, 38514892, 40053446, 38387625, 34322689, 37448749, 37554156, 38826710]
+mean, stdv, relstdv: 39694172.00,3517046.68,8.86%
+partitioned load:    [40874227, 40372892, 40821344, 39317075, 40748258, 39548179, 38735400, 36684205, 40595277, 38621752, 40709465, 39301990]
+mean, stdv, relstdv: 39694172.00,1262183.08,3.18%
+
+
+
+
+
+
+./compare_distributions.py 12 srBenchQ3smallTask.json srBenchQ3smallTask.metis.part.12 
+total messages:      40351960
+uniform traffic:     37907329
+partitioned traffic: 34479976
+improvement:         9.04%
+uniform load:        [3396857, 3791020, 3349880, 3436287, 2701148, 3572667, 3438278, 2637416, 3252654, 3813530, 3168030, 3794193]
+mean, stdv, relstdv: 3362663.33,386491.28,11.49%
+partitioned load:    [3350140, 3321460, 3371095, 3400740, 3430886, 3356483, 3366734, 3367802, 3408842, 3355940, 3292714, 3329124]
+
+
+#################### reverse sorting below ######################
 
 ./compare_distributions.py 6 sendgraph.json sendgraph.metis.part.6random
 traffic: 35.720.014

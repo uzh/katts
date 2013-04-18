@@ -46,7 +46,8 @@ public class StarterMonitor {
 		try {
 			EvalInfo.persistInfoToZookeeper((Map<Object, Object>) stormConf, zooKeeper);
 		} catch (Exception e) {
-			throw new RuntimeException("Couldn't write evaluation info to ZooKeeper.", e);
+			this.logger.warn("Could not store configuration information to zookeper. "
+					+ "Probably it already existed. Exception was: " + e.getMessage());
 		}
 	}
 

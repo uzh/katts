@@ -53,6 +53,18 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 	@XmlTransient
 	private List<Stream> producers = new Producers(this);
 
+	private int parallelism = 0;
+	
+	@Override
+	@XmlAttribute()
+	public int getParallelism() {
+		return this.parallelism;
+	}
+
+	public void setParallelism(int paralleism) {
+		this.parallelism = paralleism;
+	}
+	
 	@XmlElementWrapper(name = "produces")
 	@XmlElement(name = "stream")
 	@Override
@@ -81,11 +93,6 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 
 		// Attach the heart beat to the bolt
 		declarer.allGrouping(applyOnSource, HeartBeatSpout.buildHeartBeatStreamId(applyOnSource));
-	}
-
-	@Override
-	public int getParallelism() {
-		return 0;
 	}
 
 	@Override

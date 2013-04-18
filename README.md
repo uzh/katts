@@ -5,6 +5,15 @@ KATTS
 
 Revision History
 ================
+1.3.4-SNAPSHOT    - concurrent messagerecorder
+
+1.3.3-SNAPSHOT    - value converstion does not rely on exceptions anymore.
+
+1.3.2-SNAPSHOT    - new timeformat and loglevel for TerminationBolt
+                  - don't blow up if storm info is written to zookeeper multiple times
+
+1.3.1-SNAPSHOT    - parallelism support for TripleFilter
+
 1.3.0             - support for n5 files as source
                   - minAggregator
 

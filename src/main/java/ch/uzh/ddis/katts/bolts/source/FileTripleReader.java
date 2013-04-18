@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -27,6 +28,7 @@ import ch.uzh.ddis.katts.bolts.source.file.ZipSourceWrapper;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.query.source.File;
 import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
+import ch.uzh.ddis.katts.utils.Util;
 
 /**
  * This Bolt reads in triples from files. By the abstraction of the {@link Source} different type of files can be read
@@ -75,27 +77,17 @@ public class FileTripleReader implements IRichBolt {
 	public Object convertStringToObject(String value) {
 		Object result = value;
 
-		try {
-			result = this.isoFormat.parseDateTime(value).toDate();
-		} catch (RuntimeException e) {
-			// so it's also not a date either
-		}
-
-		try {
-			result = Double.valueOf(value);
-		} catch (NumberFormatException e) {
-			// so it's not a double
-		}
-
-		try {
+		if (Util.isLong(value)) {
 			result = Long.valueOf(value);
-		} catch (NumberFormatException e) {
-			// so it's not a long
+		} else if (Util.isDouble(value)) {
+			result = Double.valueOf(value);
+		} else if (Util.isIsoDate(value)) {
+			result = this.isoFormat.parseDateTime(value).toDate();
 		}
 
 		return result;
 	}
-	
+
 	/**
 	 * This method reads the next tuple from the file source.
 	 * 
@@ -116,14 +108,13 @@ public class FileTripleReader implements IRichBolt {
 		if (triple == null) {
 			logger.info(String.format("End of file is reached in component %1s at date %2s. Line: %3s", this
 					.getConfiguration().getId(), currentRealTimeDate.toString(), numberRead));
-			
+
 			/*
-			 * TODO: this is a dirty hack: by setting the process date to the year 292278994, the next
-			 * heartbeat that gets sent down the processing chain will tell the TerminationBolt, that we
-			 * reached the end of the file.
+			 * TODO: this is a dirty hack: by setting the process date to the year 292278994, the next heartbeat that
+			 * gets sent down the processing chain will tell the TerminationBolt, that we reached the end of the file.
 			 */
-			currentRealTimeDate = new Date(Long.MAX_VALUE); // set the current date 
-			
+			currentRealTimeDate = new Date(Long.MAX_VALUE); // set the current date
+
 			return false;
 		}
 
@@ -147,8 +138,8 @@ public class FileTripleReader implements IRichBolt {
 		if (date != null & triple.get(1) != null && triple.get(2) != null && triple.get(3) != null) {
 			// currently the start and end date are equal
 			tuple.add(date);
-			tuple.add(convertStringToObject(triple.get(1)));
-			tuple.add(convertStringToObject(triple.get(2)));
+			tuple.add(triple.get(1));
+			tuple.add(triple.get(2));
 			tuple.add(convertStringToObject(triple.get(3)));
 
 			// We emit on the default stream, since we do not want multiple
@@ -259,6 +250,7 @@ public class FileTripleReader implements IRichBolt {
 
 	/**
 	 * {@link FileTripleReader#source}
+	 * 
 	 * @return the source
 	 */
 	protected Source getSource() {
@@ -267,7 +259,9 @@ public class FileTripleReader implements IRichBolt {
 
 	/**
 	 * {@link FileTripleReader#source}
-	 * @param source the source to set
+	 * 
+	 * @param source
+	 *            the source to set
 	 */
 	protected void setSource(Source source) {
 		this.source = source;
@@ -275,7 +269,9 @@ public class FileTripleReader implements IRichBolt {
 
 	/**
 	 * {@link FileTripleReader#starterMonitor}
-	 * @param starterMonitor the starterMonitor to set
+	 * 
+	 * @param starterMonitor
+	 *            the starterMonitor to set
 	 */
 	protected void setStarterMonitor(StarterMonitor starterMonitor) {
 		this.starterMonitor = starterMonitor;
@@ -283,7 +279,9 @@ public class FileTripleReader implements IRichBolt {
 
 	/**
 	 * {@link FileTripleReader#collector}
-	 * @param collector the collector to set
+	 * 
+	 * @param collector
+	 *            the collector to set
 	 */
 	protected void setCollector(OutputCollector collector) {
 		this.collector = collector;

@@ -110,9 +110,26 @@
     </produces>
   </oneFieldJoin>
 
+  <partitioner slideSize="PT10M" windowSize="PT3H" partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner">
+    <consumes>
+      <stream maxBufferSize="5" streamId="jResult">
+        <variableGrouping>
+          <groupOn variableName="sensor_id" />
+        </variableGrouping>
+      </stream>
+    </consumes>
+    <produces>
+      <stream id="minWindSpeedStream" inheritFrom="jResult">
+        <variable name="min_wind_speed" referencesTo="min" />
+      </stream>
+    </produces>
+    <components>
+      <minPartitioner />
+    </components>
+  </partitioner>
+  
 
-
-  <aggregate groupBy="sensor_id" windowSize="PT3H" every="PT10M" onlyIfChanged="false">
+  <!-- <aggregate groupBy="sensor_id" windowSize="PT3H" every="PT10M" onlyIfChanged="false">
     <consumes>
       <stream maxBufferSize="5" streamId="jResult">
         <variableGrouping>
@@ -131,11 +148,11 @@
         <variable name="min_wind_speed" referencesTo="teh_min" />
       </stream>
     </produces>
-  </aggregate>
+  </aggregate> -->
 
 
 
-	<expressionFilter expression="#min_wind_speed lt 10" id="expressionFilter"> <!-- 74 -->
+	<expressionFilter expression="#min_wind_speed > 4.9" id="expressionFilter"> <!-- 74 -->
 		<consumes>
 			<stream maxBufferSize="5" streamId="minWindSpeedStream">
 				<variableGrouping>
