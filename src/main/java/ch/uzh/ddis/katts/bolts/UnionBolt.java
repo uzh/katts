@@ -35,7 +35,7 @@ public class UnionBolt extends AbstractSynchronizedBolt {
 	}
 
 	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 	}
 
@@ -58,9 +58,6 @@ public class UnionBolt extends AbstractSynchronizedBolt {
 			bindingsToEmit.setEndDate((Date) bindings.get("endDate"));
 
 			bindingsToEmit.emit();
-
-			// TODO: Is this really the last possible occurring date of join?
-			setLastDateProcessed(bindingsToEmit.getEndDate());
 		}
 
 		ack(event);

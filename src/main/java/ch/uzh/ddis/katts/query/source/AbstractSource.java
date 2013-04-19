@@ -11,7 +11,7 @@ import ch.uzh.ddis.katts.query.AbstractNode;
  * 
  */
 @SuppressWarnings("serial")
-public abstract class AbstractSource extends AbstractNode implements Source {
+public abstract class AbstractSource extends AbstractNode implements Source { 
 
 
 }

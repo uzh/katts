@@ -5,6 +5,8 @@ KATTS
 
 Revision History
 ================
+2.0.0-SNAPSHOT    - removed heartbeat
+
 1.3.4-SNAPSHOT    - concurrent messagerecorder
 
 1.3.3-SNAPSHOT    - value converstion does not rely on exceptions anymore.

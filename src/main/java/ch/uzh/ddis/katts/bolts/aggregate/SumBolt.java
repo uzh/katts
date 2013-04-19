@@ -152,9 +152,6 @@ public class SumBolt extends AbstractSynchronizedBolt {
 			bindingsToEmit.setEndDate((Date) bindings.get("endDate"));
 
 			bindingsToEmit.emit();
-
-			// TODO: Is this really the last possible occurring date of join?
-			setLastDateProcessed(bindingsToEmit.getEndDate());
 		}
 
 		ack(event);

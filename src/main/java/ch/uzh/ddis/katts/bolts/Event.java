@@ -1,5 +1,7 @@
 package ch.uzh.ddis.katts.bolts;
 
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.Date;
 
 import backtype.storm.tuple.Tuple;
@@ -114,6 +116,7 @@ public class Event implements Comparable<Event> {
 		this.bolt = bolt;
 	}
 
+	// TODO lorenz: can this be removed? Why order on startDate?
 	@Override
 	public int compareTo(Event event) {
 		if (getStartDate().after(event.getStartDate())) {
@@ -165,6 +168,26 @@ public class Event implements Comparable<Event> {
 		}
 
 		return builder.toString();
+
+	}
+
+	/**
+	 * A comparator that compares two Event instances based on their end date values.
+	 * 
+	 * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
+	 */
+	public static final class EndDateComparator implements Comparator<Event>, Serializable {
+
+		@Override
+		public int compare(Event o1, Event o2) {
+			if (o1 == null && o2 == null)
+				return 0;
+			if (o1 == null)
+				return -1;
+			if (o2 == null)
+				return 1;
+			return o1.getEndDate().compareTo(o2.getEndDate());
+		}
 
 	}
 

@@ -7,16 +7,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
-import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
  * This class defines the basic structure of a bolt, that handles VariableBindings. It provides facilities to wrap and
@@ -80,8 +76,6 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		super.declareOutputFields(declarer);
-
 		for (Stream stream : this.getStreams()) {
 			List<String> fields = new ArrayList<String>();
 			fields.add("sequenceNumber");
@@ -102,9 +96,10 @@ public abstract class AbstractVariableBindingsBolt extends AbstractBolt implemen
 		streamConsumer = new HashMap<String, StreamConsumer>();
 		for (StreamConsumer stream : streamConsumers) {
 			if (stream.getStream() == null) {
-				throw new NullPointerException(
-						String.format("The given consumer stream '%s' is not linked back to the producing stream. " +
-								"Check if there is a bolt that consums a stream, which is not defined.", stream.getNode().getId()));
+				throw new NullPointerException(String.format(
+						"The given consumer stream '%s' is not linked back to the producing stream. "
+								+ "Check if there is a bolt that consums a stream, which is not defined.", stream
+								.getNode().getId()));
 			}
 			streamConsumer.put(stream.getStream().getId(), stream);
 		}

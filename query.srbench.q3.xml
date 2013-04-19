@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <query xmlns="http://uzh.ch/ddis/katts/query">
 
-  <!-- Send a heart beat every 100 milliseconds. -->
-  <heartBeat interval="100" />
-
   <!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
   <fileSource id="weathersource">
     <files>
@@ -174,7 +171,5 @@
       </stream>
     </consumes>
   </fileOutput>
-
-  <termination />
 
 </query>

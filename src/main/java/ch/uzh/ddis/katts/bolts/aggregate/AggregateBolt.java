@@ -104,9 +104,6 @@ public class AggregateBolt extends AbstractSynchronizedBolt {
 
 							}
 						}
-
-						// set the date that will be propagated by the heartbeat
-						setLastDateProcessed(endDate);
 					}
 				}, this.configuration.isOnlyIfChanged(), this.configuration.getAggregators().toArray(configs));
 
@@ -117,13 +114,6 @@ public class AggregateBolt extends AbstractSynchronizedBolt {
 			}
 			this.groupByFieldNames = builder.build();
 		}
-	}
-
-	@Override
-	protected void setLowestCurrentHeartBeat(Date value) {
-		super.setLowestCurrentHeartBeat(value);
-
-		this.aggregatorManager.advanceInTime(value.getTime());
 	}
 
 	@Override

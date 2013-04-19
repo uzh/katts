@@ -106,11 +106,6 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 		}
 
 		lastProcessedDate = event.getEndDate();
-
-		// Since we join on the end date and a certain precision, we can be sure that never an earlier date, as the one
-		// from the input will be emitted.
-		setLastDateProcessed(new Date(event.getEndDate().getTime()));
-
 	}
 
 	/**

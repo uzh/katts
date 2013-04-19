@@ -32,7 +32,6 @@ import ch.uzh.ddis.katts.query.processor.filter.TripleFilter;
 import ch.uzh.ddis.katts.query.processor.function.ExpressionFunction;
 import ch.uzh.ddis.katts.query.processor.join.OneFieldJoin;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
-import ch.uzh.ddis.katts.query.source.CachedFileSourceConfiguration;
 import ch.uzh.ddis.katts.query.source.FileSource;
 import ch.uzh.ddis.katts.query.source.NTupleFileSource;
 import ch.uzh.ddis.katts.query.stream.Stream;
@@ -53,18 +52,16 @@ public class Query implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@XmlElementRefs({ @XmlElementRef(type = AggregateConfiguration.class),//
-			@XmlElementRef(type = CachedFileSourceConfiguration.class), //
+			// @XmlElementRef(type = CachedFileSourceConfiguration.class), //
 			@XmlElementRef(type = ExpressionFilter.class),//
 			@XmlElementRef(type = ExpressionFunction.class), //
 			@XmlElementRef(type = FileSource.class), //
 			@XmlElementRef(type = FileOutput.class), //
-			@XmlElementRef(type = HeartBeat.class),//
 			@XmlElementRef(type = NTupleFileSource.class), //
 			@XmlElementRef(type = NTupleFilter.class), //
 			@XmlElementRef(type = SumConfiguration.class), //
 			@XmlElementRef(type = SystemOutput.class),//
 			@XmlElementRef(type = TemporalJoinConfiguration.class), //
-			@XmlElementRef(type = Termination.class), //
 			@XmlElementRef(type = TripleFilter.class), //
 			@XmlElementRef(type = OneFieldJoin.class), //
 			@XmlElementRef(type = Partitioner.class), //

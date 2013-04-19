@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import backtype.storm.topology.IRichBolt;
+import backtype.storm.topology.IRichSpout;
 import ch.uzh.ddis.katts.bolts.source.FileNTupleReader;
 import ch.uzh.ddis.katts.bolts.source.FileNTupleReaderConfiguration;
 
@@ -52,7 +53,7 @@ public class NTupleFileSource extends AbstractSource implements
 	}
 
 	@Override
-	public IRichBolt getBolt() {
+	public IRichSpout getSpout() {
 		FileNTupleReader reader = new FileNTupleReader();
 		reader.setNumberOfFields(getNumberOfFields());
 		reader.setConfiguration(this);

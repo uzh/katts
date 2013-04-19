@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 
@@ -31,13 +32,14 @@ public class TerminationBolt extends AbstractBolt {
 	private TerminationMonitor monitor;
 	private Date lastProcessedDate = new Date();
 	private Logger logger = LoggerFactory.getLogger(TerminationBolt.class);
-	
+
 	private DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	@Override
 	public void executeRegularTuple(Tuple input) {
-		// We do not register this bolt for any input stream except the heart beat stream. Hence we do not process
-		// anything.
+		if (input.getLongByField("EndDate") > System.currentTimeMillis()) {
+			logger.info("WE ARE DONE!");
+		}
 	}
 
 	@Override
@@ -46,18 +48,8 @@ public class TerminationBolt extends AbstractBolt {
 	}
 
 	@Override
-	public synchronized Date getProcessingDate() {
-		Date streamDate = getLowestCurrentHeartBeat();		
-		
-		if (streamDate.after(new Date())) {
-			monitor.terminate(lastProcessedDate);
-		} else {
-			lastProcessedDate = new Date();
-		}
-
-		logger.debug(String.format("Current Termination bolt heart beat time: %1s", formatter.format(streamDate)));
-		
-		return streamDate;
+	public void declareOutputFields(OutputFieldsDeclarer arg0) {
+		// Sir, nothing to declare, Sir!
 	}
 
 	@Override

@@ -21,7 +21,6 @@ import ch.uzh.ddis.katts.query.source.Source;
 import ch.uzh.ddis.katts.query.stream.Producers;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
-import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 
 /**
  * Triple filters convert a stream of time annotated triples (quadruples) into a stream of variable bindings. Each
@@ -90,9 +89,6 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		} else {
 			declarer.fieldsGrouping(applyOnSource, new Fields(groupOn));
 		}
-
-		// Attach the heart beat to the bolt
-		declarer.allGrouping(applyOnSource, HeartBeatSpout.buildHeartBeatStreamId(applyOnSource));
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package ch.uzh.ddis.katts.query.source;
 
 import backtype.storm.topology.IRichBolt;
 import ch.uzh.ddis.katts.query.Node;
+import ch.uzh.ddis.katts.query.SpoutNode;
 
 /**
  * A Source Node represents a node which does only produce data and do not consumes any.
@@ -9,8 +10,5 @@ import ch.uzh.ddis.katts.query.Node;
  * @author Thomas Hunziker
  * 
  */
-public interface Source extends Node {
-
-	public IRichBolt getBolt();
-
+public interface Source extends SpoutNode, Node {
 }

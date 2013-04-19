@@ -108,8 +108,6 @@ public class NTupleFilterBolt extends AbstractBolt implements IRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		super.declareOutputFields(declarer);
-
 		for (Stream stream : this.getStreams()) {
 			List<String> fields = new ArrayList<String>();
 			fields.add("sequenceNumber");

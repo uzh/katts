@@ -5,21 +5,17 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import clojure.pprint.pretty_writer__init;
-
-import backtype.storm.task.OutputCollector;
+import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichBolt;
+import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
 import ch.uzh.ddis.katts.bolts.source.file.CSVSource;
 import ch.uzh.ddis.katts.bolts.source.file.GzipSourceWrapper;
 import ch.uzh.ddis.katts.bolts.source.file.N5Source;
@@ -27,39 +23,32 @@ import ch.uzh.ddis.katts.bolts.source.file.Source;
 import ch.uzh.ddis.katts.bolts.source.file.ZipSourceWrapper;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.query.source.File;
-import ch.uzh.ddis.katts.spouts.file.HeartBeatSpout;
 import ch.uzh.ddis.katts.utils.Util;
 
 /**
- * This Bolt reads in triples from files. By the abstraction of the {@link Source} different type of files can be read
- * with this bolt.
+ * This Spout reads in triples from files. By the abstraction of the {@link Source} different type of files can be read
+ * with this spout.
  * 
- * Internally a thread is run to read in the data. Storm uses normally Spouts for read in data. Because of the
- * heartbeat, this must be implement as a Bolt because the heartbeat is provided centrally and hence the reader must
- * listen to this stream. Spouts are not able to listen to streams. Therefore a Bolt is used for this task.
- * 
- * To improve the parallelization of reading this bolt accepts multiple files. For each file a separate instance is
- * created.
+ * To improve the parallelization of reading this spout can be configured with multiple files. For each file a separate
+ * instance is created.
  * 
  * TODO: Checkout how reliability can be achieved with this architecture.
  * 
  * @author Thomas Hunziker
  * 
  */
-public class FileTripleReader implements IRichBolt {
+public class FileTripleReader implements IRichSpout {
 
 	/** This formatter is used to parse dateTime string values */
 	private transient DateTimeFormatter isoFormat = ISODateTimeFormat.dateTimeParser();
 
 	private static final long serialVersionUID = 1L;
-	private OutputCollector collector;
+
+	/** We emit tuples over this collector. */
+	private SpoutOutputCollector collector;
+
 	private FileTripleReaderConfiguration configuration;
 	private Source source = null;
-	private StarterMonitor starterMonitor;
-
-	private Thread thread = null;
-
-	private Date currentRealTimeDate;
 
 	private Logger logger = LoggerFactory.getLogger(FileTripleReader.class);
 
@@ -93,12 +82,9 @@ public class FileTripleReader implements IRichBolt {
 	 * 
 	 * @return True, when a tuple was emitted.
 	 */
-	public boolean nextTuple() {
-		final String dateStringValue;
-		final Date date;
-		// TODO Add support for end date
-
+	public void nextTuple() {
 		List<String> triple = null;
+
 		try {
 			triple = source.getNextTuple();
 		} catch (Exception e) {
@@ -106,81 +92,55 @@ public class FileTripleReader implements IRichBolt {
 		}
 
 		if (triple == null) {
-			logger.info(String.format("End of file is reached in component %1s at date %2s. Line: %3s", this
-					.getConfiguration().getId(), currentRealTimeDate.toString(), numberRead));
-
-			/*
-			 * TODO: this is a dirty hack: by setting the process date to the year 292278994, the next heartbeat that
-			 * gets sent down the processing chain will tell the TerminationBolt, that we reached the end of the file.
-			 */
-			currentRealTimeDate = new Date(Long.MAX_VALUE); // set the current date
-
-			return false;
-		}
-
-		// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
-		dateStringValue = triple.get(0);
-		if (dateStringValue.contains("-") || dateStringValue.contains("T") || dateStringValue.contains(":")) {
-			if (this.isoFormat == null) {
-				this.isoFormat = ISODateTimeFormat.dateTimeParser();
-			}
-			date = this.isoFormat.parseDateTime(dateStringValue).toDate();
+			final String eof = "eof";
+			logger.info(String.format("End of file is reached in component %1s on line: %2s", this.getConfiguration()
+					.getId(), numberRead));
+			// /*
+			// * TODO: this is a dirty hack: by setting the process date set to null, we tell all the following bolts
+			// that
+			// * we are done with reading from this file.
+			// */
+			// tuple.add(null);
+			// tuple.add(eof);
+			// tuple.add(eof);
+			// tuple.add(eof);
 		} else {
-			date = new Date(Long.parseLong(dateStringValue));
-		}
+			List<Object> tuple = new ArrayList<Object>();
+			Date semanticDate;
+			final String dateStringValue;
 
-		List<Object> tuple = new ArrayList<Object>();
-		tuple.add(date);
-		synchronized (this) {
-			currentRealTimeDate = date;
-		}
-
-		if (date != null & triple.get(1) != null && triple.get(2) != null && triple.get(3) != null) {
-			// currently the start and end date are equal
-			tuple.add(date);
-			tuple.add(triple.get(1));
-			tuple.add(triple.get(2));
-			tuple.add(convertStringToObject(triple.get(3)));
-
-			// We emit on the default stream, since we do not want multiple
-			// streams!
-			synchronized (this) {
-				this.collector.emit(tuple);
+			// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
+			dateStringValue = triple.get(0);
+			if (dateStringValue.contains("-") || dateStringValue.contains("T") || dateStringValue.contains(":")) {
+				if (this.isoFormat == null) {
+					this.isoFormat = ISODateTimeFormat.dateTimeParser();
+				}
+				semanticDate = this.isoFormat.parseDateTime(dateStringValue).toDate();
+			} else {
+				semanticDate = new Date(Long.parseLong(dateStringValue));
 			}
-		} else {
-			logger.info(String.format("A triple could not be read and it was ignored. Component ID: %1s", this
-					.getConfiguration().getId()));
-		}
 
-		if (numberRead % 30000 == 0) {
-			logger.info(String.format("Read time of component %1s is %2s. Line: %3s", this.getConfiguration().getId(),
-					currentRealTimeDate.toString(), numberRead));
-		}
+			tuple.add(semanticDate);
 
-		numberRead++;
+			if (semanticDate != null & triple.get(1) != null && triple.get(2) != null && triple.get(3) != null) {
+				tuple.add(semanticDate); // put same date as end date, currently the start and end date are equal
+				tuple.add(triple.get(1));
+				tuple.add(triple.get(2));
+				tuple.add(convertStringToObject(triple.get(3)));
+			} else {
+				logger.info(String.format("A triple could not be read and it was ignored. Component ID: %1s", this
+						.getConfiguration().getId()));
+			}
 
-		return true;
-	}
+			if (numberRead % 30000 == 0) {
+				logger.info(String.format("Read time of component %1s is %2s. Line: %3s", this.getConfiguration()
+						.getId(), semanticDate.toString(), numberRead));
+			}
 
-	@Override
-	public synchronized void execute(Tuple input) {
+			numberRead++;
 
-		// This bolt receives only heart beats, hence we do not need to handle here other tuples
-
-		if (thread == null) {
-			starterMonitor.start();
-
-			// Read the first line to ensure that the currentRealTimeDate is set.
-			nextTuple();
-
-			thread = new Thread(new TripleReaderThread(this));
-			thread.start();
-		}
-
-		// Ensure that the real time is not null, if so ignore the heart beat
-		if (currentRealTimeDate != null) {
-			List<Object> output = HeartBeatSpout.getOutputTuple(input, currentRealTimeDate);
-			this.collector.emit(HeartBeatSpout.buildHeartBeatStreamId(getConfiguration().getId()), output);
+			// We emit on the default stream
+			this.collector.emit(tuple);
 		}
 	}
 
@@ -188,8 +148,16 @@ public class FileTripleReader implements IRichBolt {
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		Fields fields = new Fields("startDate", "endDate", "subject", "predicate", "object");
 		declarer.declare(fields);
-		declarer.declareStream(HeartBeatSpout.buildHeartBeatStreamId(this.getConfiguration().getId()),
-				HeartBeatSpout.getHeartBeatFields());
+	}
+
+	@Override
+	public void open(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, SpoutOutputCollector collector) {
+		this.collector = collector;
+
+		// getThisTaskIndex returns the index of this task among all tasks for this component
+		buildSources(context.getThisTaskIndex());
+
+		StarterMonitor.getInstance(conf).start();
 	}
 
 	/**
@@ -234,20 +202,6 @@ public class FileTripleReader implements IRichBolt {
 		this.configuration = configuration;
 	}
 
-	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-		this.collector = collector;
-
-		int sourceIndex = context.getThisTaskIndex();
-		buildSources(sourceIndex);
-
-		starterMonitor = StarterMonitor.getInstance(stormConf);
-	}
-
-	@Override
-	public void cleanup() {
-	}
-
 	/**
 	 * {@link FileTripleReader#source}
 	 * 
@@ -267,24 +221,24 @@ public class FileTripleReader implements IRichBolt {
 		this.source = source;
 	}
 
-	/**
-	 * {@link FileTripleReader#starterMonitor}
-	 * 
-	 * @param starterMonitor
-	 *            the starterMonitor to set
-	 */
-	protected void setStarterMonitor(StarterMonitor starterMonitor) {
-		this.starterMonitor = starterMonitor;
+	@Override
+	public void close() {
 	}
 
-	/**
-	 * {@link FileTripleReader#collector}
-	 * 
-	 * @param collector
-	 *            the collector to set
-	 */
-	protected void setCollector(OutputCollector collector) {
-		this.collector = collector;
+	@Override
+	public void activate() {
+	}
+
+	@Override
+	public void deactivate() {
+	}
+
+	@Override
+	public void ack(Object msgId) {
+	}
+
+	@Override
+	public void fail(Object msgId) {
 	}
 
 }

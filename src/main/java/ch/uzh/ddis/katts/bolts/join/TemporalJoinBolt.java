@@ -149,23 +149,10 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 				bindingsToEmit.setEndDate((Date) simpleBindings.get("endDate"));
 
 				bindingsToEmit.emit();
-				
-				// TODO: Is this really the last possible occurring date of join?
-				setLastDateProcessed(bindingsToEmit.getEndDate());
 			}
 		}
 
 		ack(event);
-	}
-	
-	@Override
-	public Date getProcessingDate() {
-		// TODO: Remove this workaround. This is required to ensure the proper termination of the system.
-		if (getLowestCurrentHeartBeat().after(new Date())) {
-			setLastDateProcessed(getLowestCurrentHeartBeat());
-		}
-		
-		return super.getProcessingDate();
 	}
 
 	@Override
