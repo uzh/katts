@@ -40,7 +40,7 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	public AbstractSynchronizedBolt() {
 		this(2000);
 	}
-	
+
 	/**
 	 * Creates a synchronized bolt that keeps its entries in the buffer for bufferDelay milliseconds before processing
 	 * them in temporal order.
@@ -62,7 +62,9 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 			@Override
 			public void run() {
 				for (Event orderedEvent : AbstractSynchronizedBolt.this.buffer.drainElements()) {
-					execute(orderedEvent);
+					synchronized (buffer) {
+						execute(orderedEvent);
+					}
 				}
 			}
 		}, 0, this.bufferDelay); // drai (and execute) all events at least every "bufferDelay" milliseconds
@@ -78,9 +80,11 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 		if (event.getEndDate().getTime() > System.currentTimeMillis()) {
 			// this has to stop
 		}
-		
+
 		for (Event orderedEvent : this.buffer.offer(event)) {
-			execute(orderedEvent);
+			synchronized (buffer) { // storm is only using one thread to call execute. this is because we use a timer
+				execute(orderedEvent);
+			}
 		}
 	}
 
@@ -88,6 +92,7 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	public abstract void execute(Event event);
 
 	public void ack(Event event) {
+		ack(event.getTuple());
 	}
 
 }

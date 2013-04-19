@@ -22,6 +22,7 @@ import ch.uzh.ddis.katts.bolts.source.file.N5Source;
 import ch.uzh.ddis.katts.bolts.source.file.Source;
 import ch.uzh.ddis.katts.bolts.source.file.ZipSourceWrapper;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
+import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.query.source.File;
 import ch.uzh.ddis.katts.utils.Util;
 
@@ -39,9 +40,6 @@ import ch.uzh.ddis.katts.utils.Util;
  */
 public class FileTripleReader implements IRichSpout {
 
-	/** This formatter is used to parse dateTime string values */
-	private transient DateTimeFormatter isoFormat = ISODateTimeFormat.dateTimeParser();
-
 	private static final long serialVersionUID = 1L;
 
 	/** We emit tuples over this collector. */
@@ -52,29 +50,46 @@ public class FileTripleReader implements IRichSpout {
 
 	private Logger logger = LoggerFactory.getLogger(FileTripleReader.class);
 
-	private long numberRead = 0;
+	/** We use this reference to signal that we're done processing. */
+	private TerminationMonitor terminationMonitor;
 
-	/**
-	 * Converts a string into a proper Java object.
-	 * <p/>
-	 * The order in which we try to convert the values is: Long - Double - Date - String.
+	/** The number of the last line that has been successfully read. */
+	private long lastLineRead = 0;
+
+	/*
+	 * We count each emitted message and have counts for the acked and failed messages. When we are done reading from
+	 * the file and the number of acked and failed messages add up to the number of emitted messages, we know that we
+	 * are done processing the input file. We don't re-send messages if they have failed, but merely write a warning to
+	 * the log.
 	 * 
-	 * @param value
-	 *            the string value to convert into an object.
-	 * @return the created object.
+	 * According to this thread:
+	 * https://groups.google.com/forum/?fromgroups=#!searchin/storm-user/thread$20ack$20fail$20nextTuple
+	 * /storm-user/kM2O1gT4lPs/RJy64AcQm4QJ nextTuple, ack and fail are all called on the the same thread, so we don't
+	 * need thread safe counters.
 	 */
-	public Object convertStringToObject(String value) {
-		Object result = value;
 
-		if (Util.isLong(value)) {
-			result = Long.valueOf(value);
-		} else if (Util.isDouble(value)) {
-			result = Double.valueOf(value);
-		} else if (Util.isIsoDate(value)) {
-			result = this.isoFormat.parseDateTime(value).toDate();
-		}
+	/** Number of emitted messages. */
+	private long emitted = 0;
 
-		return result;
+	/** Number of acked messages. */
+	private long acked = 0;
+
+	/** Number of failed messages. */
+	private long failed = 0;
+
+	/** True, if the end of the file (we're currently reading) has been reached, false otherwise. */
+	private boolean eofReached = false;
+
+	@Override
+	public void open(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, SpoutOutputCollector collector) {
+		this.collector = collector;
+
+		this.terminationMonitor = TerminationMonitor.getInstance(conf);
+
+		// getThisTaskIndex returns the index of this task among all tasks for this component
+		buildSources(context.getThisTaskIndex());
+
+		StarterMonitor.getInstance(conf).start();
 	}
 
 	/**
@@ -92,18 +107,12 @@ public class FileTripleReader implements IRichSpout {
 		}
 
 		if (triple == null) {
-			final String eof = "eof";
-			logger.info(String.format("End of file is reached in component %1s on line: %2s", this.getConfiguration()
-					.getId(), numberRead));
-			// /*
-			// * TODO: this is a dirty hack: by setting the process date set to null, we tell all the following bolts
-			// that
-			// * we are done with reading from this file.
-			// */
-			// tuple.add(null);
-			// tuple.add(eof);
-			// tuple.add(eof);
-			// tuple.add(eof);
+			if (!this.eofReached) {
+				logger.info(String.format("End of file is reached in component %1s on line: %2s", this
+						.getConfiguration().getId(), lastLineRead));
+				this.eofReached = true;
+				checkForCompletion();
+			}
 		} else {
 			List<Object> tuple = new ArrayList<Object>();
 			Date semanticDate;
@@ -112,10 +121,7 @@ public class FileTripleReader implements IRichSpout {
 			// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
 			dateStringValue = triple.get(0);
 			if (dateStringValue.contains("-") || dateStringValue.contains("T") || dateStringValue.contains(":")) {
-				if (this.isoFormat == null) {
-					this.isoFormat = ISODateTimeFormat.dateTimeParser();
-				}
-				semanticDate = this.isoFormat.parseDateTime(dateStringValue).toDate();
+				semanticDate = Util.parseDateTime(dateStringValue);
 			} else {
 				semanticDate = new Date(Long.parseLong(dateStringValue));
 			}
@@ -126,21 +132,21 @@ public class FileTripleReader implements IRichSpout {
 				tuple.add(semanticDate); // put same date as end date, currently the start and end date are equal
 				tuple.add(triple.get(1));
 				tuple.add(triple.get(2));
-				tuple.add(convertStringToObject(triple.get(3)));
+				tuple.add(Util.convertStringToObject(triple.get(3)));
 			} else {
 				logger.info(String.format("A triple could not be read and it was ignored. Component ID: %1s", this
 						.getConfiguration().getId()));
 			}
 
-			if (numberRead % 30000 == 0) {
+			if (lastLineRead % 30000 == 0) {
 				logger.info(String.format("Read time of component %1s is %2s. Line: %3s", this.getConfiguration()
-						.getId(), semanticDate.toString(), numberRead));
+						.getId(), semanticDate.toString(), Long.valueOf(lastLineRead)));
 			}
-
-			numberRead++;
 
 			// We emit on the default stream
 			this.collector.emit(tuple);
+			this.emitted++;
+			this.lastLineRead++;
 		}
 	}
 
@@ -148,16 +154,6 @@ public class FileTripleReader implements IRichSpout {
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		Fields fields = new Fields("startDate", "endDate", "subject", "predicate", "object");
 		declarer.declare(fields);
-	}
-
-	@Override
-	public void open(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, SpoutOutputCollector collector) {
-		this.collector = collector;
-
-		// getThisTaskIndex returns the index of this task among all tasks for this component
-		buildSources(context.getThisTaskIndex());
-
-		StarterMonitor.getInstance(conf).start();
 	}
 
 	/**
@@ -235,10 +231,24 @@ public class FileTripleReader implements IRichSpout {
 
 	@Override
 	public void ack(Object msgId) {
+		this.acked++;
+		System.out.println("message has been acked");
+		checkForCompletion();
 	}
 
 	@Override
 	public void fail(Object msgId) {
+		logger.warn("The message " + msgId.toString() + " has failed to be processed.");
+		this.failed++;
 	}
 
+	/**
+	 * This method checks if we have reached the end of the file we're currently reading and if all emitted messages
+	 * have either been acked or failed. If so, the method informs the monitoring facility of this fact.
+	 */
+	private void checkForCompletion() {
+		if (this.eofReached && (this.acked + this.failed == this.emitted)) {
+			this.terminationMonitor.terminate(new Date());
+		}
+	}
 }

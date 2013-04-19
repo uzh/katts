@@ -106,6 +106,7 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 		}
 
 		lastProcessedDate = event.getEndDate();
+		ack(event);
 	}
 
 	/**

@@ -2,11 +2,17 @@ package ch.uzh.ddis.katts.utils;
 
 import static org.junit.Assert.*;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import ch.uzh.ddis.katts.bolts.source.FileTripleReader;
 
 public class UtilTest {
 
@@ -85,6 +91,31 @@ public class UtilTest {
 			}
 			assertEquals(validValue, Util.isIsoDate(testValue));
 		}
+	}
+	
+	@Test
+	public void testConverterLong() {
+		FileTripleReader reader = new FileTripleReader();
+		assertEquals(Long.valueOf(1L), Util.convertStringToObject("1"));
+	}
+		
+	@Test
+	public void testConverterDouble() {
+		FileTripleReader reader = new FileTripleReader();
+		assertEquals(Double.valueOf(1.0D), Util.convertStringToObject("1.0D"));
+	}
+
+	@Test
+	public void testConverterDateTime() {
+		FileTripleReader reader = new FileTripleReader();
+		Calendar cal = GregorianCalendar.getInstance();
+		cal.set(2001, 2, 4, 5, 6, 7);
+		cal.set(Calendar.MILLISECOND, 0);
+		
+		long calDate = cal.getTime().getTime();
+		long parseDate = ((Date)Util.convertStringToObject("2001-03-04T05:06:07")).getTime();
+		assertEquals(calDate, parseDate);
+		
 	}
 
 }
