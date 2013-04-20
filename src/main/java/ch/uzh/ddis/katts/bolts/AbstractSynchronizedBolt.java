@@ -24,7 +24,7 @@ import ch.uzh.ddis.katts.utils.ElasticPriorityQueue;
 public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsBolt {
 
 	/** This datastructure does the temporal ordering. */
-	private final ElasticPriorityQueue<Event> buffer;
+	private ElasticPriorityQueue<Event> buffer;
 
 	/** Events will be kept in the buffer for this many milliseconds, before processing them in temporal order. */
 	private final long bufferDelay;
@@ -38,24 +38,27 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	 * Default constructor that uses a delay of two seconds. Why two? I'll tell you why: I don't know!
 	 */
 	public AbstractSynchronizedBolt() {
-		this(2000);
+		this(1000);
 	}
 
 	/**
-	 * Creates a synchronized bolt that keeps its entries in the buffer for bufferDelay milliseconds before processing
-	 * them in temporal order.
+	 * Creates a synchronized bolt that keeps its entries in the buffer for at most maxDelay milliseconds before
+	 * processing them in temporal order. If there are tuples from all incoming streams before maxDelay has expired, all
+	 * tuples that have a date older than the oldest date from all streams, will be processed.
 	 * 
-	 * @param bufferDelay
+	 * @param maxDelay
 	 *            the number of milliseconds, an event will be kept in the buffer.
 	 */
-	public AbstractSynchronizedBolt(int bufferDelay) {
-		this.bufferDelay = bufferDelay;
-		this.buffer = new ElasticPriorityQueue<Event>(this.bufferDelay, new Event.EndDateComparator());
+	public AbstractSynchronizedBolt(int maxDelay) {
+		this.bufferDelay = maxDelay;
 	}
 
 	@Override
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
+
+		this.buffer = new ElasticPriorityQueue<Event>(this.bufferDelay, context.getThisStreams(),
+				new Event.EndDateComparator());
 
 		drainTimer = new Timer("Drain timer " + context.getThisTaskId());
 		drainTimer.schedule(new TimerTask() {
@@ -73,12 +76,13 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	@Override
 	public void executeRegularTuple(Tuple input) {
 		Event event = createEvent(input);
+
 		/*
 		 * Storm uses the same thread to call execute. However, since we drain the buffer using a timer (which is a
 		 * second thread) we need so synchronize access to it.
 		 */
 		synchronized (buffer) {
-			for (Event orderedEvent : this.buffer.offer(event)) {
+			for (Event orderedEvent : this.buffer.offer(event, input.getSourceStreamId())) {
 				execute(orderedEvent);
 			}
 		}
