@@ -2,9 +2,9 @@ package ch.uzh.ddis.katts.bolts.source;
 
 import java.util.List;
 
-import ch.uzh.ddis.katts.bolts.ProducerConfiguration;
 import ch.uzh.ddis.katts.query.source.File;
 
+// TODO lorenz: maybe rename this into a general FileReaderConfiguration?
 /**
  * This interface provides the basic configuration required by {@link FileTripleReader}.
  * 

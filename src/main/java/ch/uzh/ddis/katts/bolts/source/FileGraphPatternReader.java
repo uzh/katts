@@ -7,36 +7,43 @@ import java.util.List;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import ch.uzh.ddis.katts.bolts.source.file.Source;
+import ch.uzh.ddis.katts.query.source.FileGraphPatternReaderConfiguration;
 import ch.uzh.ddis.katts.utils.Util;
 
 /**
  * This Spout reads in triples from files. By the abstraction of the {@link Source} different type of files can be read
  * with this spout.
  * 
- * To improve the parallelization of reading this spout can be configured with multiple files. For each file a separate
- * instance is created.
+ * All triples that share the same timestamp will be matched against the configured graph pattern. If there is a match
+ * all variables from the graph pattern will be emitted on the configured stream.
  * 
- * TODO: Checkout how reliability can be achieved with this architecture.
+ * Multiple files can be configured. There will be one spout instance for each file.
  * 
- * @author Thomas Hunziker
  * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
  * 
  */
-public class FileTripleReader extends AbstractLineReader {
+public class FileGraphPatternReader extends AbstractLineReader {
 
-	private FileTripleReaderConfiguration configuration;
+	private FileGraphPatternReaderConfiguration configuration;
 
-	/** We keep track of how many lines we have read so far using this variable. */
+	/** We keep track of how many lines we have read using this variable. */
 	private int lastLineRead = 0;
 
-	public FileTripleReader(FileTripleReaderConfiguration configuration) {
+	/**
+	 * Creates a new reader instance using the provided configuration.
+	 * 
+	 * @param configuration
+	 *            the configuration object.
+	 */
+	public FileGraphPatternReader(FileGraphPatternReaderConfiguration configuration) {
 		super(configuration);
 		this.configuration = configuration;
 	}
 
 	@Override
 	public boolean nextTuple(Source source) {
-		boolean result = false;
+		boolean result;
+
 		List<String> triple = null;
 
 		try {
@@ -75,11 +82,12 @@ public class FileTripleReader extends AbstractLineReader {
 						semanticDate.toString(), Long.valueOf(lastLineRead)));
 			}
 
-			lastLineRead++;
+			this.lastLineRead++;
+			// We emit on the default stream
 			emit(tuple);
 			result = true;
-		} else {
 
+		} else {
 			logger.info(String.format("End of file is reached in component %1s on line: %2s",
 					this.configuration.getId(), lastLineRead));
 			result = false;

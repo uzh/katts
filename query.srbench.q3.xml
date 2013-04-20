@@ -149,7 +149,7 @@
 
 
 
-	<expressionFilter expression="#min_wind_speed > 4.9" id="expressionFilter"> <!-- 74 -->
+	<expressionFilter expression="#min_wind_speed > 1" id="expressionFilter"> <!-- 74 -->
 		<consumes>
 			<stream maxBufferSize="5" streamId="minWindSpeedStream">
 				<variableGrouping>

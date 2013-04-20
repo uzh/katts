@@ -5,6 +5,8 @@ KATTS
 
 Revision History
 ================
+2.1.5-SNAPSHOT    - don't log acker messages
+
 2.1.4-SNAPSHOT    - using a comparator in ElasticPriorityQueue
 
 2.1.0-SNAPSHOT    - acking facility activated again.

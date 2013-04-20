@@ -39,7 +39,7 @@ public class TaskMonitor extends BaseTaskHook {
 
 	@Override
 	public void emit(EmitInfo info) {
-		if (this.recordMessages && !info.stream.contains("heartbeat")) {
+		if (this.recordMessages && !info.stream.contains("__ack")) { // don't measure ack messages
 			for (Integer taskId : info.outTasks) {
 				this.recorder.recordMessageSending(this.thisTaskId, taskId);
 			}

@@ -50,6 +50,8 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 		streamList = this.getStreamConsumer();
 	}
 
+	private Date lastEndDate = new Date(0);
+	
 	@Override
 	public synchronized void execute(Event event) {
 
@@ -75,7 +77,16 @@ public class OneFieldJoinBolt extends AbstractSynchronizedBolt {
 			joinBuffer = new ConcurrentHashMap<StreamConsumer, Event>();
 			this.buffers.put(joinOn, joinBuffer);
 		}
-
+//		
+//		if (getId().equals("Join_Result")) {
+//			System.out.println(event);
+//			if (lastEndDate.after(event.getEndDate())) {
+//				System.out.println("date " + lastEndDate + " is after " + event.getEndDate());
+//				throw new IllegalStateException("fuck");
+//			}
+//			lastEndDate = event.getEndDate();
+//		}
+		
 		// Remove all events from join buffer, that are before the current event.
 		List<StreamConsumer> toRemove = new ArrayList<StreamConsumer>();
 		for (Entry<StreamConsumer, Event> entry : joinBuffer.entrySet()) {
