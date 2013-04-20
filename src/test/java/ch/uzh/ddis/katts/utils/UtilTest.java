@@ -1,6 +1,7 @@
 package ch.uzh.ddis.katts.utils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -12,13 +13,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import ch.uzh.ddis.katts.bolts.source.FileTripleReader;
-
 public class UtilTest {
 
 	/** This formatter is used to parse dateTime string values */
 	private DateTimeFormatter isoFormat = ISODateTimeFormat.dateTimeParser();
-	
+
 	@Before
 	public void setUp() throws Exception {
 	}
@@ -29,7 +28,7 @@ public class UtilTest {
 
 	@Test
 	public void testIsLong() {
-		String[] valuesToTest = {"1.0", "0", ".1", "-1", "+1", "-321321", "+654654"};
+		String[] valuesToTest = { "1.0", "0", ".1", "-1", "+1", "-321321", "+654654" };
 
 		System.out.println("testIsLong:");
 		for (String testValue : valuesToTest) {
@@ -39,19 +38,19 @@ public class UtilTest {
 				Long.parseLong(testValue);
 				validValue = true;
 			} catch (NumberFormatException e) {
-				validValue =  false;
+				validValue = false;
 			}
 			assertEquals(validValue, Util.isLong(testValue));
-			
+
 			// can an integer be parsed to a double?
 			assertFalse(Util.isLong("1.0"));
 		}
 	}
-	
+
 	@Test
 	public void testIsDouble() {
-		String[] valuesToTest = {"1.0", "+1.0", "-1.0", "0.0000", "0", "0.0001", "-0.0000", ".1"};
-		
+		String[] valuesToTest = { "1.0", "+1.0", "-1.0", "0.0000", "0", "0.0001", "-0.0000", ".1" };
+
 		System.out.println("testIsDouble:");
 		for (String testValue : valuesToTest) {
 			boolean validValue;
@@ -60,25 +59,17 @@ public class UtilTest {
 				Double.parseDouble(testValue);
 				validValue = true;
 			} catch (NumberFormatException e) {
-				validValue =  false;
+				validValue = false;
 			}
 			assertEquals(validValue, Util.isDouble(testValue));
 		}
 	}
-	
-	
+
 	@Test
 	public void testIsIsoDate() {
-		String[] valuesToTest = {"2004-01-02",
-								 "2004-02-03",
-								 "2004-02-03T12:12",
-								 "2004-01-01T00:00",
-								 "2004-03-02T01:01",
-								 "2004-05-04T00:00",
-								 "2004-12-12T00:00",
-								 "2004-13-14T00:00",
-								 "2004-12-03T00:59"};
-		
+		String[] valuesToTest = { "2004-01-02", "2004-02-03", "2004-02-03T12:12", "2004-01-01T00:00",
+				"2004-03-02T01:01", "2004-05-04T00:00", "2004-12-12T00:00", "2004-13-14T00:00", "2004-12-03T00:59" };
+
 		System.out.println("testIsIsoDate:");
 		for (String testValue : valuesToTest) {
 			boolean validValue;
@@ -87,35 +78,33 @@ public class UtilTest {
 				this.isoFormat.parseDateTime(testValue);
 				validValue = true;
 			} catch (IllegalArgumentException e) {
-				validValue =  false;
+				validValue = false;
 			}
 			assertEquals(validValue, Util.isIsoDate(testValue));
 		}
 	}
-	
+
 	@Test
 	public void testConverterLong() {
-		FileTripleReader reader = new FileTripleReader();
 		assertEquals(Long.valueOf(1L), Util.convertStringToObject("1"));
 	}
-		
+
 	@Test
 	public void testConverterDouble() {
-		FileTripleReader reader = new FileTripleReader();
 		assertEquals(Double.valueOf(1.0D), Util.convertStringToObject("1.0D"));
+		assertEquals(Double.valueOf(1.0D), Util.convertStringToObject("1.0d"));
 	}
 
 	@Test
 	public void testConverterDateTime() {
-		FileTripleReader reader = new FileTripleReader();
 		Calendar cal = GregorianCalendar.getInstance();
 		cal.set(2001, 2, 4, 5, 6, 7);
 		cal.set(Calendar.MILLISECOND, 0);
-		
+
 		long calDate = cal.getTime().getTime();
-		long parseDate = ((Date)Util.convertStringToObject("2001-03-04T05:06:07")).getTime();
+		long parseDate = ((Date) Util.convertStringToObject("2001-03-04T05:06:07")).getTime();
 		assertEquals(calDate, parseDate);
-		
+
 	}
 
 }
