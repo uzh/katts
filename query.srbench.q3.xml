@@ -4,7 +4,7 @@
   <!-- Before the query is deployed the data files are copied to all nodes with rsync. -->
   <fileSource id="weathersource">
     <files>
-      <file mimeType="text/n5" path="data/charley.top10k.n5" />
+      <file mimeType="text/n5" path="data/charley.top10k.sorted.n5" />
     </files>
   </fileSource>
 
