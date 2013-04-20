@@ -61,8 +61,8 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 		drainTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				for (Event orderedEvent : AbstractSynchronizedBolt.this.buffer.drainElements()) {
-					synchronized (buffer) {
+				synchronized (AbstractSynchronizedBolt.this.buffer) {
+					for (Event orderedEvent : AbstractSynchronizedBolt.this.buffer.drainElements()) {
 						execute(orderedEvent);
 					}
 				}
@@ -73,16 +73,12 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	@Override
 	public void executeRegularTuple(Tuple input) {
 		Event event = createEvent(input);
-
 		/*
-		 * TODO Halting Problem: remove this hack and replace it with the regular ack/fail process
+		 * Storm uses the same thread to call execute. However, since we drain the buffer using a timer (which is a
+		 * second thread) we need so synchronize access to it.
 		 */
-		if (event.getEndDate().getTime() > System.currentTimeMillis()) {
-			// this has to stop
-		}
-
-		for (Event orderedEvent : this.buffer.offer(event)) {
-			synchronized (buffer) { // storm is only using one thread to call execute. this is because we use a timer
+		synchronized (buffer) {
+			for (Event orderedEvent : this.buffer.offer(event)) {
 				execute(orderedEvent);
 			}
 		}

@@ -18,14 +18,13 @@ import java.util.PriorityQueue;
  * run but stays in there, because there are always new elements added to the queue that are lower in terms of their
  * semantic ordering, but younger in terms of when they were added to the queue.
  * 
+ * This class is <b>not thread safe</b>, so access to it has to be synchronized.
+ * 
  * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
  */
 public class ElasticPriorityQueue<E> implements Serializable {
 
 	private PriorityQueue<ElemWrap> priorityQueue;
-
-	/** The comparator used to compare two instances of E when deciding which one is "smaller". */
-	private Comparator<E> comparator;
 
 	/**
 	 * This is the delay (milliseconds) during which elements are kept in the cache before they are returned.
@@ -40,13 +39,15 @@ public class ElasticPriorityQueue<E> implements Serializable {
 	 */
 	public ElasticPriorityQueue(long delay, Comparator<E> comparator) {
 		this.delay = delay;
-		this.comparator = comparator;
-		this.priorityQueue = new PriorityQueue<ElemWrap>();
+		this.priorityQueue = new PriorityQueue<ElemWrap>(1000, new ElemWrapComparator(comparator));
 	}
 
 	public Collection<E> offer(E e) {
 		ArrayList<E> result = new ArrayList<E>();
-
+		
+		if (e == null) {
+			throw new NullPointerException("WTF??");
+		}
 		// add the element to the queue
 		this.priorityQueue.offer(new ElemWrap(e));
 
@@ -77,7 +78,10 @@ public class ElasticPriorityQueue<E> implements Serializable {
 		ArrayList<E> result = new ArrayList<E>();
 
 		while (!this.priorityQueue.isEmpty()) {
-			result.add(this.priorityQueue.poll().element);
+			ElemWrap wrapper = this.priorityQueue.poll();
+			if (wrapper != null) { // this should be possible
+				result.add(wrapper.element);
+			}
 		}
 
 		return result;
@@ -95,10 +99,10 @@ public class ElasticPriorityQueue<E> implements Serializable {
 	 * element and attaches the current system timestamp to is. This time stamp is used to determine the time for which
 	 * a element has to be kept in cache.
 	 * 
-	 * @author aeon
+	 * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
 	 * 
 	 */
-	private final class ElemWrap implements Comparable<ElemWrap> {
+	private final class ElemWrap implements Serializable {
 		private final E element;
 		private final long timestamp;
 
@@ -106,11 +110,38 @@ public class ElasticPriorityQueue<E> implements Serializable {
 			this.element = element;
 			this.timestamp = System.currentTimeMillis();
 		}
+	}
+
+	/**
+	 * This comparator compares elements of type ElemWrap using a user-supplied comaprator to compare the inner Elements
+	 * of type E.
+	 * 
+	 * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
+	 */
+	private final class ElemWrapComparator implements Comparator<ElemWrap>, Serializable {
+
+		/** The comparator to compare the elemements wrapped by ElemWrap. */
+		private final Comparator<E> comparator;
+
+		/**
+		 * Creates a comparator for ElemWrap objects using the provided comparator to compare the wrapped objects that
+		 * are inside the ElemWrap objects.
+		 * 
+		 * @param elementComparator
+		 *            a comparator that compares the objects wrapped inside the ElemWrap objects.
+		 */
+		public ElemWrapComparator(Comparator<E> comparator) {
+			this.comparator = comparator;
+		}
 
 		@Override
-		public int compareTo(ElemWrap o) {
-			return ElasticPriorityQueue.this.comparator.compare(this.element, o.element);
+		public int compare(ElemWrap o1, ElemWrap o2) {
+			if (o1 == null && o2 == null) return 0;
+			if (o1 == null && o2 != null) return -1;
+			if (o1 != null && o2 == null) return 1;
+			return this.comparator.compare(o1.element, o2.element);
 		}
+
 	}
 
 }

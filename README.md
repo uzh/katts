@@ -5,6 +5,11 @@ KATTS
 
 Revision History
 ================
+2.1.4-SNAPSHOT    - using a comparator in ElasticPriorityQueue
+
+2.1.0-SNAPSHOT    - acking facility activated again.
+                  - end of run detection depends on acks now
+
 2.0.0-SNAPSHOT    - removed heartbeat
 
 1.3.4-SNAPSHOT    - concurrent messagerecorder

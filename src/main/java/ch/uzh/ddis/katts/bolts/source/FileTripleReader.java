@@ -6,8 +6,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +34,7 @@ import ch.uzh.ddis.katts.utils.Util;
  * TODO: Checkout how reliability can be achieved with this architecture.
  * 
  * @author Thomas Hunziker
+ * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
  * 
  */
 public class FileTripleReader implements IRichSpout {
@@ -143,10 +142,10 @@ public class FileTripleReader implements IRichSpout {
 						.getId(), semanticDate.toString(), Long.valueOf(lastLineRead)));
 			}
 
-			// We emit on the default stream
-			this.collector.emit(tuple);
-			this.emitted++;
 			this.lastLineRead++;
+			// We emit on the default stream
+			this.collector.emit(tuple, this.lastLineRead);
+			this.emitted++;
 		}
 	}
 
@@ -232,7 +231,6 @@ public class FileTripleReader implements IRichSpout {
 	@Override
 	public void ack(Object msgId) {
 		this.acked++;
-		System.out.println("message has been acked");
 		checkForCompletion();
 	}
 
@@ -240,6 +238,7 @@ public class FileTripleReader implements IRichSpout {
 	public void fail(Object msgId) {
 		logger.warn("The message " + msgId.toString() + " has failed to be processed.");
 		this.failed++;
+		checkForCompletion();
 	}
 
 	/**

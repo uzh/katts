@@ -119,9 +119,9 @@ public final class Recorder implements TerminationWatcher {
 		if (instance == null) {
 			instance = new Recorder(stormConf, topologyName);
 
-			// Start Virtual Machine Monitoring
-			Thread vmMonitor = new Thread(new VmMonitor(instance, (Long) stormConf.get(VmMonitor.RECORD_INVERVAL)));
-			vmMonitor.start();
+//			// Start Virtual Machine Monitoring
+//			Thread vmMonitor = new Thread(new VmMonitor(instance, (Long) stormConf.get(VmMonitor.RECORD_INVERVAL)));
+//			vmMonitor.start();
 		}
 
 		return instance;

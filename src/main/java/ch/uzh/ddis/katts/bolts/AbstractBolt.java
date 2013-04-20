@@ -105,8 +105,7 @@ public abstract class AbstractBolt implements IRichBolt {
 	 *            The tuple to emit.
 	 */
 	public void emit(String streamId, Tuple anchor, List<Object> tuple) {
-		// We do not emit the anchor, to prevent the tracking of the tuples
-		this.emit(streamId, tuple);
+		this.collector.emit(streamId, anchor, tuple);
 	}
 
 	/**

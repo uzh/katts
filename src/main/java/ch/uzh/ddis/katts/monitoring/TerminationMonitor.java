@@ -84,7 +84,7 @@ public class TerminationMonitor implements Watcher {
 	public synchronized void terminate(Date terminatedOn) {
 		// If this method is invoked multiple times, we need to make sure, that the barrier is only written the first time.
 		if (!isTerminated) {
-			logger.info("End of file reached.");
+			logger.info("Run terminated.");
 			
 			ZooKeeper zooKeeper;
 			try {
