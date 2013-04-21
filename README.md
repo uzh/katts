@@ -5,6 +5,8 @@ KATTS
 
 Revision History
 ================
+2.2.0-SNAPSHOT    - first version of sub graph reader
+
 2.1.5-SNAPSHOT    - don't log acker messages
 
 2.1.4-SNAPSHOT    - using a comparator in ElasticPriorityQueue

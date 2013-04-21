@@ -32,6 +32,7 @@ import ch.uzh.ddis.katts.query.processor.filter.TripleFilter;
 import ch.uzh.ddis.katts.query.processor.function.ExpressionFunction;
 import ch.uzh.ddis.katts.query.processor.join.OneFieldJoin;
 import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
+import ch.uzh.ddis.katts.query.source.FileGraphPatternReaderConfiguration;
 import ch.uzh.ddis.katts.query.source.FileSource;
 import ch.uzh.ddis.katts.query.source.NTupleFileSource;
 import ch.uzh.ddis.katts.query.stream.Stream;
@@ -55,6 +56,7 @@ public class Query implements Serializable {
 			// @XmlElementRef(type = CachedFileSourceConfiguration.class), //
 			@XmlElementRef(type = ExpressionFilter.class),//
 			@XmlElementRef(type = ExpressionFunction.class), //
+			@XmlElementRef(type = FileGraphPatternReaderConfiguration.class), //
 			@XmlElementRef(type = FileSource.class), //
 			@XmlElementRef(type = FileOutput.class), //
 			@XmlElementRef(type = NTupleFileSource.class), //

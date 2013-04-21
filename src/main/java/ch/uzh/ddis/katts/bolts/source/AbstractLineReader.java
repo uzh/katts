@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichSpout;
+import backtype.storm.utils.Utils;
 import ch.uzh.ddis.katts.bolts.source.file.CSVSource;
 import ch.uzh.ddis.katts.bolts.source.file.GzipSourceWrapper;
 import ch.uzh.ddis.katts.bolts.source.file.N5Source;
@@ -18,7 +19,6 @@ import ch.uzh.ddis.katts.bolts.source.file.Source;
 import ch.uzh.ddis.katts.bolts.source.file.ZipSourceWrapper;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
-import ch.uzh.ddis.katts.query.source.AbstractSource;
 import ch.uzh.ddis.katts.query.source.File;
 
 /**
@@ -66,12 +66,13 @@ public abstract class AbstractLineReader implements IRichSpout {
 
 	/** The basic configuration necessary for a line reader. */
 	private FileTripleReaderConfiguration configuration;
-	
-	
+
+	/** This monitor will be informed when we reached the end of the input. */
+	private StarterMonitor starterMonitor;
+
 	public AbstractLineReader(FileTripleReaderConfiguration configuration) {
 		this.configuration = configuration;
 	}
-	
 
 	@Override
 	public void open(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, SpoutOutputCollector collector) {
@@ -80,9 +81,9 @@ public abstract class AbstractLineReader implements IRichSpout {
 		this.terminationMonitor = TerminationMonitor.getInstance(conf);
 
 		// getThisTaskIndex returns the index of this task among all tasks for this component
-		buildSources(context.getThisTaskIndex());
+		this.source = buildSources(context.getThisTaskIndex());
 
-		StarterMonitor.getInstance(conf).start();
+		this.starterMonitor = StarterMonitor.getInstance(conf);
 	}
 
 	/**
@@ -96,6 +97,13 @@ public abstract class AbstractLineReader implements IRichSpout {
 				this.eofReached = true;
 				checkForCompletion();
 			}
+		} else {
+			try {
+				// as requested by ISpout#nextTuple() documentation
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				logger.warn("Interrupted while sleeping for a millisecond (eof reached)");
+			}
 		}
 	}
 
@@ -108,10 +116,32 @@ public abstract class AbstractLineReader implements IRichSpout {
 	 */
 	protected abstract boolean nextTuple(Source source);
 
-	/** Emits the supplied tuple on the default stream. */
+	/**
+	 * Emits the supplied tuple on the default stream.
+	 * 
+	 * @param tuple
+	 *            the tuple to emit.
+	 */
 	protected void emit(List<Object> tuple) {
+		emit(Utils.DEFAULT_STREAM_ID, tuple);
+	}
+
+	/**
+	 * Emits the supplied tuple on the given stream.
+	 * 
+	 * @param streamId
+	 *            the name of the stream to emit the tuple on
+	 * @param tuple
+	 *            the tuple to emit.
+	 */
+	protected void emit(String streamId, List<Object> tuple) {
+		// we start measuring time, when the first tuple gets emitted
+		if (this.emitted == 0) {
+			starterMonitor.start();
+		}
+
 		// We emit on the default stream
-		this.collector.emit(tuple, ++this.emitted);
+		this.collector.emit(streamId, tuple, ++this.emitted);
 	}
 
 	/**
@@ -120,27 +150,33 @@ public abstract class AbstractLineReader implements IRichSpout {
 	 * 
 	 * @param sourceIndex
 	 */
-	protected void buildSources(int sourceIndex) {
+	protected Source buildSources(int sourceIndex) {
+		Source src;
+
 		File file = this.configuration.getFiles().get(sourceIndex);
 		if (file.getMimeType().equals("text/comma-separated-values")) {
-			source = new CSVSource();
+			src = new CSVSource();
 		} else if (file.getMimeType().equals("text/n5")) {
-			source = new N5Source();
+			src = new N5Source();
+		} else {
+			throw new IllegalArgumentException("The file is neither csv nor n5. We only support these two.");
 		}
 
 		if (file.getPath().endsWith(".zip")) {
-			source = new ZipSourceWrapper(source);
+			src = new ZipSourceWrapper(src);
 		} else if (file.getPath().endsWith(".gz")) {
-			source = new GzipSourceWrapper(source);
+			src = new GzipSourceWrapper(src);
 		}
 
 		try {
-			InputStream inputStream = source.buildInputStream(file);
-			source.setFileInputStream(inputStream);
+			InputStream inputStream = src.buildInputStream(file);
+			src.setFileInputStream(inputStream);
 		} catch (Exception e) {
 			throw new RuntimeException(String.format("Unable to read input file '%1s' because: %2s", file.getPath(),
 					e.getMessage()), e);
 		}
+
+		return src;
 	}
 
 	/**
@@ -196,7 +232,7 @@ public abstract class AbstractLineReader implements IRichSpout {
 			this.terminationMonitor.terminate(new Date());
 		}
 	}
-	
+
 	@Override
 	public Map<String, Object> getComponentConfiguration() {
 		return null;
