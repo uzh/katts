@@ -5,6 +5,8 @@ KATTS
 
 Revision History
 ================
+2.2.1-SNAPSHOT    - fixed but in expression filter which would only allow "inherited" variable configuration
+
 2.2.0-SNAPSHOT    - first version of sub graph reader
 
 2.1.5-SNAPSHOT    - don't log acker messages

@@ -56,13 +56,8 @@ public class ExpressionFilterBolt extends AbstractVariableBindingsBolt {
 			for (Stream stream : this.getStreams()) {
 				VariableBindings binding = getEmitter().createVariableBindings(stream, event);
 
-				// Copy Variables from the inherit stream
-				for (Variable variable : stream.getInheritFrom().getAllVariables()) {
-					binding.add(variable, event.getVariableValue(variable));
-				}
-
 				// Overwrite inherited values with the variables configured for this stream.
-				for (Variable var : event.getEmittedOn().getStream().getAllVariables()) {
+				for (Variable var : stream.getAllVariables()) {
 					binding.add(var, event.getVariableValue(var));
 				}
 

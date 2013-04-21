@@ -33,7 +33,8 @@
 			</stream>
 		</consumes>
 		<produces>
-			<stream id="minWindSpeedStream" inheritFrom="weathersource">
+			<stream id="minWindSpeedStream">
+				<variable name="sensor_id" referencesTo="sensor_id" />
 				<variable name="min_wind_speed" referencesTo="min" />
 			</stream>
 		</produces>
@@ -42,7 +43,7 @@
 		</components>
 	</partitioner>
 
-	<expressionFilter expression="#min_wind_speed > 1" id="expressionFilter"> <!-- 74 -->
+	<expressionFilter expression="#min_wind_speed > 5" id="expressionFilter"> <!-- 74 -->
 		<consumes>
 			<stream maxBufferSize="5" streamId="minWindSpeedStream">
 				<variableGrouping>
@@ -51,7 +52,10 @@
 			</stream>
 		</consumes>
 		<produces>
-			<stream id="filteredMinWindSpeedStream" inheritFrom="minWindSpeedStream" />
+			<stream id="filteredMinWindSpeedStream">
+			     <variable name="sensor_id" referencesTo="sensor_id" />
+			     <variable name="min_wind_speed" referencesTo="min_wind_speed" />
+			</stream>
 		</produces>
 	</expressionFilter>
 

@@ -263,9 +263,9 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 		for (Stream stream : this.getStreams()) {
 			VariableBindings bindings = getEmitter().createVariableBindings(stream, eventToJoinWith);
 
-			// Copy Variables from the stream we inherit our variables from
-			if (stream.getInheritFrom() != null) {
-				for (Variable variable : stream.getInheritFrom().getAllVariables()) {
+			// Copy all configured variables that exist in the original tuple (inherited and others)
+			for (Variable variable : stream.getAllVariables()) {
+				if (eventToJoinWith.getTuple().contains(variable.getName())) {
 					bindings.add(variable, eventToJoinWith.getVariableValue(variable));
 				}
 			}
@@ -282,8 +282,8 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 				Double aggregate = component.calculateAggregate(componentBuckets);
 
 				if (aggregate == null) {
-					logger.warn("An aggreate could not be built, " +
-								"because all buckets seem to be empty or null, respectively.");
+					logger.warn("An aggreate could not be built, "
+							+ "because all buckets seem to be empty or null, respectively.");
 					aggreationMissed = true;
 					break;
 				}
