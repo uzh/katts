@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query xmlns="http://uzh.ch/ddis/katts/query">
+
+	<fileGraphPatternReader id="tickerSource">
+		<files>
+			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" 
+                path="data/2001_7ticker_wrds_crsp.sorted.triples" />
+		</files>
+		<patterns>
+			<pattern>?ticker_id PRC ?ticker_price</pattern>
+			<pattern>?ticker_id COMNAM ?company_name</pattern>
+			<pattern>?ticker_id TICKER ?ticker_symbol</pattern>
+		</patterns>
+		<produces>
+            <stream id="tickerStream">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="?ticker_symbol" />
+                <variable type="xs:double" name="ticker_price" referencesTo="?ticker_price" />
+                <variable type="xs:string" name="company_name" referencesTo="?company_name" />
+            </stream>
+        </produces>
+	</fileGraphPatternReader>
+
+      
+    <fileGraphPatternReader id="contractSource">
+        <files>
+            <file csvFieldDelimiter="," mimeType="text/comma-separated-values" 
+                path="data/2001_5contracts.sorted.triples" />
+        </files>
+        <patterns>
+            <pattern>?contract_id agencyid ?agency_name</pattern>
+            <pattern>?contract_id obligatedamount ?contract_amount</pattern>
+            <pattern>?contract_id vendorname ?company_name</pattern>
+            <pattern>?contract_id signeddate ?signed_date</pattern>
+        </patterns>
+        <produces>
+            <stream id="contractStream">
+                <variable type="xs:string" name="contract_id" referencesTo="?contract_id" />
+                <variable type="xs:double" name="contract_amount" referencesTo="?contract_amount" />
+                <variable type="xs:string" name="company_name" referencesTo="?company_name" />
+                <variable type="xs:string" name="contract_agency" referencesTo="?agency_name" />
+                <variable type="xs:string" name="signed_date" referencesTo="?signed_date" />
+            </stream>
+        </produces>
+    </fileGraphPatternReader>
+    
+   
+    <partitioner slideSize="P1D" windowSize="P20D" partitionOn="ticker_symbol" aggregateOn="ticker_price" id="Partitioner" parallelism="12">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStream">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStream" id="tickerStreamMinMax">
+                <variable type="xs:double" name="ticker_min" referencesTo="min" />
+                <variable type="xs:double" name="ticker_max" referencesTo="max" />
+            </stream>
+        </produces>
+        <components>
+            <minPartitioner />
+            <maxPartitioner />
+        </components>
+    </partitioner>
+
+
+
+    <expressionFunction expression="#ticker_max / #ticker_min" id="expressionFunction" parallelism="12">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStreamMinMax">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStreamMinMax" id="tickerStreamfct">
+                <variable type="xs:double" name="ticker_fct" referencesTo="result" />
+            </stream>
+        </produces>
+    </expressionFunction>
+
+
+
+    <expressionFilter expression="#ticker_fct > 2" id="expressionFilter" parallelism="12">
+        <consumes>
+            <stream maxBufferSize="5" streamId="tickerStreamfct">
+                <variableGrouping>
+                    <groupOn variableName="ticker_symbol" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+        <produces>
+            <stream inheritFrom="tickerStreamfct" id="filteredTickerStream" />
+        </produces>
+    </expressionFilter>
+
+    <!-- Join together ticker and contract data -->
+    <temporalJoin id="TemporalJoin_TickerAndContractData" parallelism="12">
+        <consumes>
+            <stream maxBufferSize="5" streamId="contractStream">
+                <variableGrouping>
+                    <groupOn variableName="company_name" />
+                </variableGrouping>
+            </stream>
+            <stream maxBufferSize="5" streamId="filteredTickerStream">
+                <variableGrouping>
+                    <groupOn variableName="company_name" />
+                </variableGrouping>
+            </stream>
+        </consumes>
+
+        <evictBefore>
+            <!-- Evict old intervals -->
+            <evict from="filteredTickerStream" on="filteredTickerStream" if="#from.endDate lt #on.endDate" />
+            <!-- When we receive bindings on the aggregated ticker stream, we can remove all contracts that are older than the start date of the aggregated value, 
+                that we've just received. -->
+            <evict from="contractStream" on="filteredTickerStream" if="#from.endDate lt #on.startDate" />
+            <!-- When we receive bindings on the contract stream, we can remove all aggregated value bindings that are older than the contract item, that we've 
+                just received. -->
+            <evict from="filteredTickerStream" on="contractStream" if="#from.startDate lt #on.startDate" />
+            <!-- When we receive a contract value, we can remove all contracts that are more than 20 days old. -->
+            <evict from="contractStream" on="contractStream" if="(#from.endDate + 20 * 24 * 3600 * 1000) lt #on.startDate" />
+        </evictBefore>
+
+        <sameValue onFields="company_name" />
+
+        <produces>
+            <stream id="tickerAndContractStream">
+                <variable type="xs:string" name="ticker_symbol" referencesTo="ticker_symbol" />
+                <variable type="xs:string" name="company_name" referencesTo="company_name" />
+                <variable type="xs:string" name="ticker_fct" referencesTo="ticker_fct" />
+                <variable type="xs:string" name="signed_date" referencesTo="signed_date" />
+                <variable type="xs:string" name="contract_id" referencesTo="contract_id" />
+            </stream>
+        </produces>
+    </temporalJoin>
+
+	<fileOutput filePath="data/output.csv" id="fileOutput">
+		<consumes>
+			<stream maxBufferSize="5" streamId="tickerAndContractStream">
+				<shuffleGrouping />
+			</stream>
+		</consumes>
+	</fileOutput>
+
+</query>
