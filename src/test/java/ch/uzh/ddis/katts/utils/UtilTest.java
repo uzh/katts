@@ -49,7 +49,7 @@ public class UtilTest {
 
 	@Test
 	public void testIsDouble() {
-		String[] valuesToTest = { "1.0", "+1.0", "-1.0", "0.0000", "0", "0.0001", "-0.0000", ".1" };
+		String[] valuesToTest = { "1.0", "+1.0", "-1.0", "0.0000", "0", "0.0001", "-0.0000", ".1", "D", "ASDF", "A.D" };
 
 		System.out.println("testIsDouble:");
 		for (String testValue : valuesToTest) {

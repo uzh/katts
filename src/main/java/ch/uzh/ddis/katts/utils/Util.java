@@ -20,7 +20,7 @@ public final class Util {
 	private static Pattern longPattern = Pattern.compile("-?\\d+");
 
 	/** The regular expression pattern to match double values. */
-	private static Pattern doublePattern = Pattern.compile("[-+]?\\d*(\\.\\d+)?[Dd]?");
+	private static Pattern doublePattern = Pattern.compile("[-+]?((\\d*\\.\\d+)|\\d+)[Dd]?");
 
 	/** The regular expression pattern to match iso dates values. */
 	private static Pattern isoDatePattern = Pattern
