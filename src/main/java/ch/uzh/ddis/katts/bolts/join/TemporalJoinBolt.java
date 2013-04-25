@@ -36,10 +36,6 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  */
 public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 
-	// TODO lorenz: use global storage facility
-
-	private static final long serialVersionUID = 1L;
-
 	/** This object holds the configuration details for this bolt. */
 	private final TemporalJoinConfiguration configuration;
 
@@ -54,14 +50,8 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	 */
 	private EvictionRuleManager evictionRuleManager;
 
-	/** We store all of our state variables into this object. */
-	// private Storage<Object, Map<StreamConsumer, PriorityQueue<Event>>>
-	// queues;
-	// private Logger logger = LoggerFactory.getLogger(TemporalJoinBolt.class);
-
-	private Date lastEventDate;
-
-	private Boolean monitor = new Boolean(true);
+	/** We use this variable for guaranteeing the temporal order of events. Actually.. we should not have this. */
+	private Date lastProcessedEventDate;
 
 	private Logger logger = LoggerFactory.getLogger(TemporalJoinBolt.class);
 
@@ -108,15 +98,12 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	@Override
 	public void execute(Event event) {
 
-		// Check the constrain that all event, must be in order for processing.
-		synchronized (monitor) {
-
-			if (lastEventDate != null && lastEventDate.after(event.getEndDate())) {
-				logger.error(String.format("An event was out of order. Component Id: %1s -- Source Stream ID: %2s", this.getId(), event.getTuple().getSourceStreamId()));
-			}
-
-			lastEventDate = event.getEndDate();
+		// Check the constraint that all event, must be in order for processing.
+		if (lastProcessedEventDate != null && lastProcessedEventDate.after(event.getEndDate())) {
+			logger.error(String.format("An event was out of order. Component Id: %1s -- Source Stream ID: %2s",
+					this.getId(), event.getTuple().getSourceStreamId()));
 		}
+		lastProcessedEventDate = event.getEndDate();
 
 		Set<SimpleVariableBindings> joinResults;
 		SimpleVariableBindings newBindings = new SimpleVariableBindings(event.getTuple());

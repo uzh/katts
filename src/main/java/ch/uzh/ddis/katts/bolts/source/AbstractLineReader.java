@@ -1,7 +1,6 @@
 package ch.uzh.ddis.katts.bolts.source;
 
 import java.io.InputStream;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +32,9 @@ public abstract class AbstractLineReader implements IRichSpout {
 
 	/** We emit tuples over this collector. */
 	private SpoutOutputCollector collector;
+
+	/** This monitor will be informed when we reached the end of the input. */
+	private StarterMonitor starterMonitor;
 
 	/** We use this reference to signal that we're done processing. */
 	private TerminationMonitor terminationMonitor;
@@ -67,9 +69,6 @@ public abstract class AbstractLineReader implements IRichSpout {
 	/** The basic configuration necessary for a line reader. */
 	private FileTripleReaderConfiguration configuration;
 
-	/** This monitor will be informed when we reached the end of the input. */
-	private StarterMonitor starterMonitor;
-
 	public AbstractLineReader(FileTripleReaderConfiguration configuration) {
 		this.configuration = configuration;
 	}
@@ -82,6 +81,7 @@ public abstract class AbstractLineReader implements IRichSpout {
 
 		// getThisTaskIndex returns the index of this task among all tasks for this component
 		this.source = buildSources(context.getThisTaskIndex());
+		this.terminationMonitor.registerSource(this.source.getSourceId());
 
 		this.starterMonitor = StarterMonitor.getInstance(conf);
 	}
@@ -154,10 +154,11 @@ public abstract class AbstractLineReader implements IRichSpout {
 		Source src;
 
 		File file = this.configuration.getFiles().get(sourceIndex);
+
 		if (file.getMimeType().equals("text/comma-separated-values")) {
-			src = new CSVSource();
+			src = new CSVSource(file.getReadToLineNo());
 		} else if (file.getMimeType().equals("text/n5")) {
-			src = new N5Source();
+			src = new N5Source(file.getReadToLineNo());
 		} else {
 			throw new IllegalArgumentException("The file is neither csv nor n5. We only support these two.");
 		}
@@ -218,7 +219,8 @@ public abstract class AbstractLineReader implements IRichSpout {
 
 	@Override
 	public void fail(Object msgId) {
-		logger.warn("The message " + msgId.toString() + " has failed to be processed.");
+		logger.warn("The message " + msgId.toString() + " or source " + this.source.getSourceId()
+				+ " has failed to be processed.");
 		this.failed++;
 		checkForCompletion();
 	}
@@ -229,7 +231,7 @@ public abstract class AbstractLineReader implements IRichSpout {
 	 */
 	private void checkForCompletion() {
 		if (this.eofReached && (this.acked + this.failed == this.emitted)) {
-			this.terminationMonitor.terminate(new Date());
+			this.terminationMonitor.terminate(this.source.getSourceId());
 		}
 	}
 

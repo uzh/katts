@@ -179,7 +179,7 @@ public final class Recorder implements TerminationWatcher {
 			}
 		}
 
-		String identifier = getHostIdentifier();
+		String identifier = Cluster.getHostIdentifier();
 
 		try {
 			zooKeeper.create(MESSAGE_RECORDER_FINISHED_PATH + "/" + identifier, new byte[0], Ids.OPEN_ACL_UNSAFE,
@@ -193,29 +193,6 @@ public final class Recorder implements TerminationWatcher {
 					identifier), e);
 		}
 
-	}
-
-	/**
-	 * This method returns the nodes host on which this code is executed on.
-	 * 
-	 * @return
-	 */
-	private String getHostIdentifier() {
-
-		try {
-			return InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			logger.info("Can't get hostname. Instead the IP address is used.");
-		}
-
-		try {
-			return InetAddress.getLocalHost().getHostAddress();
-		} catch (UnknownHostException e) {
-			logger.info("Can't get ip address. Instead a random number is used.");
-		}
-
-		SecureRandom random = new SecureRandom();
-		return Long.toString(random.nextLong());
 	}
 
 	/** Helper class used to concurrently record messages that are send from a "source" task to a "destination" task. */

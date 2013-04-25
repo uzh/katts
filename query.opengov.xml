@@ -4,7 +4,7 @@
 	<fileGraphPatternReader id="tickerSource">
 		<files>
 			<file csvFieldDelimiter="," mimeType="text/comma-separated-values" 
-                path="data/2001_7ticker_wrds_crsp.sorted.triples" />
+                path="data/2001_7ticker_wrds_crsp.sorted.triples" readToLineNo="10000" />
 		</files>
 		<patterns>
 			<pattern>?ticker_id PRC ?ticker_price</pattern>
@@ -24,7 +24,7 @@
     <fileGraphPatternReader id="contractSource">
         <files>
             <file csvFieldDelimiter="," mimeType="text/comma-separated-values" 
-                path="data/2001_5contracts.sorted.triples" />
+                path="data/2001_5contracts.sorted.triples" readToLineNo="500" />
         </files>
         <patterns>
             <pattern>?contract_id agencyid ?agency_name</pattern>

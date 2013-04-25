@@ -19,7 +19,7 @@
   stroke-opacity: .5;
 }
 </style>
-<title>sankey</title>
+<title>srBenchQ3charley12-2.2.1-48-Components</title>
 <body>
 <p id="chart">
 <script type="text/javascript" src="http://d3js.org/d3.v2.min.js"></script>
@@ -28,8 +28,8 @@
 var units = "Messages";
 
 var margin = {top: 10, right: 10, bottom: 10, left: 10},
-    width = 3000 - margin.left - margin.right,
-    height = 3000 - margin.top - margin.bottom;
+    width = 1200 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
 
 var formatNumber = d3.format(",.0f"),    // zero decimal places
     format = function(d) { return formatNumber(d) + " " + units; },
@@ -51,7 +51,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-graph = JSON.parse('{"nodes":[{"name":"27"},{"name":"8"},{"name":"6"},{"name":"12"},{"name":"25"},{"name":"26"},{"name":"11"},{"name":"36"},{"name":"9"},{"name":"38"},{"name":"34"},{"name":"1"},{"name":"10"},{"name":"7"},{"name":"24"},{"name":"20"},{"name":"2"},{"name":"15"},{"name":"16"},{"name":"19"},{"name":"14"},{"name":"17"},{"name":"5"},{"name":"18"},{"name":"35"},{"name":"4"},{"name":"37"},{"name":"23"},{"name":"29"},{"name":"33"},{"name":"28"},{"name":"3"},{"name":"21"},{"name":"22"},{"name":"31"},{"name":"32"},{"name":"30"}],"links":[{"source":14,"value":3719,"target":9},{"source":34,"value":475,"target":12},{"source":11,"value":8231,"target":20},{"source":28,"value":15961,"target":3},{"source":34,"value":8609,"target":3},{"source":19,"value":4179,"target":9},{"source":30,"value":225,"target":11},{"source":29,"value":9537,"target":16},{"source":30,"value":16608,"target":22},{"source":28,"value":8283,"target":12},{"source":27,"value":3791,"target":9},{"source":30,"value":9092,"target":31},{"source":29,"value":14825,"target":25},{"source":10,"value":9828,"target":8},{"source":0,"value":16317,"target":12},{"source":0,"value":49,"target":3},{"source":36,"value":322,"target":31},{"source":5,"value":585,"target":6},{"source":10,"value":37,"target":11},{"source":36,"value":9194,"target":22},{"source":36,"value":16073,"target":13},{"source":7,"value":8941,"target":6},{"source":10,"value":361,"target":13},{"source":0,"value":417,"target":2},{"source":26,"value":15785,"target":1},{"source":0,"value":8352,"target":1},{"source":26,"value":486,"target":25},{"source":26,"value":9280,"target":2},{"source":5,"value":15697,"target":31},{"source":5,"value":8581,"target":11},{"source":16,"value":8129,"target":17},{"source":31,"value":8131,"target":18},{"source":6,"value":8095,"target":14},{"source":34,"value":15211,"target":16},{"source":29,"value":396,"target":3},{"source":7,"value":16106,"target":11},{"source":1,"value":8078,"target":32},{"source":20,"value":3871,"target":9},{"source":12,"value":8022,"target":27},{"source":8,"value":8569,"target":33},{"source":25,"value":7919,"target":21},{"source":3,"value":8036,"target":4},{"source":7,"value":330,"target":8},{"source":13,"value":8343,"target":15},{"source":22,"value":8436,"target":23},{"source":10,"value":15487,"target":6},{"source":35,"value":8628,"target":13},{"source":35,"value":15643,"target":8},{"source":21,"value":3759,"target":9},{"source":35,"value":322,"target":22},{"source":24,"value":435,"target":16},{"source":24,"value":8513,"target":25},{"source":17,"value":3781,"target":9},{"source":28,"value":268,"target":1},{"source":18,"value":3829,"target":9},{"source":4,"value":3709,"target":9},{"source":24,"value":16445,"target":2},{"source":33,"value":3999,"target":9},{"source":23,"value":4020,"target":9},{"source":15,"value":3938,"target":9},{"source":32,"value":3848,"target":9},{"source":2,"value":8803,"target":19}]}');
+graph = JSON.parse('{"nodes":[{"name":"fileGraphPatternReader"},{"name":"Partitioner"},{"name":"expressionFilter"},{"name":"fileOutput"}],"links":[{"source":1,"value":81061,"target":2},{"source":2,"value":12671,"target":3},{"source":0,"value":280847,"target":1}]}');
 
   sankey
       .nodes(graph.nodes)

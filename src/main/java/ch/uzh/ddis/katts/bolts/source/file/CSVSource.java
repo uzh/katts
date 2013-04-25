@@ -24,13 +24,36 @@ public class CSVSource implements Source{
 	private transient CSVReader csvReader;
 	private File file;
 	
+
+	/** If > 0, only lines up to this number (exclusive, 0-based) will be read. */
+	private long readToLineNo = 0;
+
+	/** We use this to keep track of what line (int the file) we're currently reading from. */
+	private long currentLine = 0;
+	
+	/**
+	 * Creates a source that only reads the supplied file up until line <code>readToLine</code>.
+	 * @param readToLineNo the line number (exclusive) up to which the reader will read the input file. If this value
+	 * is 0, no limit will be set.
+	 */
+	public CSVSource(long readToLineNo) {
+		this.readToLineNo = readToLineNo;
+	}
+	
 	@Override
 	public List<String> getNextTuple() throws Exception {
-		String[] line = csvReader.readNext();
-		if (line == null) {
-			return null;
+		List<String> result = null;
+		
+		if (this.readToLineNo == 0 || this.currentLine++ < this.readToLineNo) {
+			String[] line = null;
+			line  = csvReader.readNext();
+			
+			if (line != null) {
+				result = Arrays.asList(line);
+			}
 		}
-		return Arrays.asList(line);
+		
+		return result;
 	}
 
 	@Override
@@ -52,6 +75,11 @@ public class CSVSource implements Source{
 	 */
 	public char getDelimiter() {
 		return file.getCsvFieldDelimiter().charAt(0);
+	}
+
+	@Override
+	public String getSourceId() {
+		return this.file.getPath();
 	}
 
 }

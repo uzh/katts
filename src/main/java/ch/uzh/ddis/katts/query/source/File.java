@@ -33,6 +33,10 @@ public class File implements Serializable{
 	
 	@XmlAttribute(required=false)
 	private String csvFieldDelimiter = ",";
+	
+	/** 0-based line number. if > 0, only all lines up to this line (exclusive) will be read. */
+	@XmlAttribute
+	private long readToLineNo = 0;
 
 	@XmlTransient
 	public String getPath() {
@@ -77,5 +81,21 @@ public class File implements Serializable{
 
 	public void setMimeType(String mimeType) {
 		this.mimeType = mimeType;
+	}
+
+	/**
+	 * {@link File#readToLineNo}
+	 * @return the toLineNo
+	 */
+	public long getReadToLineNo() {
+		return readToLineNo;
+	}
+
+	/**
+	 * {@link File#readToLineNo}
+	 * @param readToLineNo the toLineNo to set
+	 */
+	public void setReadToLineNo(long readToLineNo) {
+		this.readToLineNo = readToLineNo;
 	}
 }

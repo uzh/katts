@@ -1,35 +1,9 @@
 package ch.uzh.ddis.katts.bolts.join;
 
-import static ch.uzh.ddis.katts.util.MockDataUtils.convertToValues;
-import static ch.uzh.ddis.katts.util.MockDataUtils.parseString;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-import java.util.Map;
-
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
-
-import backtype.storm.Config;
-import backtype.storm.ILocalCluster;
-import backtype.storm.Testing;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.testing.CompleteTopologyParam;
-import backtype.storm.testing.MkClusterParam;
-import backtype.storm.testing.MockedSources;
-import backtype.storm.testing.TestJob;
-import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
-import ch.uzh.ddis.katts.bolts.source.DummySpout;
-import ch.uzh.ddis.katts.query.processor.join.EvictionRuleConfiguration;
-import ch.uzh.ddis.katts.query.processor.join.SameValueJoinConditionConfiguration;
-import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
-import ch.uzh.ddis.katts.query.stream.Producers;
-import ch.uzh.ddis.katts.query.stream.Stream;
-import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
 public class TemporalJoinBoltTest {
 

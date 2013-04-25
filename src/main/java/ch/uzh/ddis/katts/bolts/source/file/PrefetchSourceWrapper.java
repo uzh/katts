@@ -19,6 +19,9 @@ public class PrefetchSourceWrapper implements Source {
 
 	private static final long serialVersionUID = 1L;
 
+	/** We store the id of the source we're caching in this variable. */
+	private String sourceId;
+	
 	/**
 	 * Creates a PrefetchSourceWrapper that wrapps another source. We read out the content of this source into an
 	 * internal (memory) datastructure and then return its content one-by-one through the {@link #getNextTuple()}
@@ -32,6 +35,7 @@ public class PrefetchSourceWrapper implements Source {
 	 */
 	public PrefetchSourceWrapper(Source wrappedSource, int blockSize, int numberOfTasks, int thisTaskId)
 			throws Exception {
+		this.sourceId = wrappedSource.getSourceId();		
 		int currentLine = 0;
 
 		this.cache = new LinkedList<List<String>>();
@@ -63,6 +67,11 @@ public class PrefetchSourceWrapper implements Source {
 	public List<String> getNextTuple() throws Exception {
 		// returning next tuple from cache
 		return this.cache.poll();
+	}
+	
+	@Override
+	public String getSourceId() {
+		return this.sourceId;
 	}
 
 }

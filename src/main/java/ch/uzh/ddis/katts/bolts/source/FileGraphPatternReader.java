@@ -11,8 +11,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import ch.uzh.ddis.katts.bolts.source.file.Source;
@@ -39,6 +37,15 @@ import com.google.common.collect.SetMultimap;
  */
 public class FileGraphPatternReader extends AbstractLineReader {
 
+	/** 
+	 * This variable can be "referenced" to in the variable mapping of the outgoing stream configuration.
+	 * <p/>
+	 * Example:<br/> 
+	 * &lt;variable name="source_id" referencesTo="sourceFilePath" /&gt;
+	 * 
+	 */
+	public final static String SOURCE_ID_VARIABLE_NAME = "sourceFilePath";
+	
 	private FileGraphPatternReaderConfiguration configuration;
 
 	/** We keep track of how many lines we have read using this variable. */
@@ -59,7 +66,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 	/** We need to send this along with the tuples. */
 	private long sequenceNumber = 0;
-	
+
 	/**
 	 * Creates a new reader instance using the provided configuration.
 	 * 
@@ -91,11 +98,6 @@ public class FileGraphPatternReader extends AbstractLineReader {
 				currentPosition = m.end();
 			}
 		}
-	}
-
-	@Override
-	public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-		super.open(conf, context, collector);
 	}
 
 	@Override
@@ -151,15 +153,15 @@ public class FileGraphPatternReader extends AbstractLineReader {
 					logger.info(String.format("Read time of component %1s is %2s. Line: %3s",
 							this.configuration.getId(), semanticDate.toString(), Long.valueOf(lastLineRead)));
 				}
-
+				
 				this.lastLineRead++;
 
 			} else {
 				/*
-				 * This line will show up twice in the log: The first time, when the current batch ends. Then, because
-				 * we still emit all elements from the current batch, the nextTuple method will be called once more, 
-				 * and we will end up in this place once again. The second time, there won't be any tuples to emit, though.
-				 * So we will return with "false" from this method. 
+				 * This line COULD show up twice in the log: The first time, when the current batch ends. Then, because
+				 * we still emit all elements from the current batch, the nextTuple method will be called once more, and
+				 * we will end up in this place once again. The second time, there won't be any tuples to emit, though.
+				 * So we will return with "false" from this method.
 				 */
 				logger.info(String.format("End of file is reached in component %1s on line: %2s",
 						this.configuration.getId(), lastLineRead));
@@ -174,18 +176,21 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 				List<Object> tuple = new ArrayList<Object>();
 				tuple.add(sequenceNumber++);
-				
+
 				if (dateProcessedInThisBatch == null) {
 					throw new IllegalStateException();
 				}
-				
+
 				tuple.add(dateProcessedInThisBatch); // startDate
 				tuple.add(dateProcessedInThisBatch); // endDate - same as startDate as we process batches of same-time
+
+				// support sourceFilePath as a propery
+				bindings.put(SOURCE_ID_VARIABLE_NAME, getSource().getSourceId());
 
 				for (Variable variable : stream.getVariables()) {
 					tuple.add(bindings.get(variable.getReferencesTo()));
 				}
-				//System.out.println("emitting tuple " + bindings);
+				// System.out.println("emitting tuple " + bindings);
 				emit(stream.getId(), tuple); // We emit on the default stream
 				result = true;
 			}
@@ -279,10 +284,10 @@ public class FileGraphPatternReader extends AbstractLineReader {
 				if (bindings != null) { // add the bindings object to our cache
 					// needed to prevent concurrent modification exception
 					Set<Bindings> additionalPartiallyBoundBindings = new HashSet<Bindings>();
-					
+
 					for (Bindings partiallyBound : partiallyBoundBindings) { // check with bindings already in the cache
 						Bindings mergedBindings = partiallyBound.mergeWith(bindings);
-						
+
 						if (mergedBindings != null) { // no collisions
 							if (mergedBindings.isFullyBound()) {
 								// if this is the case (most likely not yet), store it so we can generate the result
@@ -299,7 +304,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 							}
 						}
 					}
-					
+
 					partiallyBoundBindings.addAll(additionalPartiallyBoundBindings);
 
 				} else { // the pattern did not match, put it into the working cache

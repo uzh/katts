@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <query xmlns="http://uzh.ch/ddis/katts/query">
 
-	<!-- Before the query is deployed the data files are copied to all nodes 
-		with rsync. -->
+	<!-- 
+	   srBench Query 4: 
+	   ----------------
+	   Get the average wind speed at the stations where the air temperature is >32 degrees in the last hour, 
+	   every 10 minutes. 
+	-->
+
+
 	<fileGraphPatternReader id="fileGraphPatternReader">
 		<files>
-			<file mimeType="text/n5" path="data/charley.top10k.sorted.n5" readToLineNo="100" />
+			<file mimeType="text/n5" path="data/charley.top10k.sorted.n5" />
 		</files>
 		<patterns>
 			<pattern>?observation_id &lt;om-owl:procedure&gt; ?sensor_id</pattern>
@@ -14,28 +20,25 @@
 			<pattern>?result_id &lt;om-owl:floatValue&gt; ?wind_speed</pattern>
 		</patterns>
 		<produces>
-            <stream id="weathersource">
-                <variable name="source_id" referencesTo="sourceFilePath" />
-                <variable name="observation_id" referencesTo="?observation_id" />
-                <variable name="sensor_id" referencesTo="?sensor_id" />
-                <variable name="result_id" referencesTo="?result_id" />
-                <variable name="wind_speed" referencesTo="?wind_speed" />
-            </stream>
-        </produces>
+			<stream id="weathersource">
+				<variable name="observation_id" referencesTo="?observation_id" />
+				<variable name="sensor_id" referencesTo="?sensor_id" />
+				<variable name="result_id" referencesTo="?result_id" />
+				<variable name="wind_speed" referencesTo="?wind_speed" />
+			</stream>
+		</produces>
 	</fileGraphPatternReader>
 
-	<partitioner slideSize="PT10M" windowSize="PT3H"
-		partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner">
+	<partitioner slideSize="PT10M" windowSize="PT3H" partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner">
 		<consumes>
 			<stream maxBufferSize="5" streamId="weathersource">
 				<variableGrouping>
-					<groupOn variableName="source_id" />
+					<groupOn variableName="sensor_id" />
 				</variableGrouping>
 			</stream>
 		</consumes>
 		<produces>
 			<stream id="minWindSpeedStream">
-				<variable name="source_id" referencesTo="source_id" />
 				<variable name="sensor_id" referencesTo="sensor_id" />
 				<variable name="min_wind_speed" referencesTo="min" />
 			</stream>
@@ -49,14 +52,14 @@
 		<consumes>
 			<stream maxBufferSize="5" streamId="minWindSpeedStream">
 				<variableGrouping>
-					<groupOn variableName="source_id" />
+					<groupOn variableName="sensor_id" />
 				</variableGrouping>
 			</stream>
 		</consumes>
 		<produces>
 			<stream id="filteredMinWindSpeedStream">
-			     <variable name="sensor_id" referencesTo="sensor_id" />
-			     <variable name="min_wind_speed" referencesTo="min_wind_speed" />
+				<variable name="sensor_id" referencesTo="sensor_id" />
+				<variable name="min_wind_speed" referencesTo="min_wind_speed" />
 			</stream>
 		</produces>
 	</expressionFilter>

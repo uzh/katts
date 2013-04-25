@@ -40,4 +40,9 @@ public class GzipSourceWrapper implements Source {
 		return component.getNextTuple();
 	}
 
+	@Override
+	public String getSourceId() {
+		return this.component.getSourceId();
+	}
+
 }

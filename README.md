@@ -5,7 +5,24 @@ KATTS
 
 Revision History
 ================
-2.2.1-SNAPSHOT    - fixed but in expression filter which would only allow "inherited" variable configuration
+2.3.5-SNAPSHOT    - ExpressionFunction back to normal.
+
+2.3.4-SNAPSHOT    - ExpressionFunction just acks everything...
+
+2.3.3-SNAPSHOT    - remove synchronization from TemporalJoinBolt
+
+2.3.1-SNAPSHOT    - print name of source when messages fail
+
+2.3.1-SNAPSHOT    - moved readToLineNo variable to the source
+                  - termination monitoring now supports multiple sources, but still only works correctly if 
+                    run on only one machine.
+
+2.2.3-SNAPSHOT    - fileSourcePath as variable in graphreader
+                  - new property toLineNo in sourceFile descriptor
+
+2.2.2-SNAPSHOT    - fixed bug: "D" is not a double
+
+2.2.1-SNAPSHOT    - fixed bug in expression filter which would only allow "inherited" variable configuration
 
 2.2.0-SNAPSHOT    - first version of sub graph reader
 

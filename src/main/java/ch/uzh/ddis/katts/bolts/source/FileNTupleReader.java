@@ -26,8 +26,8 @@ import ch.uzh.ddis.katts.query.source.File;
 import ch.uzh.ddis.katts.query.source.NTupleFileSource;
 
 /**
- * This spout reads in n-tuples from files. Thanks to the abstraction of the {@link Source} different type
- * of files can be read with this bolt.
+ * This spout reads in n-tuples from files. Thanks to the abstraction of the {@link Source} different type of files can
+ * be read with this bolt.
  * 
  * To improve the parallelization of reading this bolt accepts multiple files. For each file a separate instance is
  * created.
@@ -157,23 +157,23 @@ public class FileNTupleReader implements IRichSpout {
 		throw new NotImplementedException("This class needs to be updated to reflect the newest stopping condition");
 	}
 
-//	@Override
-//	public synchronized void execute(Tuple input) {
-//
-//		// This bolt receives only heart beats, hence we do not need to handle
-//		// here other tuples
-//
-//		if (thread == null) {
-//			starterMonitor.start();
-//
-//			// Read the first line to ensure that the currentRealTimeDate is
-//			// set.
-//			nextTuple();
-//
-//			thread = new Thread(new NTupleReaderThread(this));
-//			thread.start();
-//		}
-//	}
+	// @Override
+	// public synchronized void execute(Tuple input) {
+	//
+	// // This bolt receives only heart beats, hence we do not need to handle
+	// // here other tuples
+	//
+	// if (thread == null) {
+	// starterMonitor.start();
+	//
+	// // Read the first line to ensure that the currentRealTimeDate is
+	// // set.
+	// nextTuple();
+	//
+	// thread = new Thread(new NTupleReaderThread(this));
+	// thread.start();
+	// }
+	// }
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -200,7 +200,7 @@ public class FileNTupleReader implements IRichSpout {
 	private void buildSources(int sourceIndex) {
 		File file = configuration.getFiles().get(sourceIndex);
 		if (file.getMimeType().equals("text/comma-separated-values")) {
-			source = new CSVSource();
+			source = new CSVSource(file.getReadToLineNo());
 		}
 
 		if (file.getPath().endsWith(".zip")) {
@@ -230,17 +230,18 @@ public class FileNTupleReader implements IRichSpout {
 	public void setConfiguration(NTupleFileSource nTupleFileSource) {
 		this.configuration = nTupleFileSource;
 	}
-	
-	 @Override
-	 public void open(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, SpoutOutputCollector collector) {
-	 this.collector = collector;
-	
-	 int sourceIndex = context.getThisTaskIndex();
-	 buildSources(sourceIndex);
-	
-	 starterMonitor = StarterMonitor.getInstance(stormConf);
-	 }
-	
+
+	@Override
+	public void open(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context,
+			SpoutOutputCollector collector) {
+		this.collector = collector;
+
+		int sourceIndex = context.getThisTaskIndex();
+		buildSources(sourceIndex);
+
+		starterMonitor = StarterMonitor.getInstance(stormConf);
+	}
+
 	public int getNumberOfFields() {
 		return numberOfFields;
 	}
@@ -252,31 +253,31 @@ public class FileNTupleReader implements IRichSpout {
 	@Override
 	public void ack(Object arg0) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void activate() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void close() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void deactivate() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void fail(Object arg0) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

@@ -25,10 +25,33 @@ public class N5Source implements Source {
 	/** We use this reader to read the file. */
 	private BufferedReader reader;
 
+	/** This id will contain the path of the file we're reading. */
+	private String sourceId;
+	
+	/** If > 0, only lines up to this number (exclusive, 0-based) will be read. */
+	private long readToLineNo = 0;
+
+	/** We use this to keep track of what line (int the file) we're currently reading from. */
+	private long currentLine = 0;
+	
+	/**
+	 * Creates a source that only reads the supplied file up until line <code>readToLine</code>.
+	 * @param readToLineNo the line number (exclusive) up to which the reader will read the input file. If this value
+	 * is 0, no limit will be set.
+	 */
+	public N5Source(long readToLineNo) {
+		this.readToLineNo = readToLineNo;
+	}
+	
 	@Override
 	public List<String> getNextTuple() throws Exception {
 		List<String> result = null;
-		String line = this.reader.readLine();
+		String line = null;
+		
+		if (this.readToLineNo == 0 || this.currentLine++ < this.readToLineNo) {
+			line  = this.reader.readLine();
+		}
+		
 		if (line != null) {
 			String[] elements;
 			String element;
@@ -46,17 +69,24 @@ public class N5Source implements Source {
 			}
 
 		}
+		
 		return result;
 	}
 
 	@Override
 	public InputStream buildInputStream(File file) throws FileNotFoundException {
+		this.sourceId = file.getPath();
 		return new FileInputStream(file.getPath());
 	}
 
 	@Override
 	public void setFileInputStream(InputStream inputStream) {
 		this.reader = new BufferedReader(new InputStreamReader(inputStream));
+	}
+	
+	@Override
+	public String getSourceId() {
+		return this.sourceId;
 	}
 
 }

@@ -38,7 +38,7 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	 * Default constructor that uses a delay of two seconds. Why two? I'll tell you why: I don't know!
 	 */
 	public AbstractSynchronizedBolt() {
-		this(1000);
+		this(2000);
 	}
 
 	/**

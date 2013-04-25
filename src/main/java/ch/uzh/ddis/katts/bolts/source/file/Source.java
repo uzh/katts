@@ -45,4 +45,12 @@ public interface Source extends Serializable {
 	 */
 	public List<String> getNextTuple() throws Exception;
 
+	/**
+	 * This method must return an identifier for the source. This could be the address of a queue or the name of the
+	 * file we're reading from or anything similar.
+	 * 
+	 * @return the id of the source.
+	 */
+	public String getSourceId();
+
 }

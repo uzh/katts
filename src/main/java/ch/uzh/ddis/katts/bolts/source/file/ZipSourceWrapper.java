@@ -42,4 +42,9 @@ public class ZipSourceWrapper implements Source {
 		return component.getNextTuple();
 	}
 	
+	@Override
+	public String getSourceId() {
+		return this.component.getSourceId();
+	}
+	
 }
