@@ -60,7 +60,7 @@ public abstract class AbstractFlushQueue<E> implements Serializable {
 
 	/**
 	 * This method resets the flush timer. After calling this method the timer starts to count again and will eventually
-	 * call {@link #flushTimeout()} after the timeout milliseconds if this method doesn't get called before this
+	 * call {@link #flushTimeout()} after the timeout milliseconds.. if this method doesn't get called before this
 	 * happens.
 	 * 
 	 * The method <b>thread safe</b>. It is synchronized internally and can be called from multiple threads
@@ -80,7 +80,8 @@ public abstract class AbstractFlushQueue<E> implements Serializable {
 	}
 
 	/**
-	 * This method will be called by the flush timer, when the timeout has expired.
+	 * This method will be called by the flush timer, when the timeout has expired. The timer for the timeout can be
+	 * reset using the {@link #resetTimer()} method.
 	 */
 	protected abstract void flushTimeout();
 
