@@ -21,6 +21,7 @@ import ch.uzh.ddis.katts.utils.Util;
 
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
 
 /**
@@ -37,15 +38,15 @@ import com.google.common.collect.SetMultimap;
  */
 public class FileGraphPatternReader extends AbstractLineReader {
 
-	/** 
+	/**
 	 * This variable can be "referenced" to in the variable mapping of the outgoing stream configuration.
 	 * <p/>
-	 * Example:<br/> 
+	 * Example:<br/>
 	 * &lt;variable name="source_id" referencesTo="sourceFilePath" /&gt;
 	 * 
 	 */
 	public final static String SOURCE_ID_VARIABLE_NAME = "sourceFilePath";
-	
+
 	private FileGraphPatternReaderConfiguration configuration;
 
 	/** We keep track of how many lines we have read using this variable. */
@@ -56,6 +57,9 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 	/** This list contains all variables that could be found in the defined patterns of the configuration object. */
 	private List<String> variableNameList;
+
+	/** This set contains the same names as variableNameList, but with O(1) complexity for the contains() method. */
+	private Set<String> variableNameSet;
 
 	/**
 	 * As we cannot "peek" at the next triple of the source, we have to load a triple from the source in order to have a
@@ -77,8 +81,8 @@ public class FileGraphPatternReader extends AbstractLineReader {
 		super(configuration);
 
 		Pattern variableNamePattern = Pattern.compile("(^|\\s)(\\?\\w+)($|\\s)");
-		Set<String> uniqueVariableNames = new HashSet<String>();
 
+		this.variableNameSet = new HashSet<String>();
 		this.configuration = configuration;
 		this.variableNameList = new ArrayList<String>();
 
@@ -87,9 +91,9 @@ public class FileGraphPatternReader extends AbstractLineReader {
 			int currentPosition = 0;
 			while (m.find(currentPosition)) {
 				String variableName = m.group(2);
-				if (!uniqueVariableNames.contains(variableName)) {
+				if (!this.variableNameSet.contains(variableName)) {
 					this.variableNameList.add(variableName);
-					uniqueVariableNames.add(variableName);
+					this.variableNameSet.add(variableName);
 					/*
 					 * why so complicated? so that the order of the variable names is the same as the order in which
 					 * they are listed in the triple patterns.
@@ -153,7 +157,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 					logger.info(String.format("Read time of component %1s is %2s. Line: %3s",
 							this.configuration.getId(), semanticDate.toString(), Long.valueOf(lastLineRead)));
 				}
-				
+
 				this.lastLineRead++;
 
 			} else {
@@ -333,7 +337,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 		Bindings result;
 		String[] patternParts;
 
-		result = new Bindings(this.variableNameList);
+		result = new Bindings(this.variableNameSet);
 		patternParts = pattern.split(" ");
 
 		if (patternParts.length != 3) {
@@ -405,10 +409,15 @@ public class FileGraphPatternReader extends AbstractLineReader {
 	private class Bindings extends ForwardingMap<String, Object> {
 
 		/** This is the backing map where all the bindings are actually stored. */
-		private Map<String, Object> backingMap = new HashMap<String, Object>();
+		private HashMap<String, Object> backingMap = new HashMap<String, Object>();
 
-		/** We keep track of all the unbound variables using this set. */
-		private Set<String> unboundVariables;
+		/** We keep track of how manye unbound variables this bindings object has using this set. */
+		private int unboundVariablesCount;
+
+		/**
+		 * A set that contains all variables that need to be bound before we can say that all variables have been bound.
+		 */
+		private Set<String> variablesToBind;
 
 		/**
 		 * Creates a new bindings object. The list of variable names will be used to determine if all variables have
@@ -418,8 +427,21 @@ public class FileGraphPatternReader extends AbstractLineReader {
 		 *            the list of all variable names that have to be bound before this bindings object to have fully
 		 *            bound.
 		 */
-		public Bindings(Collection<String> variables) {
-			this.unboundVariables = new HashSet<String>(variables);
+		public Bindings(Set<String> variables) {
+			this.variablesToBind = variables;
+			this.unboundVariablesCount = variables.size();
+		}
+		
+		/**
+		 * A copy constructor that creates a bindings object using the current state of the provided other bindings
+		 * object.
+		 * @param copyFrom the bindings object to copy all the data from.
+		 */
+		private Bindings(Bindings copyFrom) {
+			this.variablesToBind = copyFrom.variablesToBind;
+			this.unboundVariablesCount = copyFrom.unboundVariablesCount;
+			// this will call the map's put method and not the one in this class
+			this.backingMap.putAll(copyFrom.backingMap);
 		}
 
 		/**
@@ -432,7 +454,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 		 *         collision.
 		 */
 		public Bindings mergeWith(Bindings other) {
-			Bindings result = new Bindings(this.unboundVariables);
+			Bindings result = new Bindings(this);
 
 			testForCollisions: for (String key : other.keySet()) {
 				Object thisValue = get(key);
@@ -460,7 +482,13 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 		@Override
 		public Object put(String key, Object value) {
-			this.unboundVariables.remove(key);
+			/*
+			 * If this is one of the variables that we have to bind and it is not already bound we decrease the addition
+			 * of this key represents one step towards being fully bound.
+			 */
+			if (this.variablesToBind.contains(key) && !containsKey(key)) {
+				this.unboundVariablesCount -= 1;
+			}
 			return super.put(key, value);
 		}
 
@@ -468,7 +496,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 		 * @return true if this bindings object is fully bound (i.e. has no more unbound variables), false otherwise.
 		 */
 		public boolean isFullyBound() {
-			return this.unboundVariables.isEmpty();
+			return this.unboundVariablesCount == 0;
 		}
 
 		@Override
