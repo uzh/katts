@@ -19,6 +19,7 @@ import ch.uzh.ddis.katts.query.processor.join.TemporalJoinConfiguration;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 import ch.uzh.ddis.katts.query.stream.Variable;
+import ch.uzh.ddis.katts.utils.Util;
 
 /**
  * The temporal join basically happens in two steps. First, all events arrive over the input streams are kept in the
@@ -50,8 +51,8 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	 */
 	private EvictionRuleManager evictionRuleManager;
 
-	/** We use this variable for guaranteeing the temporal order of events. Actually.. we should not have this. */
-	private Date lastProcessedEventDate;
+	/** We use this variable for guaranteeing the temporal order of events. Actually.. we should not have to do this. */
+	private long lastProcessedEventDate = 0;
 
 	private Logger logger = LoggerFactory.getLogger(TemporalJoinBolt.class);
 
@@ -99,11 +100,14 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	public void execute(Event event) {
 
 		// Check the constraint that all event, must be in order for processing.
-		if (lastProcessedEventDate != null && lastProcessedEventDate.after(event.getEndDate())) {
-			logger.error(String.format("An event was out of order. Component Id: %1s -- Source Stream ID: %2s",
-					this.getId(), event.getTuple().getSourceStreamId()));
+		if (lastProcessedEventDate > event.getEndDate().getTime()) {
+			String msg = String.format(
+					"Event out of order - comp.: '%1s'  src-stream: '%2s' prev-date: '%3s' curr-date: '%4s'",
+					this.getId(), event.getTuple().getSourceStreamId(),
+					Util.formatDate(new Date(lastProcessedEventDate)), Util.formatDate(event.getEndDate()));
+			logger.error(msg);
 		}
-		lastProcessedEventDate = event.getEndDate();
+		lastProcessedEventDate = event.getEndDate().getTime();
 
 		Set<SimpleVariableBindings> joinResults;
 		SimpleVariableBindings newBindings = new SimpleVariableBindings(event.getTuple());

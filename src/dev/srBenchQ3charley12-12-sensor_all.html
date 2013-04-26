@@ -1,0 +1,128 @@
+<html title="sankey">
+
+<style>
+.node rect {
+  cursor: move;
+  fill-opacity: .9;
+  shape-rendering: crispEdges;
+}
+.node text {
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff;
+}
+.link {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .2;
+}
+.link:hover {
+  stroke-opacity: .5;
+}
+</style>
+<title>srBenchQ3charley12-12-sensorID_javaHash_Task.json</title>
+<body>
+<p id="chart">
+<script type="text/javascript" src="http://d3js.org/d3.v2.min.js"></script>
+<script type="text/javascript" src="https://raw.github.com/d3/d3-plugins/master/sankey/sankey.js"></script>
+<script>
+var units = "Messages";
+
+var margin = {top: 10, right: 10, bottom: 10, left: 10},
+    width = 3000 - margin.left - margin.right,
+    height = 3000 - margin.top - margin.bottom;
+
+var formatNumber = d3.format(",.0f"),    // zero decimal places
+    format = function(d) { return formatNumber(d) + " " + units; },
+    color = d3.scale.category20();
+
+// append the svg canvas to the page
+var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Set the sankey diagram properties
+var sankey = d3.sankey()
+    .nodeWidth(36)
+    .nodePadding(40)
+    .size([width, height]);
+
+var path = sankey.link();
+
+graph = JSON.parse('{"nodes":[{"name":"32"},{"name":"11"},{"name":"27"},{"name":"4"},{"name":"2"},{"name":"6"},{"name":"12"},{"name":"25"},{"name":"38"},{"name":"34"},{"name":"1"},{"name":"36"},{"name":"3"},{"name":"9"},{"name":"24"},{"name":"7"},{"name":"20"},{"name":"15"},{"name":"16"},{"name":"19"},{"name":"14"},{"name":"17"},{"name":"5"},{"name":"18"},{"name":"35"},{"name":"33"},{"name":"10"},{"name":"23"},{"name":"37"},{"name":"28"},{"name":"8"},{"name":"21"},{"name":"22"},{"name":"31"},{"name":"29"},{"name":"30"},{"name":"26"}],"links":[{"source":14,"value":1229,"target":8},{"source":33,"value":16317,"target":26},{"source":10,"value":8213,"target":20},{"source":25,"value":268,"target":30},{"source":33,"value":49,"target":6},{"source":19,"value":1361,"target":8},{"source":29,"value":9194,"target":22},{"source":27,"value":1202,"target":8},{"source":29,"value":322,"target":12},{"source":29,"value":16073,"target":15},{"source":9,"value":330,"target":13},{"source":28,"value":396,"target":6},{"source":9,"value":16106,"target":10},{"source":35,"value":322,"target":22},{"source":28,"value":9537,"target":4},{"source":35,"value":8628,"target":15},{"source":11,"value":585,"target":1},{"source":2,"value":435,"target":4},{"source":35,"value":15643,"target":13},{"source":2,"value":8513,"target":3},{"source":2,"value":16445,"target":5},{"source":28,"value":14825,"target":3},{"source":25,"value":8283,"target":26},{"source":0,"value":15487,"target":1},{"source":36,"value":9092,"target":12},{"source":36,"value":225,"target":10},{"source":33,"value":8352,"target":30},{"source":4,"value":8151,"target":17},{"source":12,"value":8563,"target":18},{"source":1,"value":8059,"target":14},{"source":25,"value":15961,"target":6},{"source":11,"value":8581,"target":10},{"source":30,"value":8089,"target":31},{"source":20,"value":1257,"target":8},{"source":26,"value":8025,"target":27},{"source":13,"value":8611,"target":32},{"source":24,"value":8609,"target":6},{"source":3,"value":7913,"target":21},{"source":24,"value":475,"target":26},{"source":6,"value":8078,"target":7},{"source":11,"value":15697,"target":12},{"source":15,"value":8356,"target":16},{"source":22,"value":8457,"target":23},{"source":36,"value":16608,"target":22},{"source":9,"value":8941,"target":1},{"source":0,"value":361,"target":15},{"source":0,"value":9828,"target":13},{"source":21,"value":1185,"target":8},{"source":34,"value":486,"target":3},{"source":34,"value":9280,"target":5},{"source":0,"value":37,"target":10},{"source":24,"value":15211,"target":4},{"source":17,"value":1268,"target":8},{"source":18,"value":1309,"target":8},{"source":7,"value":1257,"target":8},{"source":32,"value":1364,"target":8},{"source":34,"value":15785,"target":30},{"source":23,"value":1301,"target":8},{"source":16,"value":1254,"target":8},{"source":31,"value":1272,"target":8},{"source":5,"value":8818,"target":19}]}');
+
+  sankey
+      .nodes(graph.nodes)
+      .links(graph.links)
+      .layout(32);
+
+// add in the links
+  var link = svg.append("g").selectAll(".link")
+      .data(graph.links)
+    .enter().append("path")
+      .attr("class", "link")
+      .attr("d", path)
+      .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+      .sort(function(a, b) { return b.dy - a.dy; });
+
+// add the link titles
+  link.append("title")
+        .text(function(d) {
+            return d.source.name + " → " + 
+                d.target.name + "\n" + format(d.value); });
+
+// add in the nodes
+  var node = svg.append("g").selectAll(".node")
+      .data(graph.nodes)
+    .enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { 
+          return "translate(" + d.x + "," + d.y + ")"; })
+    .call(d3.behavior.drag()
+      .origin(function(d) { return d; })
+      .on("dragstart", function() { 
+          this.parentNode.appendChild(this); })
+      .on("drag", dragmove));
+
+// add the rectangles for the nodes
+  node.append("rect")
+      .attr("height", function(d) { return d.dy; })
+      .attr("width", sankey.nodeWidth())
+      .style("fill", function(d) { 
+          return d.color = color(d.name.replace(/ .*/, "")); })
+      .style("stroke", function(d) { 
+          return d3.rgb(d.color).darker(2); })
+    .append("title")
+      .text(function(d) { 
+          return d.name + "\n" + format(d.value); });
+
+// add in the title for the nodes
+  node.append("text")
+      .attr("x", -6)
+      .attr("y", function(d) { return d.dy / 2; })
+      .attr("dy", ".35em")
+      .attr("text-anchor", "end")
+      .attr("transform", null)
+      .text(function(d) { return d.name; })
+    .filter(function(d) { return d.x < width / 2; })
+      .attr("x", 6 + sankey.nodeWidth())
+      .attr("text-anchor", "start");
+
+// the function for moving the nodes
+  function dragmove(d) {
+    d3.select(this).attr("transform", 
+        "translate(" + (
+            d.x = Math.max(0, Math.min(width - d.dx, d3.event.x))
+        )
+        + "," + (
+            d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))
+        ) + ")");
+    sankey.relayout();
+    link.attr("d", path);
+  }
+
+</script>
+</body>
+</html>

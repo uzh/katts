@@ -1,7 +1,6 @@
 package ch.uzh.ddis.katts.bolts.source;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +20,6 @@ import ch.uzh.ddis.katts.utils.Util;
 
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
 
 /**
@@ -61,12 +59,24 @@ public class FileGraphPatternReader extends AbstractLineReader {
 	/** This set contains the same names as variableNameList, but with O(1) complexity for the contains() method. */
 	private Set<String> variableNameSet;
 
-	/**
-	 * As we cannot "peek" at the next triple of the source, we have to load a triple from the source in order to have a
-	 * look at it. We store the last read triple in this variable, so we can use this triple instead of reading a fresh
-	 * one from the source as the first triple of each batch.
+	/*
+	 * A map that maps variable names to their values as well as to all bindings objects that contain this binding.
+	 * 
+	 * Map<variableName, MultiMap<variableValue, Binding>>
+	 * 
+	 * We also initialize this map as a "default" map (i.e. a map that generates empty SetMultimap objects if the
+	 * multimap is requested for a variableName that does not exist yet.
 	 */
-	private List<String> quadrupleForNextRound;
+	Map<String, SetMultimap<Object, Bindings>> nameValueBindingsIndex = new HashMap<String, SetMultimap<Object, Bindings>>() {
+		public SetMultimap<Object, Bindings> get(Object key) {
+			SetMultimap<Object, Bindings> result = super.get(key);
+			if (result == null) {
+				result = HashMultimap.create();
+				put(key.toString(), result);
+			}
+			return result;
+		}
+	};
 
 	/** We need to send this along with the tuples. */
 	private long sequenceNumber = 0;
@@ -107,31 +117,15 @@ public class FileGraphPatternReader extends AbstractLineReader {
 	@Override
 	public boolean nextTuple(Source source) {
 		boolean result = false;
-		Date dateProcessedInThisBatch = null;
 
-		/*
-		 * We keep all triples that share the same time value in this cache. Then we search this cache for matches. The
-		 * arrays in this
-		 */
-		List<List<String>> quadrupleCache;
+		untilEmit: while (true) { // read until we have emitted at least one tuple
+			boolean emitted = false; // keep track of if we have emitted at least one tuple
+			List<String> quadruple = null; // the current entry we're working with
 
-		// clear cache (wasteful but fast)
-		quadrupleCache = new ArrayList<List<String>>();
-
-		// read all triples that share the same time
-		batch: while (true) {
-			List<String> quadruple = null;
-
-			if (quadrupleForNextRound != null) {
-				quadruple = this.quadrupleForNextRound;
-				this.quadrupleForNextRound = null;
-			} else {
-				try {
-					quadruple = source.getNextTuple();
-				} catch (Exception e) {
-					throw new RuntimeException(
-							String.format("Unable to read next triple because: %1s", e.getMessage()), e);
-				}
+			try {
+				quadruple = source.getNextTuple();
+			} catch (Exception e) {
+				throw new RuntimeException(String.format("Unable to read next triple because: %1s", e.getMessage()), e);
 			}
 
 			if (quadruple != null) {
@@ -140,187 +134,125 @@ public class FileGraphPatternReader extends AbstractLineReader {
 				// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
 				semanticDate = extractDate(quadruple.get(0));
 
-				if (!this.lastDateProcessed.equals(semanticDate)) {
-					// store the current triple for the next batch and stop processing
-					this.quadrupleForNextRound = quadruple;
+				// make sure we empty the cache if hit a quadruple of another "batch" (i.e. a different date value)
+				if (semanticDate.equals(this.lastDateProcessed)) {
+					this.nameValueBindingsIndex.clear();
 					this.lastDateProcessed = semanticDate;
-					result = true; // make sure we come back one more time
-					break batch;
-				} else {
-					dateProcessedInThisBatch = semanticDate;
 				}
 
-				// add the quadruple to the current batch
-				quadrupleCache.add(quadruple);
+				// try to bind to all patterns
+				for (String pattern : this.configuration.getPatterns()) {
+					Bindings currentBindings = tryToBindVariables(pattern, quadruple);
+
+					if (currentBindings != null) { // the quadruple could be bound
+
+						if (currentBindings.isFullyBound()) {
+							// if this is the case (most likely not yet), emit it straight away
+							if (emitBindings(semanticDate, currentBindings)) {
+								emitted = true;
+							}
+						} else {
+							// add the bindings object to our cache and emit fully bound bindings along the way
+							for (String variableName : currentBindings.keySet()) {
+								Object variableValue = currentBindings.get(variableName);
+								Set<Bindings> bindingsInCache;
+								List<Bindings> toAddToCache;
+
+								// find all bindings that have the same variable bound, already
+								bindingsInCache = nameValueBindingsIndex.get(variableName).get(variableValue);
+
+								/*
+								 * we store bindings that need to be added to the cache in this list to prevent
+								 * concurrent modification exceptions.
+								 */
+								toAddToCache = new ArrayList<Bindings>();
+
+								for (Bindings inCacheBindings : bindingsInCache) {
+									Bindings merged = currentBindings.mergeWith(inCacheBindings);
+									if (merged != null) {
+										if (merged.isFullyBound()) {
+											if (emitBindings(semanticDate, merged)) {
+												emitted = true;
+											}
+										} else { // add to cache for each variable
+											toAddToCache.add(merged);
+										}
+									}
+								}
+
+								// store all merged (and not yet fully bound) bindings objects in the index
+								for (Bindings bindingsToAdd : toAddToCache) {
+									for (String vn : bindingsToAdd.keySet()) { // add it for each variable
+										nameValueBindingsIndex.get(vn).put(bindingsToAdd.get(vn), bindingsToAdd);
+									}
+								}
+
+								// store the unmerged bindings object as it's own "root" bindings object in the index
+								nameValueBindingsIndex.get(variableName).put(variableValue, currentBindings);
+							}
+						}
+
+					}
+				}
 
 				if (lastLineRead % 30000 == 0) {
 					logger.info(String.format("Read time of component %1s is %2s. Line: %3s",
 							this.configuration.getId(), semanticDate.toString(), Long.valueOf(lastLineRead)));
 				}
-
 				this.lastLineRead++;
+				result = true;
 
 			} else {
-				/*
-				 * This line COULD show up twice in the log: The first time, when the current batch ends. Then, because
-				 * we still emit all elements from the current batch, the nextTuple method will be called once more, and
-				 * we will end up in this place once again. The second time, there won't be any tuples to emit, though.
-				 * So we will return with "false" from this method.
-				 */
 				logger.info(String.format("End of file is reached in component %1s on line: %2s",
 						this.configuration.getId(), lastLineRead));
-				break batch;
+				break untilEmit;
 			}
-
-		}
-
-		// emit all tuples of this batch
-		for (Bindings bindings : findSubGraphTuples(quadrupleCache)) {
-			for (Stream stream : this.configuration.getProducers()) {
-
-				List<Object> tuple = new ArrayList<Object>();
-				tuple.add(sequenceNumber++);
-
-				if (dateProcessedInThisBatch == null) {
-					throw new IllegalStateException();
-				}
-
-				tuple.add(dateProcessedInThisBatch); // startDate
-				tuple.add(dateProcessedInThisBatch); // endDate - same as startDate as we process batches of same-time
-
-				// support sourceFilePath as a propery
-				bindings.put(SOURCE_ID_VARIABLE_NAME, getSource().getSourceId());
-
-				for (Variable variable : stream.getVariables()) {
-					tuple.add(bindings.get(variable.getReferencesTo()));
-				}
-				// System.out.println("emitting tuple " + bindings);
-				emit(stream.getId(), tuple); // We emit on the default stream
-				result = true;
+			
+			if (emitted) {
+				break untilEmit;
 			}
-		}
+		} // untilEmit: while (true)
 
 		return result;
 	}
 
 	/**
-	 * This method searches for all subgraphs as defined by the patterns in the configuration objects and returns all
-	 * tuples that could be built out of this.
+	 * Emits the contents of the supplied bindings object on all configured streams using the respective configured
+	 * variable.
 	 * 
-	 * @param quadrupleCache
-	 *            the list of all quadruples that belong to the current semantic time timestamp.
-	 * @return a list containing all subgraph patterns matched as lists of objects.
+	 * @param semanticDate
+	 *            the start AND the end date of the tuples that are emitted.
+	 * @param bindings
+	 *            the bindings object.
+	 * @return true, if any tuple was emitted (if an outgoing stream was configured), false otherwise.
 	 */
-	private Collection<Bindings> findSubGraphTuples(List<List<String>> quadrupleCache) {
-		Map<String, SetMultimap<Object, Bindings>> nameValueBindingsIndex;
-		Set<Bindings> partiallyBoundBindings;
-		List<Bindings> fullyBoundBindings;
-		String firstPattern;
-		List<List<String>> workingCache;
+	private boolean emitBindings(Date semanticDate, Bindings bindings) {
+		Boolean result = false;
 
-		fullyBoundBindings = new ArrayList<Bindings>();
+		for (Stream stream : this.configuration.getProducers()) {
 
-		/*
-		 * A map that maps variable names to their values as well as to all bindings objects that contain this binding.
-		 * 
-		 * Map<variableName, MultiMap<variableValue, Binding>>
-		 * 
-		 * We also initialize this map as a "default" map (i.e. a map that generates empty SetMultimap objects if the
-		 * multimap is requested for a variableName that does not exist yet.
-		 */
-		nameValueBindingsIndex = new HashMap<String, SetMultimap<Object, Bindings>>() {
-			public SetMultimap<Object, Bindings> get(Object key) {
-				SetMultimap<Object, Bindings> result = super.get(key);
-				if (result == null) {
-					result = HashMultimap.create();
-					put(key.toString(), result);
-				}
-				return result;
+			List<Object> tuple = new ArrayList<Object>();
+			tuple.add(sequenceNumber++);
+
+			if (semanticDate == null) {
+				throw new IllegalStateException();
 			}
-		};
 
-		/*
-		 * Next to the nameValueBidningsMap-Index, we also need a simple way to iterate over all bindings that are
-		 * currenly not yet fully bound. This is what this set is for.
-		 */
-		partiallyBoundBindings = new HashSet<Bindings>();
+			tuple.add(semanticDate); // startDate
+			tuple.add(semanticDate); // endDate - same as startDate as we process batches of same-time
 
-		// we generate the initial set of bindings
-		firstPattern = this.configuration.getPatterns().get(0);
-		workingCache = new ArrayList<List<String>>();
-		for (List<String> quadruple : quadrupleCache) {
-			Bindings bindings = tryToBindVariables(firstPattern, quadruple);
+			// support sourceFilePath as a propery
+			bindings.put(SOURCE_ID_VARIABLE_NAME, getSource().getSourceId());
 
-			if (bindings != null) { // add the bindings object to our cache
-
-				if (bindings.isFullyBound()) {
-					// if this is the case (most likely not yet), store it so we can generate the result from it
-					// later
-					fullyBoundBindings.add(bindings);
-				} else {
-					for (String variableName : bindings.keySet()) {
-						// store it in our database for all matched variables
-						nameValueBindingsIndex.get(variableName).put(bindings.get(variableName), bindings);
-						partiallyBoundBindings.add(bindings);
-					}
-				}
-
-			} else { // the pattern did not match, put it into the working cache
-				workingCache.add(quadruple); // this will save some work later on
+			for (Variable variable : stream.getVariables()) {
+				tuple.add(bindings.get(variable.getReferencesTo()));
 			}
+			// System.out.println("emitting tuple " + bindings);
+			emit(stream.getId(), tuple); // We emit on the default stream
+			result = true;
 		}
 
-		/*
-		 * Now we go over all all remaining triple patterns from top to bottom and bind variables as we find matches
-		 */
-		for (String pattern : this.configuration.getPatterns().subList(1, this.configuration.getPatterns().size())) {
-			List<List<String>> newWorkingCache;
-
-			/*
-			 * In each step, we create a new working cache so we don't iterate over quadruples that we have already
-			 * successfully processed
-			 */
-			newWorkingCache = new ArrayList<List<String>>();
-
-			for (List<String> quadruple : workingCache) {
-				Bindings bindings = tryToBindVariables(pattern, quadruple);
-
-				if (bindings != null) { // add the bindings object to our cache
-					// needed to prevent concurrent modification exception
-					Set<Bindings> additionalPartiallyBoundBindings = new HashSet<Bindings>();
-
-					for (Bindings partiallyBound : partiallyBoundBindings) { // check with bindings already in the cache
-						Bindings mergedBindings = partiallyBound.mergeWith(bindings);
-
-						if (mergedBindings != null) { // no collisions
-							if (mergedBindings.isFullyBound()) {
-								// if this is the case (most likely not yet), store it so we can generate the result
-								// from it
-								// later
-								fullyBoundBindings.add(mergedBindings);
-							} else {
-								for (String variableName : bindings.keySet()) {
-									// store it in our database for all matched variables
-									nameValueBindingsIndex.get(variableName).put(mergedBindings.get(variableName),
-											mergedBindings);
-									additionalPartiallyBoundBindings.add(mergedBindings);
-								}
-							}
-						}
-					}
-
-					partiallyBoundBindings.addAll(additionalPartiallyBoundBindings);
-
-				} else { // the pattern did not match, put it into the working cache
-					newWorkingCache.add(quadruple); // this will save some work later on
-				}
-			}
-
-			// cache replace the working
-			workingCache = newWorkingCache;
-		}
-
-		return fullyBoundBindings;
+		return result;
 	}
 
 	/**
@@ -431,11 +363,13 @@ public class FileGraphPatternReader extends AbstractLineReader {
 			this.variablesToBind = variables;
 			this.unboundVariablesCount = variables.size();
 		}
-		
+
 		/**
 		 * A copy constructor that creates a bindings object using the current state of the provided other bindings
 		 * object.
-		 * @param copyFrom the bindings object to copy all the data from.
+		 * 
+		 * @param copyFrom
+		 *            the bindings object to copy all the data from.
 		 */
 		private Bindings(Bindings copyFrom) {
 			this.variablesToBind = copyFrom.variablesToBind;
@@ -457,7 +391,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 			Bindings result = new Bindings(this);
 
 			testForCollisions: for (String key : other.keySet()) {
-				Object thisValue = get(key);
+				Object thisValue = get(key); // we check on "this" as we have not yet copied the content to the result
 				Object otherValue = other.get(key);
 				if (thisValue == null) {
 					result.put(key, otherValue); // does not exist, yet. Cool!

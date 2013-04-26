@@ -5,6 +5,14 @@ KATTS
 
 Revision History
 ================
+2.3.12-SNAPSHOT    - reformat out-of-order message
+
+2.3.8-SNAPSHOT    - graph reader reads one line at the time until it could emit at least one tuple
+
+2.3.7-SNAPSHOT    - print batch date
+
+2.3.6-SNAPSHOT    - Copy bound variables in bindings
+
 2.3.5-SNAPSHOT    - ExpressionFunction back to normal.
 
 2.3.4-SNAPSHOT    - ExpressionFunction just acks everything...

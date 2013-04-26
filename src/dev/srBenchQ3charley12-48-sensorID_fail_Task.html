@@ -1,0 +1,128 @@
+<html title="sankey">
+
+<style>
+.node rect {
+  cursor: move;
+  fill-opacity: .9;
+  shape-rendering: crispEdges;
+}
+.node text {
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff;
+}
+.link {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .2;
+}
+.link:hover {
+  stroke-opacity: .5;
+}
+</style>
+<title>srBenchQ3charley12-48-sensorID_javaHash_Task.json</title>
+<body>
+<p id="chart">
+<script type="text/javascript" src="http://d3js.org/d3.v2.min.js"></script>
+<script type="text/javascript" src="https://raw.github.com/d3/d3-plugins/master/sankey/sankey.js"></script>
+<script>
+var units = "Messages";
+
+var margin = {top: 10, right: 10, bottom: 10, left: 10},
+    width = 3000 - margin.left - margin.right,
+    height = 3000 - margin.top - margin.bottom;
+
+var formatNumber = d3.format(",.0f"),    // zero decimal places
+    format = function(d) { return formatNumber(d) + " " + units; },
+    color = d3.scale.category20();
+
+// append the svg canvas to the page
+var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Set the sankey diagram properties
+var sankey = d3.sankey()
+    .nodeWidth(36)
+    .nodePadding(40)
+    .size([width, height]);
+
+var path = sankey.link();
+
+graph = JSON.parse('{"nodes":[{"name":"108"},{"name":"11"},{"name":"40"},{"name":"89"},{"name":"64"},{"name":"110"},{"name":"103"},{"name":"22"},{"name":"26"},{"name":"13"},{"name":"24"},{"name":"104"},{"name":"41"},{"name":"98"},{"name":"35"},{"name":"29"},{"name":"78"},{"name":"39"},{"name":"88"},{"name":"37"},{"name":"27"},{"name":"76"},{"name":"45"},{"name":"28"},{"name":"77"},{"name":"43"},{"name":"23"},{"name":"21"},{"name":"54"},{"name":"10"},{"name":"59"},{"name":"70"},{"name":"34"},{"name":"25"},{"name":"36"},{"name":"38"},{"name":"80"},{"name":"109"},{"name":"16"},{"name":"18"},{"name":"31"},{"name":"33"},{"name":"48"},{"name":"102"},{"name":"46"},{"name":"4"},{"name":"53"},{"name":"15"},{"name":"79"},{"name":"60"},{"name":"20"},{"name":"75"},{"name":"90"},{"name":"56"},{"name":"63"},{"name":"17"},{"name":"19"},{"name":"52"},{"name":"8"},{"name":"6"},{"name":"47"},{"name":"96"},{"name":"32"},{"name":"30"},{"name":"73"},{"name":"7"},{"name":"2"},{"name":"51"},{"name":"69"},{"name":"66"},{"name":"81"},{"name":"67"},{"name":"99"},{"name":"42"},{"name":"44"},{"name":"68"},{"name":"107"},{"name":"5"},{"name":"9"},{"name":"74"},{"name":"85"},{"name":"105"},{"name":"83"},{"name":"61"},{"name":"106"},{"name":"3"},{"name":"95"},{"name":"12"},{"name":"14"},{"name":"100"},{"name":"1"},{"name":"93"},{"name":"94"},{"name":"50"},{"name":"97"},{"name":"101"},{"name":"57"},{"name":"72"},{"name":"92"},{"name":"86"},{"name":"65"},{"name":"87"},{"name":"58"},{"name":"71"},{"name":"84"},{"name":"82"},{"name":"91"},{"name":"62"},{"name":"55"}],"links":[{"source":6,"value":122,"target":44},{"source":60,"value":2125,"target":61},{"source":74,"value":1826,"target":91},{"source":62,"value":2229,"target":70},{"source":25,"value":2210,"target":98},{"source":37,"value":165,"target":45},{"source":42,"value":1985,"target":94},{"source":37,"value":2115,"target":59},{"source":6,"value":1908,"target":42},{"source":37,"value":4244,"target":58},{"source":0,"value":32,"target":78},{"source":84,"value":55,"target":56},{"source":90,"value":2267,"target":93},{"source":32,"value":2174,"target":82},{"source":84,"value":37,"target":9},{"source":76,"value":237,"target":88},{"source":84,"value":4471,"target":1},{"source":76,"value":2065,"target":38},{"source":76,"value":3416,"target":39},{"source":6,"value":113,"target":32},{"source":6,"value":2054,"target":34},{"source":61,"value":1008,"target":5},{"source":0,"value":4334,"target":90},{"source":6,"value":3309,"target":35},{"source":84,"value":3540,"target":26},{"source":84,"value":2686,"target":27},{"source":80,"value":823,"target":5},{"source":76,"value":2092,"target":23},{"source":43,"value":2052,"target":15},{"source":6,"value":2212,"target":10},{"source":52,"value":1050,"target":5},{"source":6,"value":171,"target":7},{"source":76,"value":2551,"target":45},{"source":108,"value":979,"target":5},{"source":6,"value":4009,"target":8},{"source":76,"value":4178,"target":59},{"source":76,"value":198,"target":66},{"source":76,"value":4499,"target":63},{"source":84,"value":48,"target":65},{"source":84,"value":2646,"target":78},{"source":15,"value":2174,"target":16},{"source":21,"value":899,"target":5},{"source":6,"value":69,"target":29},{"source":6,"value":2435,"target":87},{"source":43,"value":2160,"target":55},{"source":88,"value":2219,"target":54},{"source":6,"value":4132,"target":88},{"source":43,"value":3482,"target":56},{"source":43,"value":93,"target":47},{"source":76,"value":4352,"target":73},{"source":76,"value":1805,"target":2},{"source":29,"value":1794,"target":30},{"source":43,"value":4633,"target":25},{"source":43,"value":2297,"target":12},{"source":13,"value":2429,"target":90},{"source":41,"value":1919,"target":105},{"source":13,"value":3915,"target":85},{"source":8,"value":1892,"target":51},{"source":79,"value":893,"target":5},{"source":11,"value":37,"target":12},{"source":33,"value":1906,"target":79},{"source":11,"value":4412,"target":22},{"source":11,"value":2014,"target":25},{"source":43,"value":3457,"target":40},{"source":102,"value":1042,"target":5},{"source":30,"value":866,"target":5},{"source":43,"value":65,"target":17},{"source":97,"value":796,"target":5},{"source":75,"value":887,"target":5},{"source":91,"value":844,"target":5},{"source":10,"value":1962,"target":64},{"source":83,"value":1029,"target":5},{"source":106,"value":1104,"target":5},{"source":2,"value":1827,"target":3},{"source":69,"value":978,"target":5},{"source":11,"value":2370,"target":40},{"source":26,"value":1798,"target":97},{"source":98,"value":1030,"target":5},{"source":11,"value":3492,"target":41},{"source":0,"value":13,"target":41},{"source":94,"value":906,"target":5},{"source":0,"value":2402,"target":14},{"source":0,"value":4025,"target":19},{"source":101,"value":941,"target":5},{"source":45,"value":2153,"target":46},{"source":93,"value":1017,"target":5},{"source":84,"value":138,"target":40},{"source":17,"value":1944,"target":18},{"source":23,"value":2044,"target":24},{"source":84,"value":2292,"target":41},{"source":48,"value":1139,"target":5},{"source":84,"value":3789,"target":14},{"source":89,"value":4138,"target":12},{"source":77,"value":2144,"target":28},{"source":89,"value":2261,"target":17},{"source":78,"value":2238,"target":102},{"source":0,"value":248,"target":22},{"source":89,"value":96,"target":19},{"source":0,"value":2651,"target":60},{"source":53,"value":1084,"target":5},{"source":68,"value":976,"target":5},{"source":86,"value":1037,"target":5},{"source":58,"value":2033,"target":96},{"source":57,"value":1027,"target":5},{"source":46,"value":986,"target":5},{"source":31,"value":1036,"target":5},{"source":84,"value":120,"target":25},{"source":84,"value":3687,"target":60},{"source":84,"value":2204,"target":22},{"source":89,"value":2528,"target":85},{"source":4,"value":1007,"target":5},{"source":89,"value":44,"target":90},{"source":89,"value":3925,"target":77},{"source":81,"value":179,"target":42},{"source":72,"value":3757,"target":7},{"source":37,"value":2332,"target":39},{"source":81,"value":3877,"target":2},{"source":37,"value":3528,"target":50},{"source":72,"value":169,"target":63},{"source":72,"value":2195,"target":62},{"source":0,"value":37,"target":27},{"source":95,"value":3718,"target":34},{"source":0,"value":1926,"target":26},{"source":70,"value":1052,"target":5},{"source":0,"value":3720,"target":33},{"source":95,"value":119,"target":62},{"source":95,"value":2111,"target":32},{"source":51,"value":880,"target":5},{"source":81,"value":2295,"target":35},{"source":81,"value":53,"target":34},{"source":73,"value":2202,"target":106},{"source":12,"value":2106,"target":52},{"source":92,"value":1097,"target":5},{"source":72,"value":49,"target":87},{"source":35,"value":1910,"target":101},{"source":72,"value":69,"target":39},{"source":37,"value":165,"target":38},{"source":34,"value":1787,"target":80},{"source":72,"value":2637,"target":50},{"source":22,"value":2323,"target":92},{"source":95,"value":3829,"target":42},{"source":44,"value":2141,"target":86},{"source":0,"value":4027,"target":9},{"source":95,"value":2232,"target":44},{"source":0,"value":1962,"target":1},{"source":95,"value":45,"target":74},{"source":11,"value":3709,"target":27},{"source":18,"value":924,"target":5},{"source":81,"value":31,"target":10},{"source":81,"value":2086,"target":8},{"source":81,"value":4022,"target":23},{"source":11,"value":87,"target":15},{"source":37,"value":2225,"target":73},{"source":89,"value":2345,"target":47},{"source":50,"value":2030,"target":68},{"source":37,"value":3666,"target":74},{"source":7,"value":1883,"target":103},{"source":72,"value":3786,"target":29},{"source":89,"value":3935,"target":55},{"source":89,"value":32,"target":9},{"source":95,"value":1904,"target":29},{"source":95,"value":4649,"target":87},{"source":27,"value":2119,"target":31},{"source":37,"value":53,"target":2},{"source":13,"value":88,"target":1},{"source":87,"value":2256,"target":83},{"source":81,"value":3474,"target":38},{"source":81,"value":2521,"target":88},{"source":67,"value":968,"target":5},{"source":104,"value":938,"target":5},{"source":20,"value":1972,"target":21},{"source":11,"value":1997,"target":56},{"source":37,"value":103,"target":23},{"source":11,"value":194,"target":55},{"source":24,"value":925,"target":5},{"source":81,"value":133,"target":87},{"source":16,"value":1035,"target":5},{"source":89,"value":1958,"target":20},{"source":72,"value":83,"target":59},{"source":89,"value":53,"target":33},{"source":37,"value":4347,"target":62},{"source":103,"value":839,"target":5},{"source":95,"value":2036,"target":7},{"source":95,"value":75,"target":50},{"source":64,"value":936,"target":5},{"source":37,"value":2608,"target":63},{"source":89,"value":4610,"target":15},{"source":72,"value":1802,"target":58},{"source":95,"value":3765,"target":10},{"source":39,"value":1903,"target":71},{"source":14,"value":2087,"target":104},{"source":55,"value":2049,"target":69},{"source":11,"value":2247,"target":65},{"source":13,"value":4079,"target":20},{"source":11,"value":4,"target":77},{"source":13,"value":49,"target":26},{"source":11,"value":4030,"target":78},{"source":13,"value":2154,"target":33},{"source":105,"value":831,"target":5},{"source":38,"value":1904,"target":100},{"source":107,"value":946,"target":5},{"source":81,"value":3452,"target":45},{"source":81,"value":2635,"target":66},{"source":100,"value":924,"target":5},{"source":54,"value":1019,"target":5},{"source":71,"value":926,"target":5},{"source":47,"value":2094,"target":4},{"source":13,"value":4035,"target":47},{"source":82,"value":1033,"target":5},{"source":13,"value":2231,"target":9},{"source":19,"value":1998,"target":99},{"source":40,"value":2088,"target":36},{"source":72,"value":1718,"target":74},{"source":72,"value":4359,"target":44},{"source":3,"value":880,"target":5},{"source":96,"value":954,"target":5},{"source":43,"value":4501,"target":65},{"source":13,"value":322,"target":60},{"source":43,"value":2685,"target":77},{"source":43,"value":164,"target":85},{"source":6,"value":3761,"target":66},{"source":63,"value":2490,"target":48},{"source":66,"value":2091,"target":67},{"source":72,"value":4415,"target":32},{"source":9,"value":2003,"target":107},{"source":56,"value":1741,"target":75},{"source":13,"value":1767,"target":19},{"source":49,"value":999,"target":5},{"source":13,"value":126,"target":14},{"source":95,"value":29,"target":58},{"source":59,"value":2135,"target":108},{"source":65,"value":2341,"target":53},{"source":13,"value":3668,"target":17},{"source":85,"value":2130,"target":57},{"source":36,"value":954,"target":5},{"source":99,"value":960,"target":5},{"source":72,"value":96,"target":73},{"source":1,"value":2126,"target":49},{"source":28,"value":978,"target":5}]}');
+
+  sankey
+      .nodes(graph.nodes)
+      .links(graph.links)
+      .layout(32);
+
+// add in the links
+  var link = svg.append("g").selectAll(".link")
+      .data(graph.links)
+    .enter().append("path")
+      .attr("class", "link")
+      .attr("d", path)
+      .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+      .sort(function(a, b) { return b.dy - a.dy; });
+
+// add the link titles
+  link.append("title")
+        .text(function(d) {
+            return d.source.name + " → " + 
+                d.target.name + "\n" + format(d.value); });
+
+// add in the nodes
+  var node = svg.append("g").selectAll(".node")
+      .data(graph.nodes)
+    .enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { 
+          return "translate(" + d.x + "," + d.y + ")"; })
+    .call(d3.behavior.drag()
+      .origin(function(d) { return d; })
+      .on("dragstart", function() { 
+          this.parentNode.appendChild(this); })
+      .on("drag", dragmove));
+
+// add the rectangles for the nodes
+  node.append("rect")
+      .attr("height", function(d) { return d.dy; })
+      .attr("width", sankey.nodeWidth())
+      .style("fill", function(d) { 
+          return d.color = color(d.name.replace(/ .*/, "")); })
+      .style("stroke", function(d) { 
+          return d3.rgb(d.color).darker(2); })
+    .append("title")
+      .text(function(d) { 
+          return d.name + "\n" + format(d.value); });
+
+// add in the title for the nodes
+  node.append("text")
+      .attr("x", -6)
+      .attr("y", function(d) { return d.dy / 2; })
+      .attr("dy", ".35em")
+      .attr("text-anchor", "end")
+      .attr("transform", null)
+      .text(function(d) { return d.name; })
+    .filter(function(d) { return d.x < width / 2; })
+      .attr("x", 6 + sankey.nodeWidth())
+      .attr("text-anchor", "start");
+
+// the function for moving the nodes
+  function dragmove(d) {
+    d3.select(this).attr("transform", 
+        "translate(" + (
+            d.x = Math.max(0, Math.min(width - d.dx, d3.event.x))
+        )
+        + "," + (
+            d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))
+        ) + ")");
+    sankey.relayout();
+    link.attr("d", path);
+  }
+
+</script>
+</body>
+</html>

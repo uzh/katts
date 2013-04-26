@@ -3,6 +3,8 @@
  */
 package ch.uzh.ddis.katts.utils;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -28,6 +30,9 @@ public final class Util {
 
 	/** This formatter is used to parse dateTime string values */
 	private static DateTimeFormatter isoFormat = ISODateTimeFormat.dateTimeParser();
+	
+	/** Used to format simple date time values. */
+	private static DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	/**
 	 * Tests if the value of a string is a long (integer). This method supports positive and negative numbers.
@@ -97,6 +102,17 @@ public final class Util {
 	 */
 	public static Date parseDateTime(String dateString) {
 		return Util.isoFormat.parseDateTime(dateString).toDate();
+	}
+
+	/**
+	 * Formats a date value into an string of the form "yyyy-MM-dd HH:mm:ss".
+	 * 
+	 * @param date
+	 *            the date to be formatted.
+	 * @return the formatted string.
+	 */
+	public static String formatDate(Date date) {
+		return Util.dateFormatter.format(date);
 	}
 
 	/** Utility classes should not be initiatlized. */
