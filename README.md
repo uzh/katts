@@ -5,6 +5,12 @@ KATTS
 
 Revision History
 ================
+3.0.3-SNAPSHOT    - 5k unacked tuples
+
+3.0.2-SNAPSHOT    - copy start and end dates in ExpressionFilterBolt and ExpressionFunctionBolt
+
+3.0.1-SNAPSHOT    - 1 million unacked messages
+
 3.0.0-SNAPSHOT    - Ripped out the "parallelism magic"
                   - bufferTimeout and waitTimeout configurable
 

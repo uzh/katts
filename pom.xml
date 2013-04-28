@@ -3,7 +3,7 @@
 
 	<groupId>ch.uzh.ifi.ddis.katts</groupId>
 	<artifactId>katts</artifactId>
-	<version>3.0.0-SNAPSHOT</version>
+	<version>3.0.3-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>katts</name>
