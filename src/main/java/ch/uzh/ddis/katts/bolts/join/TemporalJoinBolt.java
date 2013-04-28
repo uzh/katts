@@ -67,6 +67,33 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 		this.configuration = configuration;
 	}
 
+	// // The stuff below is for debugging. Can be ignored, deleted, or just left there for future reference
+	// HashMap<String, Long> lastInput = new HashMap<String, Long>() {
+	// public Long get(Object key) {
+	// Long result = super.get(key);
+	// if (result == null) {
+	// result = Long.valueOf(0l);
+	// put(key.toString(), result);
+	// }
+	// return result;
+	// }
+	// };
+	// @Override
+	// public void executeRegularTuple(Tuple input) {
+	// String source = input.getSourceStreamId();
+	// long li = lastInput.get(source).longValue();
+	//
+	//
+	// if (li % 1000 == 0) {
+	// Date endDate = (Date) input.getValueByField("endDate");
+	// System.out.println(source + " at position " + li + " " + Util.formatDate(endDate));
+	// }
+	// li++;
+	// lastInput.put(source, Long.valueOf(li));
+	//
+	// super.executeRegularTuple(input);
+	// }
+
 	@Override
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);

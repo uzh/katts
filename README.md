@@ -6,6 +6,7 @@ KATTS
 Revision History
 ================
 3.0.0-SNAPSHOT    - Ripped out the "parallelism magic"
+                  - bufferTimeout and waitTimeout configurable
 
 2.5.0-SNAPSHOT    - ScheduledThreadPoolExecutor instead of TimerTask
                   - TOPOLOGY_MAX_SPOUT_PENDING set to 100k
