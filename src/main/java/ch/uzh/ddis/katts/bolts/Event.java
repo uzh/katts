@@ -49,6 +49,14 @@ public class Event implements Comparable<Event> {
 		this.setSequenceNumber(tuple.getLongByField("sequenceNumber"));
 		this.setStartDate((Date) tuple.getValueByField("startDate"));
 		this.setEndDate((Date) tuple.getValueByField("endDate"));
+		
+		if (this.startDate == null) {
+			throw new NullPointerException("startDate must not be null");
+		}
+		if (this.endDate == null) {
+			throw new NullPointerException("endDate must not be null");
+		}
+		
 	}
 
 	/**
