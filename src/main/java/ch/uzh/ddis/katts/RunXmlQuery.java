@@ -45,21 +45,14 @@ public class RunXmlQuery {
 		}
 
 		// Read in the args
-		long monitoringRecordInterval = 15;
 		boolean monitoring = true;
 		String topologyName = "katts-topology";
 		String path = null;
 		String terminationCheckInterval = null;
-		int numberOfProcessors = 10;
-		int numberOfWorkers = 1000;
-		float factorOfThreadsPerProcessor = 1.1f;
 		String evalNotes = "";
 
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].equalsIgnoreCase("--monitoring-record-interval")) {
-				i++;
-				monitoringRecordInterval = Long.valueOf(args[i]);
-			} else if (args[i].equalsIgnoreCase("--monitoring")) {
+			if (args[i].equalsIgnoreCase("--monitoring")) {
 				i++;
 				monitoring = args[i].equals("0") ? false : true;
 			} else if (args[i].equalsIgnoreCase("--topology-name")) {
@@ -68,15 +61,6 @@ public class RunXmlQuery {
 			} else if (args[i].equalsIgnoreCase("--termination-check-interval")) {
 				i++;
 				terminationCheckInterval = args[i];
-			} else if (args[i].equalsIgnoreCase("--number-of-processors")) {
-				i++;
-				numberOfProcessors = Integer.valueOf(args[i]);
-			} else if (args[i].equalsIgnoreCase("--number-of-workers")) {
-				i++;
-				numberOfWorkers = Integer.valueOf(args[i]);
-			} else if (args[i].equalsIgnoreCase("--factor-of-threads-per-processor")) {
-				i++;
-				factorOfThreadsPerProcessor = Float.valueOf(args[i]);
 			} else if (args[i].equalsIgnoreCase("--eval-notes")) {
 				i++;
 				evalNotes = args[i];
@@ -109,7 +93,6 @@ public class RunXmlQuery {
 		}
 
 		Config conf = new Config();
-		conf.setNumWorkers(numberOfWorkers);
 
 		// read properties file
 		kattsProperties = new Properties();
@@ -128,7 +111,7 @@ public class RunXmlQuery {
 		// yet failed or acked.
 		conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 10); // 10 acker threads let's see what this brings
 		conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 60 * 60); // we wait for up to one hour
-		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 100 * 1000); // only allow 40k unacked-messages per spout
+		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 5 * 1000); // only allow 5k unacked-messages per spout
 
 		if (terminationCheckInterval != null) {
 			conf.put(TerminationMonitor.CONF_TERMINATION_CHECK_INTERVAL, terminationCheckInterval);
