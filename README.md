@@ -5,6 +5,10 @@ KATTS
 
 Revision History
 ================
+3.0.5-SNAPSHOT    - new program argument "--max-spout-pending"
+
+3.0.4-SNAPSHOT    - increase zookeeper timeout to 30 seconds
+
 3.0.3-SNAPSHOT    - 5k unacked tuples
 
 3.0.2-SNAPSHOT    - copy start and end dates in ExpressionFilterBolt and ExpressionFunctionBolt

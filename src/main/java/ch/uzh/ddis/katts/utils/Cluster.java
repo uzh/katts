@@ -13,8 +13,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.uzh.ddis.katts.monitoring.StarterMonitor;
-
 import backtype.storm.Config;
 
 /**
@@ -42,7 +40,7 @@ public final class Cluster {
 			connection.append(server).append(":").append(port).append(",");
 		}
 
-		return new ZooKeeper(connection.toString(), 3000, new Watcher() {
+		return new ZooKeeper(connection.toString(), 30 * 1000, new Watcher() {
 			@Override
 			public void process(WatchedEvent event) {
 				// Ignore. We need this only to prevent null pointer exceptions

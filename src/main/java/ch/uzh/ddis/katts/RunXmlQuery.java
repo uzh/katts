@@ -50,6 +50,7 @@ public class RunXmlQuery {
 		String path = null;
 		String terminationCheckInterval = null;
 		String evalNotes = "";
+		long maxSpoutPending = 5 * 1000; // default is 5k
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("--monitoring")) {
@@ -64,6 +65,9 @@ public class RunXmlQuery {
 			} else if (args[i].equalsIgnoreCase("--eval-notes")) {
 				i++;
 				evalNotes = args[i];
+			} else if (args[i].equalsIgnoreCase("--max-spout-pending")) {
+				i++;
+				maxSpoutPending = Long.parseLong(args[i]);
 			} else if (args[i].startsWith("--")) {
 				i++;
 				// Unknown parameter, ignore it.
@@ -111,7 +115,7 @@ public class RunXmlQuery {
 		// yet failed or acked.
 		conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 10); // 10 acker threads let's see what this brings
 		conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 60 * 60); // we wait for up to one hour
-		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 5 * 1000); // only allow 5k unacked-messages per spout
+		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, maxSpoutPending);
 
 		if (terminationCheckInterval != null) {
 			conf.put(TerminationMonitor.CONF_TERMINATION_CHECK_INTERVAL, terminationCheckInterval);

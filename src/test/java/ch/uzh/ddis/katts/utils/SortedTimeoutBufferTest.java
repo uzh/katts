@@ -213,7 +213,7 @@ public class SortedTimeoutBufferTest {
 		int[] channel1 = { 1,  6,  5,  4, 3, 7 };
 
 		feedToBuffer(buffer, channel0, channel1);
-		Thread.sleep(20); // that's the greater of the two timeouts + 4
+		Thread.sleep(100); // that's the greater of the two timeouts + 4
 
 		Assert.assertEquals(countData(channel0, channel1), resultQueue.size());
 		assertAscendingOrder(resultQueue);
