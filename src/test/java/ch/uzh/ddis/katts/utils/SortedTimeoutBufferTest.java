@@ -42,6 +42,8 @@ public class SortedTimeoutBufferTest {
 		assertAscendingOrder(resultQueue);
 	}
 
+	// TODO lorenz: these time dependent tests are suboptimal. Hypothesis, if the waitTimeout is too low, the
+	// flush task does not always get called.
 	@Test
 	public void minorHickupInOneChannel() throws InterruptedException {
 		ConcurrentLinkedQueue<DummyEvent> resultQueue;
@@ -52,7 +54,7 @@ public class SortedTimeoutBufferTest {
 		queueCallback = createQueueCallback(resultQueue);
 		buffer = new SortedTimeoutBuffer<DummyEvent>(Arrays.asList("c0", "c1"), // list of channels
 				2, // buffer timeout
-				6, // wait timeout
+				50, // wait timeout
 				new DummyEventComparator(), // comparator
 				queueCallback);
 
@@ -61,7 +63,7 @@ public class SortedTimeoutBufferTest {
 		int[] channel1 = { 1, 3, 2, 4 };
 
 		feedToBuffer(buffer, channel0, channel1);
-		Thread.sleep(12);
+		Thread.sleep(1000);
 
 		Assert.assertEquals(countData(channel0, channel1), resultQueue.size());
 		assertAscendingOrder(resultQueue);
@@ -136,7 +138,7 @@ public class SortedTimeoutBufferTest {
 		int[] channel1 = { 1, 3, 2, 6, 5 };
 
 		feedToBuffer(buffer, channel0, channel1);
-		Thread.sleep(50); // that's the greater of the two timeouts + 4
+		Thread.sleep(100); // that's the greater of the two timeouts + 4
 
 		Assert.assertEquals(countData(channel0, channel1), resultQueue.size());
 		assertAscendingOrder(resultQueue);
@@ -161,7 +163,7 @@ public class SortedTimeoutBufferTest {
 		int[] channel1 = { 1, 2, 3, 4 };
 
 		feedToBuffer(buffer, channel0, channel1);
-		Thread.sleep(40); // that's the greater of the two timeouts + 1
+		Thread.sleep(100); // that's the greater of the two timeouts + 1
 
 		Assert.assertEquals(countData(channel0, channel1), resultQueue.size());
 		assertAscendingOrder(resultQueue);
@@ -227,7 +229,7 @@ public class SortedTimeoutBufferTest {
 		queueCallback = createQueueCallback(resultQueue);
 		buffer = new SortedTimeoutBuffer<DummyEvent>(Arrays.asList("c0", "c1"), // list of channels
 				0, // buffer timeout
-				40, // wait timeout
+				100, // wait timeout
 				new DummyEventComparator(), // comparator
 				queueCallback);
 
@@ -236,7 +238,7 @@ public class SortedTimeoutBufferTest {
 		int[] channel1 = { 17, 18,  19,  20, 21, 22 };
 
 		feedToBuffer(buffer, channel0, channel1);
-		Thread.sleep(50); // that's the greater of the two timeouts + 4
+		Thread.sleep(200); // that's the greater of the two timeouts + 4
 
 		Assert.assertEquals(countData(channel0, channel1), resultQueue.size());
 		assertAscendingOrder(resultQueue);
