@@ -74,6 +74,11 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 	 */
 	private Variable aggregateOnField;
 
+	public PartitionerBolt(PartitionerConfiguration configuration) {
+		super(configuration.getBufferTimeout(), configuration.getWaitTimeout());
+		this.configuration = configuration;
+	}
+	
 	@Override
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);

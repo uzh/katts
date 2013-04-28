@@ -1,6 +1,6 @@
 package ch.uzh.ddis.katts.bolts.join;
 
-import ch.uzh.ddis.katts.bolts.Configuration;
+import ch.uzh.ddis.katts.bolts.SynchronizedConfiguration;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
@@ -9,7 +9,7 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  * @author Thomas Hunziker
  * 
  */
-public interface OneFieldJoinConfiguration extends Configuration {
+public interface OneFieldJoinConfiguration extends SynchronizedConfiguration {
 
 	/**
 	 * This {@link Variable} indicates on which values the join is done. The variable is used to find out which value is

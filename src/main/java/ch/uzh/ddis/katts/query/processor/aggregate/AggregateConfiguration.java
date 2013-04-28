@@ -17,7 +17,7 @@ import javax.xml.datatype.Duration;
 
 import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.aggregate.AggregateBolt;
-import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
+import ch.uzh.ddis.katts.query.processor.AbstractSynchronizedProcessor;
 
 /**
  * This node builds one or multiple aggregates over the stream of incoming n-tuples. It can be configured in windowed or
@@ -77,7 +77,7 @@ import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
  */
 @XmlRootElement(name = "aggregate")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class AggregateConfiguration extends AbstractProcessor {
+public class AggregateConfiguration extends AbstractSynchronizedProcessor {
 
 	/**
 	 * This is analoguous to the "group by" statement of an SQL query. A comma separated list of variable names, over

@@ -12,7 +12,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.join.TemporalJoinBolt;
-import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
+import ch.uzh.ddis.katts.query.processor.AbstractSynchronizedProcessor;
 
 /**
  * The temporal join joins multiple streams of variable bindings using both, their semantic and their temporal contents
@@ -32,7 +32,7 @@ import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
  */
 @XmlRootElement(name = "temporalJoin")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class TemporalJoinConfiguration extends AbstractProcessor {
+public class TemporalJoinConfiguration extends AbstractSynchronizedProcessor {
 
 	private static final long serialVersionUID = 1L;
 
@@ -66,6 +66,7 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 
 	/**
 	 * {@link TemporalJoinConfiguration#evictBefore}
+	 * 
 	 * @return the evictBefore
 	 */
 	public List<EvictionRuleConfiguration> getEvictBefore() {
@@ -74,7 +75,9 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 
 	/**
 	 * {@link TemporalJoinConfiguration#evictBefore}
-	 * @param evictBefore the evictBefore to set
+	 * 
+	 * @param evictBefore
+	 *            the evictBefore to set
 	 */
 	public void setEvictBefore(List<EvictionRuleConfiguration> evictBefore) {
 		this.evictBefore = evictBefore;
@@ -82,6 +85,7 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 
 	/**
 	 * {@link TemporalJoinConfiguration#evictAfter}
+	 * 
 	 * @return the evictAfter
 	 */
 	public List<EvictionRuleConfiguration> getEvictAfter() {
@@ -90,7 +94,9 @@ public class TemporalJoinConfiguration extends AbstractProcessor {
 
 	/**
 	 * {@link TemporalJoinConfiguration#evictAfter}
-	 * @param evictAfter the evictAfter to set
+	 * 
+	 * @param evictAfter
+	 *            the evictAfter to set
 	 */
 	public void setEvictAfter(List<EvictionRuleConfiguration> evictAfter) {
 		this.evictAfter = evictAfter;

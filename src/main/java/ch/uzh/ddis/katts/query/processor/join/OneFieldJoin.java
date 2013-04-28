@@ -10,19 +10,19 @@ import javax.xml.bind.annotation.XmlTransient;
 import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.join.OneFieldJoinBolt;
 import ch.uzh.ddis.katts.bolts.join.OneFieldJoinConfiguration;
-import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
+import ch.uzh.ddis.katts.query.processor.AbstractSynchronizedProcessor;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
- * OneFieldJoin-Bolts join streams of variable bindings on the specified field. The startDate and endDate fields
- * of the bindings need to be equivalent regarding the specified joinPrecision argument.
+ * OneFieldJoin-Bolts join streams of variable bindings on the specified field. The startDate and endDate fields of the
+ * bindings need to be equivalent regarding the specified joinPrecision argument.
  * 
  * @author Thomas Hunziker
  * 
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class OneFieldJoin extends AbstractProcessor implements OneFieldJoinConfiguration {
+public class OneFieldJoin extends AbstractSynchronizedProcessor implements OneFieldJoinConfiguration {
 
 	private static final long serialVersionUID = 1L;
 
@@ -34,8 +34,7 @@ public class OneFieldJoin extends AbstractProcessor implements OneFieldJoinConfi
 
 	@Override
 	public Bolt createBoltInstance() {
-		OneFieldJoinBolt bolt = new OneFieldJoinBolt();
-		bolt.setConfiguration(this);
+		OneFieldJoinBolt bolt = new OneFieldJoinBolt(this);
 		return bolt;
 	}
 

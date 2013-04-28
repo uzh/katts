@@ -31,6 +31,7 @@ public class UnionBolt extends AbstractSynchronizedBolt {
 	 *            the jaxb configuration object.
 	 */
 	public UnionBolt(UnionConfiguration configuration) {
+		super(configuration.getBufferTimeout(), configuration.getWaitTimeout());
 		this.configuration = configuration;
 	}
 

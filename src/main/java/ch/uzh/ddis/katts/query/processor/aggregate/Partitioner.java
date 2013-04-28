@@ -18,7 +18,7 @@ import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerBolt;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerComponent;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerConfiguration;
-import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
+import ch.uzh.ddis.katts.query.processor.AbstractSynchronizedProcessor;
 import ch.uzh.ddis.katts.query.processor.aggregate.component.MaxPartitioner;
 import ch.uzh.ddis.katts.query.processor.aggregate.component.MinPartitioner;
 import ch.uzh.ddis.katts.query.stream.Variable;
@@ -45,7 +45,7 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Partitioner extends AbstractProcessor implements PartitionerConfiguration {
+public class Partitioner extends AbstractSynchronizedProcessor implements PartitionerConfiguration {
 
 	private static final long serialVersionUID = 1L;
 
@@ -101,9 +101,7 @@ public class Partitioner extends AbstractProcessor implements PartitionerConfigu
 
 	@Override
 	public Bolt createBoltInstance() {
-		PartitionerBolt bolt = new PartitionerBolt();
-		bolt.setConfiguration(this);
-		return bolt;
+		return new PartitionerBolt(this);
 	}
 
 	@Override

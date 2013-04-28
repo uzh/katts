@@ -47,6 +47,7 @@ public class AggregateBolt extends AbstractSynchronizedBolt {
 	private final ImmutableList<Object> nonGroupedAggegateKey = ImmutableList.of();
 
 	public AggregateBolt(AggregateConfiguration configuration) {
+		super(configuration.getBufferTimeout(), configuration.getWaitTimeout());
 		this.configuration = configuration;
 	}
 

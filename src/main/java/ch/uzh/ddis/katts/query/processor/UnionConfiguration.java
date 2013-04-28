@@ -19,7 +19,7 @@ import ch.uzh.ddis.katts.bolts.UnionBolt;
  */
 @XmlRootElement(name = "union")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class UnionConfiguration extends AbstractProcessor {
+public class UnionConfiguration extends AbstractSynchronizedProcessor {
 
 	@Override
 	public Bolt createBoltInstance() {

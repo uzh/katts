@@ -59,6 +59,7 @@ public class SumBolt extends AbstractSynchronizedBolt {
 	 *            the jaxb configuration object.
 	 */
 	public SumBolt(SumConfiguration configuration) {
+		super(configuration.getBufferTimeout(), configuration.getWaitTimeout());
 		this.configuration = configuration;
 	}
 

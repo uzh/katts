@@ -8,7 +8,7 @@ import javax.xml.datatype.Duration;
 
 import ch.uzh.ddis.katts.bolts.Bolt;
 import ch.uzh.ddis.katts.bolts.aggregate.SumBolt;
-import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
+import ch.uzh.ddis.katts.query.processor.AbstractSynchronizedProcessor;
 
 /**
  * The XML configuration object for the "sum" node of KATTS. This node computes the sum of a field over a specified time
@@ -21,28 +21,30 @@ import ch.uzh.ddis.katts.query.processor.AbstractProcessor;
  */
 @XmlRootElement(name = "computeSum")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class SumConfiguration extends AbstractProcessor {
+public class SumConfiguration extends AbstractSynchronizedProcessor {
 
 	/** This is the field the sum will be computed over. */
 	@XmlAttribute(required = true)
 	private String field;
 
-	/** 
+	/**
 	 * The value of the sum can be referenced in the variable list of the outgoing streams using this name.
 	 * 
-	 * Example:
-	 * The following configuration:
+	 * Example: The following configuration:
+	 * 
 	 * <pre>
 	 * &lt;sum field="PRC" as="sum" goupBy="TICKER" /&gt;
-	 * </pre> 
+	 * </pre>
+	 * 
 	 * would allow you to use the variable "sum" in the variable configuration as follows:
+	 * 
 	 * <pre>
 	 * &lt;variable type="xs:long" name="sumValue" referencesTo="sum" /&gt;
-	 * </pre> 
+	 * </pre>
 	 */
 	@XmlAttribute(required = true)
 	private String as;
-	
+
 	/**
 	 * This is analoguous to the "group by" statement of an SQL query. A comma separated list of variable names, over
 	 * which the sum should be computed. If this field is missing, the sum will be computed over all incoming messages.
@@ -59,15 +61,16 @@ public class SumConfiguration extends AbstractProcessor {
 	@XmlAttribute(required = false)
 	private Duration windowSize;
 
-//	/**
-//	 * The interval in which the current state of the node should be communicated to the following nodes in the
-//	 * topology. If this attribute is missing, the interval is considered to be "instant", which means that the node
-//	 * emits the sums whenever the value changes. This could result in long periods without updates for certain sums.
-//	 * 
-//	 * The value of this interval has to be specified as defined in the W3C XML Schema 1.0 specification for time spans.
-//	 */
-//	@XmlAttribute(required = false)
-//	private Duration outputInterval;
+	// /**
+	// * The interval in which the current state of the node should be communicated to the following nodes in the
+	// * topology. If this attribute is missing, the interval is considered to be "instant", which means that the node
+	// * emits the sums whenever the value changes. This could result in long periods without updates for certain sums.
+	// *
+	// * The value of this interval has to be specified as defined in the W3C XML Schema 1.0 specification for time
+	// spans.
+	// */
+	// @XmlAttribute(required = false)
+	// private Duration outputInterval;
 
 	@Override
 	public Bolt createBoltInstance() {
@@ -82,12 +85,13 @@ public class SumConfiguration extends AbstractProcessor {
 	}
 
 	/**
-	 * @param field the field to set
+	 * @param field
+	 *            the field to set
 	 */
 	public void setField(String field) {
 		this.field = field;
 	}
-	
+
 	/**
 	 * @return the as
 	 */
@@ -96,7 +100,8 @@ public class SumConfiguration extends AbstractProcessor {
 	}
 
 	/**
-	 * @param as the as to set
+	 * @param as
+	 *            the as to set
 	 */
 	public void setAs(String as) {
 		this.as = as;
@@ -110,7 +115,8 @@ public class SumConfiguration extends AbstractProcessor {
 	}
 
 	/**
-	 * @param groupBy the groupBy to set
+	 * @param groupBy
+	 *            the groupBy to set
 	 */
 	public void setGroupBy(String groupBy) {
 		this.groupBy = groupBy;
@@ -124,24 +130,25 @@ public class SumConfiguration extends AbstractProcessor {
 	}
 
 	/**
-	 * @param windowSize the windowSize to set
+	 * @param windowSize
+	 *            the windowSize to set
 	 */
 	public void setWindowSize(Duration windowSize) {
 		this.windowSize = windowSize;
 	}
 
-//	/**
-//	 * @return the outputInterval
-//	 */
-//	public Duration getOutputInterval() {
-//		return outputInterval;
-//	}
-//
-//	/**
-//	 * @param outputInterval the outputInterval to set
-//	 */
-//	public void setOutputInterval(Duration outputInterval) {
-//		this.outputInterval = outputInterval;
-//	}
+	// /**
+	// * @return the outputInterval
+	// */
+	// public Duration getOutputInterval() {
+	// return outputInterval;
+	// }
+	//
+	// /**
+	// * @param outputInterval the outputInterval to set
+	// */
+	// public void setOutputInterval(Duration outputInterval) {
+	// this.outputInterval = outputInterval;
+	// }
 
 }

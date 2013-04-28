@@ -39,13 +39,6 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	private final long waitTimeout;
 
 	/**
-	 * Default constructor that uses a delay of two seconds. Why two? I'll tell you why: I don't know!
-	 */
-	public AbstractSynchronizedBolt() {
-		this(1000, 2000);
-	}
-
-	/**
 	 * Creates a synchronized bolt that keeps its entries in the buffer for at most maxDelay milliseconds before
 	 * processing them in temporal order. If there are tuples from all incoming streams before maxDelay has expired, all
 	 * tuples that have a date older than the oldest date from all streams, will be processed.
@@ -57,7 +50,7 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	 *            the tolerance towards stream interruptions, i.e. the number of milliseconds we will wait before
 	 *            declaring that a stream is not sending anything anymore.
 	 */
-	public AbstractSynchronizedBolt(int bufferTimeout, int waitTimeout) {
+	public AbstractSynchronizedBolt(long bufferTimeout, long waitTimeout) {
 		this.bufferTimeout = bufferTimeout;
 		this.waitTimeout = waitTimeout;
 	}

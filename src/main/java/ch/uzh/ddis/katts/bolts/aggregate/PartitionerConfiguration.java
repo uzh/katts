@@ -6,6 +6,7 @@ import javax.xml.datatype.Duration;
 
 import ch.uzh.ddis.katts.bolts.ConsumerConfiguration;
 import ch.uzh.ddis.katts.bolts.ProducerConfiguration;
+import ch.uzh.ddis.katts.bolts.SynchronizedConfiguration;
 import ch.uzh.ddis.katts.query.stream.Variable;
 
 /**
@@ -14,7 +15,7 @@ import ch.uzh.ddis.katts.query.stream.Variable;
  * @author Thomas Hunziker
  * 
  */
-public interface PartitionerConfiguration extends ProducerConfiguration, ConsumerConfiguration {
+public interface PartitionerConfiguration extends ProducerConfiguration, ConsumerConfiguration, SynchronizedConfiguration {
 
 	/**
 	 * The {@link Variable} on which the partition (group) is built on. This is like the "group by" in SQL languages.

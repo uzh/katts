@@ -63,6 +63,7 @@ public class TemporalJoinBolt extends AbstractSynchronizedBolt {
 	 *            the jaxb configuration object.
 	 */
 	public TemporalJoinBolt(TemporalJoinConfiguration configuration) {
+		super(configuration.getBufferTimeout(), configuration.getWaitTimeout());
 		this.configuration = configuration;
 	}
 
