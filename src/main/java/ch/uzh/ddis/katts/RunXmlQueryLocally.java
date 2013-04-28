@@ -7,7 +7,8 @@ import java.util.Properties;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
-import ch.uzh.ddis.katts.monitoring.VmMonitor;
+import backtype.storm.topology.TopologyBuilder;
+import ch.uzh.ddis.katts.query.Node;
 import ch.uzh.ddis.katts.query.Query;
 import ch.uzh.ddis.katts.utils.EvalInfo;
 
@@ -29,7 +30,7 @@ public class RunXmlQueryLocally {
 	 */
 	public static void main(String[] args) throws Exception {
 		Properties kattsProperties; // the contents of the katts.properties file
-		
+
 		if (args.length == 0 || args[0] == null) {
 			throw new Exception("The first parameter must be the path to the xml file with the query.");
 		}
@@ -43,18 +44,14 @@ public class RunXmlQueryLocally {
 		conf.setDebug(false);
 		conf.setNumWorkers(numberOfWorkers);
 
-		TopologyBuilder builder = new TopologyBuilder(conf);
-		builder.setQuery(query);
-		builder.setParallelismByNumberOfProcessors(numberOfWorkers);
-
 		List<String> hookClass = new ArrayList<String>();
 		hookClass.add("ch.uzh.ddis.katts.monitoring.TaskMonitor");
 		conf.put(Config.TOPOLOGY_AUTO_TASK_HOOKS, hookClass);
 
+		conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 10); // 10 acker threads let's see what this brings
+		conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 60*60); // we wait for up to one hour
+		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 100 * 1000); // only allow 40k unacked-messages per spout
 		conf.put(RUN_TOPOLOGY_LOCALLY_CONFIG_KEY, true);
-
-		// Log every 15 seconds the Java Virtual Machine properties
-		conf.put(VmMonitor.RECORD_INVERVAL, 30);
 
 		// read properties file
 		kattsProperties = new Properties();
@@ -68,6 +65,10 @@ public class RunXmlQueryLocally {
 		// add some information values to the config that are useful for the evaluation of the system
 		EvalInfo.storePrefixedVariable(conf, "katts-version", kattsProperties.get("katts-version").toString());
 
+		TopologyBuilder builder = new TopologyBuilder();
+		for (Node node : query.getNodes()) {
+			node.createTopology(builder);
+		}
 		LocalCluster cluster = new LocalCluster();
 		cluster.submitTopology("test", conf, builder.createTopology());
 	}

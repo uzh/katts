@@ -7,9 +7,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 
-import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.query.AbstractNode;
-import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.StreamConsumer;
 
 /**

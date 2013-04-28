@@ -14,8 +14,9 @@ import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.StormTopology;
+import backtype.storm.topology.TopologyBuilder;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
-import ch.uzh.ddis.katts.monitoring.VmMonitor;
+import ch.uzh.ddis.katts.query.Node;
 import ch.uzh.ddis.katts.query.Query;
 import ch.uzh.ddis.katts.utils.EvalInfo;
 
@@ -125,8 +126,9 @@ public class RunXmlQuery {
 
 		// The max spout pending determines how many spout tuples can be pending. Pending means that the tuples is not
 		// yet failed or acked.
-		// TODO: Let this value be controlled over the configuration
-		conf.setMaxSpoutPending(10000);
+		conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 10); // 10 acker threads let's see what this brings
+		conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 60 * 60); // we wait for up to one hour
+		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 100 * 1000); // only allow 40k unacked-messages per spout
 
 		if (terminationCheckInterval != null) {
 			conf.put(TerminationMonitor.CONF_TERMINATION_CHECK_INTERVAL, terminationCheckInterval);
@@ -136,9 +138,6 @@ public class RunXmlQuery {
 			List<String> hookClass = new ArrayList<String>();
 			hookClass.add("ch.uzh.ddis.katts.monitoring.TaskMonitor");
 			conf.put(Config.TOPOLOGY_AUTO_TASK_HOOKS, hookClass);
-
-			// Log every 15 seconds the Java Virtual Machine properties
-			conf.put(VmMonitor.RECORD_INVERVAL, monitoringRecordInterval);
 		}
 
 		// Disable reliability TODO lorenz: do I have to set this to some value?
@@ -146,10 +145,10 @@ public class RunXmlQuery {
 
 		conf.put(RunXmlQueryLocally.RUN_TOPOLOGY_LOCALLY_CONFIG_KEY, false);
 
-		TopologyBuilder builder = new TopologyBuilder(conf);
-		builder.setQuery(query);
-		builder.setFactorOfThreadsPerProcessor(factorOfThreadsPerProcessor);
-		builder.setParallelismByNumberOfProcessors(numberOfProcessors);
+		TopologyBuilder builder = new TopologyBuilder();
+		for (Node node : query.getNodes()) {
+			node.createTopology(builder);
+		}
 
 		try {
 			StormTopology topology = builder.createTopology();

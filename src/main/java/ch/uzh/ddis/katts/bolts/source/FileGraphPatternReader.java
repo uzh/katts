@@ -207,7 +207,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 						this.configuration.getId(), lastLineRead));
 				break untilEmit;
 			}
-			
+
 			if (emitted) {
 				break untilEmit;
 			}
@@ -247,7 +247,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 			for (Variable variable : stream.getVariables()) {
 				tuple.add(bindings.get(variable.getReferencesTo()));
 			}
-			// System.out.println("emitting tuple " + bindings);
+			//System.out.println("emitting tuple " + bindings);
 			emit(stream.getId(), tuple); // We emit on the default stream
 			result = true;
 		}

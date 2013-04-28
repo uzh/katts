@@ -5,6 +5,18 @@ KATTS
 
 Revision History
 ================
+3.0.0-SNAPSHOT    - Ripped out the "parallelism magic"
+
+2.5.0-SNAPSHOT    - ScheduledThreadPoolExecutor instead of TimerTask
+                  - TOPOLOGY_MAX_SPOUT_PENDING set to 100k
+                  - 1h ack-timeout
+                  - 10 acker executors
+                  - 15 minutes wait timeout
+
+2.4.1-SNAPSHOT    - 15 seconds waitTimeout
+
+2.4.0-SNAPSHOT    - new AbstractSynchronizedBold implementation using the SortedTimeoutBuffer
+
 2.3.12-SNAPSHOT    - reformat out-of-order message
 
 2.3.8-SNAPSHOT    - graph reader reads one line at the time until it could emit at least one tuple

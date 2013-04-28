@@ -142,9 +142,11 @@ public class TerminationMonitor implements Watcher {
 	@Override
 	public synchronized void process(WatchedEvent event) {
 
-		if (event.getType() == Event.EventType.None || event.getState() == KeeperState.Expired) {
-			// We need to reconnect
-			this.connect();
+		if (event.getType() == Event.EventType.None) {
+			if (event.getState() == KeeperState.Expired) {
+				// We need to reconnect
+				this.connect();
+			}
 		} else {
 			for (TerminationWatcher watcher : this.watchers) {
 				watcher.terminated();

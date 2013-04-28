@@ -3,8 +3,9 @@ package ch.uzh.ddis.katts.utils;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Queue implementations that need to sort their input can extend from this class. It provides basic facilities such as
@@ -18,65 +19,63 @@ import java.util.TimerTask;
 public abstract class AbstractFlushQueue<E> implements Serializable {
 
 	/**
-	 * This is the timeout (milliseconds) after which the
+	 * For performance reasons we do not actually reset the timer each time the {@link #resetTimer()} method is called.
+	 * We only update this field to represent the current system time, when the last reset has happened. Whenever the
+	 * scheduled timer times out, we reschedule it for (flushTimeout - (currentTime - lastReset)) milliseconds. This
+	 * will essentially shorten down the next timeout interval by the time that elapsed between the last timer reset and
+	 * now.
 	 */
-	private long flushTimeout;
-
-	/** This id is used to name the timer thread. This is helpful for debugging. */
-	private String timerId;
-
-	/**
-	 * We use this timer to make sure, someone is "clearing the pipes" even if there are no more elements being added to
-	 * the queue.
-	 */
-	private Timer flushTimer;
-
-	/** This timer task will be called whenever the flush timeout is reached. */
-	private TimerTask flushTask;
+	private AtomicLong lastReset = new AtomicLong(0);
 
 	/**
 	 * Creates a new elastic priority queue with the given delay.
 	 * 
 	 * @param flushTimeout
-	 *            the timeout (milliseconds) after which the queue flushed. Every call to
-	 * @param timerId
-	 *            a textual id for the timer task. This is useful for debugging.
+	 *            the timeout (milliseconds) after which the queue flushed. If this value is 0, no timer will be
+	 *            started.
 	 */
-	public AbstractFlushQueue(long flushTimeout, String timerId) {
-		this.flushTimeout = flushTimeout;
-		this.timerId = timerId;
-		this.flushTask = new TimerTask() {
+	public AbstractFlushQueue(final long flushTimeout) {
+		if (flushTimeout > 0) {
+			final ScheduledThreadPoolExecutor executor;
+			final Runnable flushTask;
 
-			@Override
-			public void run() {
-				flushTimeout();
-				resetTimer();
-			}
-		};
+			resetTimer(); // set reset date to now
 
-		// schedule the timer for the first time
-		resetTimer();
+			executor = new ScheduledThreadPoolExecutor(1);
+			flushTask = new Runnable() {
+				private long lr = AbstractFlushQueue.this.lastReset.get();
+
+				@Override
+				public void run() {
+					// only call the flushTimeout method, if the timer has not been "reset" in the meantime
+					if (lr == AbstractFlushQueue.this.lastReset.get()) {
+						flushTimeout();
+					} else {
+						lr = AbstractFlushQueue.this.lastReset.get();
+					}
+					scheduleFlushTask(this, executor, flushTimeout); // re-schedule
+				}
+			};
+
+			scheduleFlushTask(flushTask, executor, flushTimeout); // schedule for the first time
+		}
+	}
+
+	private void scheduleFlushTask(Runnable task, final ScheduledThreadPoolExecutor executor, long flushTimeout) {
+		executor.schedule(task, flushTimeout - (System.currentTimeMillis() - this.lastReset.get()),
+				TimeUnit.MILLISECONDS);
 	}
 
 	/**
 	 * This method resets the flush timer. After calling this method the timer starts to count again and will eventually
-	 * call {@link #flushTimeout()} after the timeout milliseconds.. if this method doesn't get called before this
-	 * happens.
+	 * call {@link #flushTimeout()} after the timeout milliseconds, unless this method doesn't get called again before
+	 * this happens.
 	 * 
-	 * The method <b>thread safe</b>. It is synchronized internally and can be called from multiple threads
-	 * concurrently.
+	 * The method is <b>thread safe</b> and can be called from multiple threads concurrently.
 	 */
 	protected void resetTimer() {
-		synchronized (this.flushTask) { // timer could be null, so synchronize on the task
-			if (this.flushTimer != null) {
-				// cancel the already scheduled timer
-				this.flushTimer.cancel();
-			}
-			this.flushTimer = new Timer("Flush timer " + this.timerId);
-			this.flushTimer.schedule(this.flushTask, this.flushTimeout);
-
-		}
-
+		// we do not actually reset the timer here, see #lastReset
+		this.lastReset.set(System.currentTimeMillis());
 	}
 
 	/**
@@ -84,8 +83,6 @@ public abstract class AbstractFlushQueue<E> implements Serializable {
 	 * reset using the {@link #resetTimer()} method.
 	 */
 	protected abstract void flushTimeout();
-
-	
 
 	/**
 	 * This class wraps the elements that have to be stored by the ElasticPriorityQueue. It keeps the reference to the
@@ -96,8 +93,8 @@ public abstract class AbstractFlushQueue<E> implements Serializable {
 	 * 
 	 */
 	protected final class ElemWrap implements Serializable {
-		private final E element;
-		private final long timestamp;
+		public final E element;
+		public final long timestamp;
 
 		public ElemWrap(E element) {
 			this.element = element;
@@ -142,18 +139,20 @@ public abstract class AbstractFlushQueue<E> implements Serializable {
 
 	/**
 	 * The callback is used to deal with the asychronosity introduced with the timeout timers. Whenever a subclass of
-	 * {@link AbstractFlushQueue} is instantiated, a timer thread will be started in order to flush the queue out
-	 * afrer a certain timeout has expired.
+	 * {@link AbstractFlushQueue} is instantiated, a timer thread will be started in order to flush the queue out afrer
+	 * a certain timeout has expired.
 	 * 
 	 * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
 	 * 
 	 * @param <M>
 	 *            the elements that will be passed in the process method
 	 */
-	protected interface ProcessCallback<M> {
+	public interface ProcessCallback<M> {
+		// TODO: if we have full control over this, we can synchronize calls of this method ourselves and remove the
+		// the warning.
 		/**
 		 * This method will be called from within the offer method or when the flush timeout has expired.
-		 * 
+		 * <p/>
 		 * <b>Please Note:</b> This method will be called from multiple threads and therefore <b>needs to be thread
 		 * safe</b>. The easiest way to achieve this is to synchonize the method.
 		 * 

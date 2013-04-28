@@ -27,7 +27,6 @@ import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologySummary;
-import ch.uzh.ddis.katts.TopologyBuilder;
 import ch.uzh.ddis.katts.monitoring.Recorder;
 import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
@@ -191,16 +190,6 @@ class Aggregator {
 		} catch (TException e1) {
 			throw new RuntimeException("Could not connect to the nimbus host. Does the cluster running?", e1);
 		}
-		long numberOfProcessors = (Long) conf.get(TopologyBuilder.NUMBERS_OF_PROCESSORS);
-		long numberOfProcessorsPerNode = 0;
-		try {
-			if (numberOfNodes == 0) {
-				numberOfNodes = 1;
-			}
-			numberOfProcessorsPerNode = numberOfProcessors / numberOfNodes;
-		} catch (Exception e) {
-			log.error(e.getMessage());
-		}
 
 		data.put("job-name", jobName);
 		data.put("start-date", this.df.format(new Date(startTime)));
@@ -210,10 +199,6 @@ class Aggregator {
 		data.put("total-remote-messages", totalRemoteMessages);
 		data.put("total-local-messages", totalLocalMessages);
 		data.put("number-of-nodes", numberOfNodes);
-		data.put("number-of-processors", numberOfProcessors);
-		data.put("number-of-processors-per-node", numberOfProcessorsPerNode);
-		data.put("expected-number-of-tasks", (Long) conf.get(TopologyBuilder.KATTS_EXPECTED_NUMBER_OF_EXECUTORS));
-		data.put("factor-of-threads-per-processor", (Double) conf.get(TopologyBuilder.KATTS_FACTOR_OF_THREADS_CONFIG));
 		data.put("number-of-triples-processed", numberOfMessagesEmittedBySpouts); // that's wrong! no?
 		data.put("sankey-tasks-json", sankeyTasks.toJson());
 		data.put("sankey-components-json", sankeyComponents.toJson());

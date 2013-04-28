@@ -3,10 +3,11 @@ package ch.uzh.ddis.katts.query.processor;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlTransient;
 
 import ch.uzh.ddis.katts.query.AbstractNode;
 import ch.uzh.ddis.katts.query.stream.Producers;
@@ -22,25 +23,23 @@ import ch.uzh.ddis.katts.query.stream.StreamConsumer;
  * @author Thomas Hunziker
  * 
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public abstract class AbstractProcessor extends AbstractNode implements Processor {
 
 	private static final long serialVersionUID = 1L;
 
-	@XmlTransient
-	private List<StreamConsumer> consumers = new ArrayList<StreamConsumer>();
-
 	// We assume that a regular processor is fully parallelizable
-	@XmlTransient
+	@XmlAttribute
 	private int parallelism = 0;
 
-	@XmlTransient
-	private float parallelismWeight = 1;
-
-	@XmlTransient
+	@XmlElementWrapper(name = "produces")
+	@XmlElement(name = "stream")
 	private List<Stream> producers = new Producers(this);
 
 	@XmlElementWrapper(name = "consumes")
 	@XmlElement(name = "stream")
+	private List<StreamConsumer> consumers = new ArrayList<StreamConsumer>();
+
 	@Override
 	public List<StreamConsumer> getConsumers() {
 		for (StreamConsumer consumer : consumers) {
@@ -50,8 +49,6 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 		return consumers;
 	}
 
-	@XmlElementWrapper(name = "produces")
-	@XmlElement(name = "stream")
 	@Override
 	public List<Stream> getProducers() {
 		for (Stream producer : producers) {
@@ -69,16 +66,7 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 		this.producers = producers;
 	}
 
-	public void appendConsumer(StreamConsumer consumer) {
-		this.getConsumers().add(consumer);
-	}
-
-	public void appendProducer(Stream producer) {
-		this.getProducers().add(producer);
-	}
-
 	@Override
-	@XmlAttribute()
 	public int getParallelism() {
 		return this.parallelism;
 	}
@@ -87,13 +75,4 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 		this.parallelism = paralleism;
 	}
 
-	@Override
-	@XmlAttribute()
-	public float getParallelismWeight() {
-		return parallelismWeight;
-	}
-
-	public void setParallelismWeight(float parallelismWeight) {
-		this.parallelismWeight = parallelismWeight;
-	}
 }

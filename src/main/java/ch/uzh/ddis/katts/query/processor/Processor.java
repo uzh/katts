@@ -12,11 +12,5 @@ import ch.uzh.ddis.katts.query.ProducerNode;
  */
 public interface Processor extends ConsumerNode, ProducerNode {
 
-	/**
-	 * The paralelismweight indicates how many instances should be created for a certain bolt comparing to the other
-	 * components in the cluster. This can be used to balance the required processing power between bolts.
-	 * 
-	 * @return
-	 */
-	public float getParallelismWeight();
+	
 }

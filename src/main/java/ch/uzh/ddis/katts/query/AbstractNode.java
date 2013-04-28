@@ -1,5 +1,7 @@
 package ch.uzh.ddis.katts.query;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -17,6 +19,7 @@ import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
  * @author Thomas Hunziker
  * 
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public abstract class AbstractNode implements Node {
 
 	private static final long serialVersionUID = 1L;
@@ -24,10 +27,7 @@ public abstract class AbstractNode implements Node {
 	@XmlAttribute(required = false)
 	private String id = String.valueOf(Math.abs(Utils.secureRandomLong()));
 
-	@XmlTransient
-	private Query query;
-
-	@Override
+		@Override
 	public boolean validate() throws InvalidNodeConfigurationException {
 		return true;
 	}
@@ -35,7 +35,7 @@ public abstract class AbstractNode implements Node {
 	@Override
 	public void createTopology(TopologyBuilder builder) {
 
-		int parallelism = getDeclaredParallelism(builder);
+		int parallelism = getParallelism();
 
 		// does this work with nodes that only produce??
 		if (this instanceof ConsumerNode) {
@@ -53,32 +53,7 @@ public abstract class AbstractNode implements Node {
 		}
 	}
 
-	/**
-	 * This method returns the effective parallelism value set in the storm topology.
-	 * 
-	 * @param builder
-	 * @return
-	 */
-	public int getDeclaredParallelism(TopologyBuilder builder) {
-		int parallelism = this.getParallelism();
-		if (parallelism > 0) {
-			return parallelism;
-		}
-		// TODO: ugly hack: disentangle this from Topologybuilder.
-		else {
-			if (builder instanceof ch.uzh.ddis.katts.TopologyBuilder) {
-				ch.uzh.ddis.katts.TopologyBuilder kattsBuilder = (ch.uzh.ddis.katts.TopologyBuilder) builder;
-				return Math.round((float) kattsBuilder.getParallelism()
-						* kattsBuilder.getParallelizationWeightByNode(this));
-
-			} else {
-				throw new RuntimeException();
-			}
-		}
-	}
-
 	@Override
-	@XmlTransient
 	public String getId() {
 		return id;
 	}
@@ -101,13 +76,4 @@ public abstract class AbstractNode implements Node {
 		}
 	}
 
-	@Override
-	@XmlTransient
-	public Query getQuery() {
-		return query;
-	}
-
-	public void setQuery(Query query) {
-		this.query = query;
-	}
 }

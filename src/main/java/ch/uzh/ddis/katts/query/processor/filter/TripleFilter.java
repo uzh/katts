@@ -3,6 +3,8 @@ package ch.uzh.ddis.katts.query.processor.filter;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -34,6 +36,7 @@ import ch.uzh.ddis.katts.query.validation.InvalidNodeConfigurationException;
  * 
  * @author Thomas Hunziker
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement
 public class TripleFilter extends AbstractNode implements ProducerNode, TripleFilterConfiguration {
 
@@ -49,13 +52,13 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 	@XmlElement(name = "condition")
 	private List<TripleCondition> conditions = new ArrayList<TripleCondition>();
 
-	@XmlTransient
+	@XmlElementWrapper(name = "produces")
+	@XmlElement(name = "stream")
 	private List<Stream> producers = new Producers(this);
 
 	private int parallelism = 0;
 	
 	@Override
-	@XmlAttribute()
 	public int getParallelism() {
 		return this.parallelism;
 	}
@@ -64,8 +67,7 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		this.parallelism = paralleism;
 	}
 	
-	@XmlElementWrapper(name = "produces")
-	@XmlElement(name = "stream")
+	
 	@Override
 	public List<Stream> getProducers() {
 		return producers;
@@ -83,7 +85,7 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 	public void createTopology(TopologyBuilder builder) {
 		TripleFilterBolt bolt = new TripleFilterBolt();
 		bolt.setConfiguration(this);
-		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt, getDeclaredParallelism(builder));
+		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt, getParallelism());
 		if (groupOn == null || groupOn.isEmpty()) {
 			declarer.localOrShuffleGrouping(applyOnSource);
 		} else {
@@ -100,7 +102,6 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		return true;
 	}
 
-	@XmlTransient
 	public String getApplyOnSource() {
 		return applyOnSource;
 	}
@@ -115,7 +116,6 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 	 * 
 	 * @return
 	 */
-	@XmlTransient
 	public String getGroupOn() {
 		return groupOn;
 	}
@@ -124,7 +124,6 @@ public class TripleFilter extends AbstractNode implements ProducerNode, TripleFi
 		this.groupOn = groupOn;
 	}
 
-	@XmlTransient
 	public List<TripleCondition> getConditions() {
 		return conditions;
 	}

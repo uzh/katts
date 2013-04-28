@@ -80,7 +80,7 @@ public class NTupleFilter extends AbstractNode implements ProducerNode, NTupleFi
 	public void createTopology(TopologyBuilder builder) {
 		NTupleFilterBolt bolt = new NTupleFilterBolt();
 		bolt.setConfiguration(this);
-		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt, getDeclaredParallelism(builder));
+		BoltDeclarer declarer = builder.setBolt(this.getId(), bolt, getParallelism());
 		if (groupOn == null || groupOn.isEmpty()) {
 			declarer.localOrShuffleGrouping(applyOnSource);
 		} else {

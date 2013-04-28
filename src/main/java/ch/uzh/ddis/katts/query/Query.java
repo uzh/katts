@@ -141,10 +141,7 @@ public class Query implements Serializable {
 	 */
 	@XmlTransient
 	public List<Node> getNodes() {
-		for (Node node : this.nodes) {
-			node.setQuery(this);
-		}
-		return nodes;
+		return this.nodes;
 	}
 
 	/**

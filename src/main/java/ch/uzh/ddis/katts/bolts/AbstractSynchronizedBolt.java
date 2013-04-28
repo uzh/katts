@@ -1,13 +1,13 @@
 package ch.uzh.ddis.katts.bolts;
 
+import java.util.Collection;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
-import ch.uzh.ddis.katts.utils.ElasticPriorityQueue;
+import ch.uzh.ddis.katts.utils.AbstractFlushQueue.ProcessCallback;
+import ch.uzh.ddis.katts.utils.SortedTimeoutBuffer;
 
 /**
  * This abstract bolt implementation provides synchronization of incoming events to the subclasses.
@@ -24,21 +24,25 @@ import ch.uzh.ddis.katts.utils.ElasticPriorityQueue;
 public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsBolt {
 
 	/** This datastructure does the temporal ordering. */
-	private ElasticPriorityQueue<Event> buffer;
-
-	/** Events will be kept in the buffer for this many milliseconds, before processing them in temporal order. */
-	private final long bufferDelay;
+	private SortedTimeoutBuffer<Event> buffer;
 
 	/**
-	 * Because we cannot bank on new events coming in, we create a timer that drains the buffer when the delay expired.
+	 * Events will be kept in the buffer at least for this many milliseconds, before processing them in temporal order.
+	 * This allows for small irregularities in the ordering within each incoming stream.
 	 */
-	private Timer drainTimer;
+	private final long bufferTimeout;
+
+	/**
+	 * After this many milliseconds, an incoming stream will be assumed to have no more elements, so processing goes on.
+	 * This is to guard against stalling in case of a filter bolt stopping to send anything.
+	 */
+	private final long waitTimeout;
 
 	/**
 	 * Default constructor that uses a delay of two seconds. Why two? I'll tell you why: I don't know!
 	 */
 	public AbstractSynchronizedBolt() {
-		this(2000);
+		this(1000, 2000);
 	}
 
 	/**
@@ -46,46 +50,45 @@ public abstract class AbstractSynchronizedBolt extends AbstractVariableBindingsB
 	 * processing them in temporal order. If there are tuples from all incoming streams before maxDelay has expired, all
 	 * tuples that have a date older than the oldest date from all streams, will be processed.
 	 * 
-	 * @param maxDelay
-	 *            the number of milliseconds, an event will be kept in the buffer.
+	 * @param bufferTimeout
+	 *            the number of milliseconds, an event will be kept in the buffer at least. This allows for small
+	 *            irregularities in the ordering within each incoming stream.
+	 * @param waitTimeout
+	 *            the tolerance towards stream interruptions, i.e. the number of milliseconds we will wait before
+	 *            declaring that a stream is not sending anything anymore.
 	 */
-	public AbstractSynchronizedBolt(int maxDelay) {
-		this.bufferDelay = maxDelay;
+	public AbstractSynchronizedBolt(int bufferTimeout, int waitTimeout) {
+		this.bufferTimeout = bufferTimeout;
+		this.waitTimeout = waitTimeout;
 	}
 
 	@Override
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 
-		this.buffer = new ElasticPriorityQueue<Event>(this.bufferDelay, context.getThisStreams(),
-				new Event.EndDateComparator());
+		ProcessCallback<Event> callback = new ProcessCallback<Event>() {
 
-		drainTimer = new Timer("Drain timer " + context.getThisTaskId());
-		drainTimer.schedule(new TimerTask() {
 			@Override
-			public void run() {
-				synchronized (AbstractSynchronizedBolt.this.buffer) {
-					for (Event orderedEvent : AbstractSynchronizedBolt.this.buffer.drainElements()) {
+			public void process(Collection<Event> elements) {
+				/* This method might be called from multiple threads concurrently */
+				synchronized (AbstractSynchronizedBolt.this) {
+					for (Event orderedEvent : elements) {
 						execute(orderedEvent);
 					}
 				}
 			}
-		}, 0, this.bufferDelay); // drai (and execute) all events at least every "bufferDelay" milliseconds
+		};
+
+		this.buffer = new SortedTimeoutBuffer<Event>(context.getThisStreams(), //
+				this.bufferTimeout, //
+				this.waitTimeout, //
+				new Event.EndDateComparator(), callback);
+
 	}
 
 	@Override
 	public void executeRegularTuple(Tuple input) {
-		Event event = createEvent(input);
-
-		/*
-		 * Storm uses the same thread to call execute. However, since we drain the buffer using a timer (which is a
-		 * second thread) we need so synchronize access to it.
-		 */
-		synchronized (buffer) {
-			for (Event orderedEvent : this.buffer.offer(event, input.getSourceStreamId())) {
-				execute(orderedEvent);
-			}
-		}
+		this.buffer.offer(createEvent(input), input.getSourceStreamId());
 	}
 
 	@Override
