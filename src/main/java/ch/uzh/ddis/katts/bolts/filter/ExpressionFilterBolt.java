@@ -46,7 +46,7 @@ public class ExpressionFilterBolt extends AbstractVariableBindingsBolt {
 		for (Variable var : event.getEmittedOn().getStream().getAllVariables()) {
 			context.setVariable(var.getName(), event.getVariableValue(var));
 		}
-
+		
 		boolean result = (Boolean) expression.getValue(context);
 
 		// If the expression evaluates to true, then we keep the variable binding
@@ -56,6 +56,10 @@ public class ExpressionFilterBolt extends AbstractVariableBindingsBolt {
 			for (Stream stream : this.getStreams()) {
 				VariableBindings binding = getEmitter().createVariableBindings(stream, event);
 
+				// copy start and end date from source event
+				binding.setStartDate(event.getStartDate());
+				binding.setEndDate(event.getEndDate());
+				
 				// Overwrite inherited values with the variables configured for this stream.
 				for (Variable var : stream.getAllVariables()) {
 					binding.add(var, event.getVariableValue(var));
