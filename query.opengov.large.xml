@@ -78,9 +78,9 @@
         </produces>
     </expressionFunction>
 
+    
 
-
-    <expressionFilter expression="#ticker_fct > 2" id="expressionFilter" parallelism="12">
+    <expressionFilter expression="#ticker_fct > 1.2" id="expressionFilter" parallelism="12">
         <consumes>
             <stream maxBufferSize="5" streamId="tickerStreamfct">
                 <variableGrouping>
@@ -93,6 +93,7 @@
         </produces>
     </expressionFilter>
 
+      
     <!-- Join together ticker and contract data -->
     <temporalJoin id="TemporalJoin_TickerAndContractData" parallelism="1" bufferTimout="2000" waitTimeout="600000">
         <consumes>
