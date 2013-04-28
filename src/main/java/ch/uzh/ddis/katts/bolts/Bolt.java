@@ -3,7 +3,6 @@ package ch.uzh.ddis.katts.bolts;
 import java.util.Collection;
 import java.util.List;
 
-import backtype.storm.task.OutputCollector;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.tuple.Tuple;
 import ch.uzh.ddis.katts.query.stream.Stream;
@@ -51,8 +50,7 @@ public interface Bolt extends IRichBolt {
 	 * @param streamId
 	 *            The stream id on which the tuple should be emitted.
 	 * @param anchor
-	 *            The tuple at which the tuple should be bound. Currently this is ignored, because KATTS provides anyway
-	 *            no reliability and hence this would produce unnecessary overhead.
+	 *            The tuple at which the tuple should be bound.
 	 * @param tuple
 	 *            The tuple to emit.
 	 */
