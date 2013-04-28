@@ -36,10 +36,8 @@ public class VariableBindings {
 		this.stream = stream;
 		this.emitter = emitter;
 		this.anchorEvent = anchorEvent;
-		// TODO lorenz: figure this anchor even out and remove this hack
-		if (this.anchorEvent != null) {
-			this.startDate = this.anchorEvent.getStartDate();
-			this.endDate = this.anchorEvent.getEndDate();
+		if (anchorEvent == null) {
+			throw new NullPointerException("anchorEvent was null");
 		}
 	}
 
