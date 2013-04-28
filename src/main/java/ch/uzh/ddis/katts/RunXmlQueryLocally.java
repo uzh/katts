@@ -50,7 +50,7 @@ public class RunXmlQueryLocally {
 
 		conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 10); // 10 acker threads let's see what this brings
 		conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 60*60); // we wait for up to one hour
-		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 100 * 1000); // only allow 40k unacked-messages per spout
+		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 5 * 1000); // only allow 5k unacked-messages per spout
 		conf.put(RUN_TOPOLOGY_LOCALLY_CONFIG_KEY, true);
 
 		// read properties file
