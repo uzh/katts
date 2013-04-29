@@ -137,7 +137,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 				// make sure the date is within the configured interval
 				if (this.configuration.getFromDate() != null && semanticDate.before(this.configuration.getFromDate())) {
 					skippedLines++;
-					if (skippedLines % 1000 == 0) {
+					if (skippedLines % (50 * 1000) == 0) {
 						logger.debug(String.format("Skipped 1000 lines, now at %1s on line %2d.",
 								Util.formatDate(semanticDate), lastLineRead));
 					}
