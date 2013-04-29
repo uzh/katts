@@ -116,10 +116,10 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 	@Override
 	public boolean nextTuple(Source source) {
-		boolean result = false;
+		boolean emittedAtLeastOneTuple = false;
+		long skippedLines = 0;
 
-		untilEmit: while (true) { // read until we have emitted at least one tuple
-			boolean emitted = false; // keep track of if we have emitted at least one tuple
+		untilEmit: while (!emittedAtLeastOneTuple) { // read until we have emitted at least one tuple
 			List<String> quadruple = null; // the current entry we're working with
 
 			try {
@@ -133,6 +133,23 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 				// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
 				semanticDate = extractDate(quadruple.get(0));
+
+				// make sure the date is within the configured interval
+				if (this.configuration.getFromDate() != null && semanticDate.before(this.configuration.getFromDate())) {
+					skippedLines++;
+					if (skippedLines % 1000 == 0) {
+						logger.debug(String.format("Skipped 1000 lines, now at %1s on line %2d.",
+								Util.formatDate(semanticDate), lastLineRead));
+					}
+					this.lastLineRead++;
+					continue untilEmit; // skip this line
+				}
+				if (this.configuration.getToDate() != null && !semanticDate.before(this.configuration.getToDate())) {
+					logger.info(String.format("Current date (%1s) is not before configured toDate (%2s). Stopping"
+							+ "reading in component %3s on line: %4s", Util.formatDate(semanticDate),
+							Util.formatDate(this.configuration.getToDate()), this.configuration.getId(), lastLineRead));
+					break untilEmit; // we're done with this file, break out.
+				}
 
 				// make sure we empty the cache if hit a quadruple of another "batch" (i.e. a different date value)
 				if (semanticDate.equals(this.lastDateProcessed)) {
@@ -149,7 +166,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 						if (currentBindings.isFullyBound()) {
 							// if this is the case (most likely not yet), emit it straight away
 							if (emitBindings(semanticDate, currentBindings)) {
-								emitted = true;
+								emittedAtLeastOneTuple = true;
 							}
 						} else {
 							// add the bindings object to our cache and emit fully bound bindings along the way
@@ -172,7 +189,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 									if (merged != null) {
 										if (merged.isFullyBound()) {
 											if (emitBindings(semanticDate, merged)) {
-												emitted = true;
+												emittedAtLeastOneTuple = true;
 											}
 										} else { // add to cache for each variable
 											toAddToCache.add(merged);
@@ -200,7 +217,6 @@ public class FileGraphPatternReader extends AbstractLineReader {
 							this.configuration.getId(), semanticDate.toString(), Long.valueOf(lastLineRead)));
 				}
 				this.lastLineRead++;
-				result = true;
 
 			} else {
 				logger.info(String.format("End of file is reached in component %1s on line: %2s",
@@ -208,12 +224,9 @@ public class FileGraphPatternReader extends AbstractLineReader {
 				break untilEmit;
 			}
 
-			if (emitted) {
-				break untilEmit;
-			}
 		} // untilEmit: while (true)
 
-		return result;
+		return emittedAtLeastOneTuple;
 	}
 
 	/**
@@ -247,7 +260,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 			for (Variable variable : stream.getVariables()) {
 				tuple.add(bindings.get(variable.getReferencesTo()));
 			}
-			//System.out.println("emitting tuple " + bindings);
+			// System.out.println("emitting tuple " + bindings);
 			emit(stream.getId(), tuple); // We emit on the default stream
 			result = true;
 		}

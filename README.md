@@ -5,6 +5,8 @@ KATTS
 
 Revision History
 ================
+3.1.0-SNAPSHOT    - fromDate and toDate on fileGraphReader
+
 3.0.5-SNAPSHOT    - new program argument "--max-spout-pending"
 
 3.0.4-SNAPSHOT    - increase zookeeper timeout to 30 seconds

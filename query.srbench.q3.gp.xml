@@ -3,9 +3,9 @@
 
 	<!-- Before the query is deployed the data files are copied to all nodes 
 		with rsync. -->
-	<fileGraphPatternReader id="fileGraphPatternReader">
+	<fileGraphPatternReader id="fileGraphPatternReader" fromDate="2004-08-08T11:40:00" toDate="2004-08-08T18:30:00">
 		<files>
-			<file mimeType="text/n5" path="data/charley.top10k.sorted.n5" readToLineNo="100" />
+			<file mimeType="text/n5" path="data/charley.top10k.sorted.n5"/>
 		</files>
 		<patterns>
 			<pattern>?observation_id &lt;om-owl:procedure&gt; ?sensor_id</pattern>

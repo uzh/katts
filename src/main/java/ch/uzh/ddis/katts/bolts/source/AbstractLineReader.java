@@ -135,7 +135,10 @@ public abstract class AbstractLineReader implements IRichSpout {
 	 *            the tuple to emit.
 	 */
 	protected void emit(String streamId, List<Object> tuple) {
-		// we start measuring time, when the first tuple gets emitted
+		/*
+		 * We only start measuring time, when the first tuple gets emitted. By doing this, the first call of
+		 * #nextTuple(Source) can take a long time without this counting towards the runtime measurement.
+		 */
 		if (this.emitted == 0) {
 			starterMonitor.start();
 		}
