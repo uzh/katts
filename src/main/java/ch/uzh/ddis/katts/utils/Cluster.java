@@ -25,8 +25,14 @@ public final class Cluster {
 
 	private final static Logger LOG = LoggerFactory.getLogger(Cluster.class);
 
-	public static ZooKeeper createZooKeeper(@SuppressWarnings("rawtypes") Map conf) throws IOException {
-
+	/**
+	 * This method creates the connection string to connect to the Zookeeper server.
+	 * 
+	 * @param conf
+	 *            the storm configuration object containing the information needed.
+	 * @return the connectio string that can be used to create an object of type {@link ZooKeeper}.
+	 */
+	public static String createZookeeperConnectionString(@SuppressWarnings("rawtypes") Map conf) {
 		@SuppressWarnings("unchecked")
 		List<String> zooKeeperServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
 
@@ -40,7 +46,11 @@ public final class Cluster {
 			connection.append(server).append(":").append(port).append(",");
 		}
 
-		return new ZooKeeper(connection.toString(), 30 * 1000, new Watcher() {
+		return connection.toString();
+	}
+
+	public static ZooKeeper createZooKeeper(@SuppressWarnings("rawtypes") Map conf) throws IOException {
+		return new ZooKeeper(createZookeeperConnectionString(conf), 30 * 1000, new Watcher() {
 			@Override
 			public void process(WatchedEvent event) {
 				// Ignore. We need this only to prevent null pointer exceptions

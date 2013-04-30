@@ -9,6 +9,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.ZooKeeper.States;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,30 +156,33 @@ public final class Recorder implements TerminationMonitor.TerminationCallback {
 	/**
 	 * Serialized the provided value and stores the result into zookeeper.
 	 * 
+	 * The method is syncrhonized, so that ZK doesn't get overloaded.
+	 * 
 	 * @param path
 	 *            the path to store the data at.
 	 * @param value
 	 *            the object to store.
 	 */
-	public void writeToZookeeper(String path, Serializable value) {
+	public synchronized void writeToZookeeper(String path, Serializable value) {
 		ZooKeeper zooKeeper;
 
 		try {
 			zooKeeper = Cluster.createZooKeeper(this.stormConfiguration);
-		} catch (IOException e) {
-			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the message sending behaviour.",
-					e);
-		}
 
-		try {
+			while (zooKeeper.getState() != States.CONNECTED) {
+				logger.debug("Waiting for Zookeeper to connect...");
+				Thread.sleep(1000);
+			}
+
 			int currentIdx = 1;
 			// create the path level by level
 			while (path.indexOf("/", currentIdx) > 0) {
 				currentIdx = path.indexOf("/", currentIdx);
 				String p = path.substring(0, currentIdx);
-
 				try {
-					zooKeeper.create(p, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					if (zooKeeper.exists(p, null) == null) { // null means it does not exist, yet
+						zooKeeper.create(p, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+					}
 				} catch (KeeperException e) {
 					if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
 						logger.warn("Zookeeper node " + p + " already existed.");
@@ -187,15 +191,12 @@ public final class Recorder implements TerminationMonitor.TerminationCallback {
 					}
 
 				}
-
 				currentIdx++;
 			}
 
 			zooKeeper.create(path, SerializationUtils.serialize(value), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-		} catch (KeeperException e) {
-			throw new RuntimeException("Can't write object to Zookeeper.", e);
-		} catch (InterruptedException e) {
-			throw new RuntimeException("Interrupted while writing object to Zookeeper.", e);
+		} catch (Exception e) {
+			throw new RuntimeException("Can't write object to Zookeeper at path " + path, e);
 		}
 	}
 

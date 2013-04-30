@@ -134,7 +134,8 @@ public class FileGraphPatternReader extends AbstractLineReader {
 	}
 
 	@Override
-	public void open(@SuppressWarnings("rawtypes") final Map conf, TopologyContext context, SpoutOutputCollector collector) {
+	public void open(@SuppressWarnings("rawtypes") final Map conf, TopologyContext context,
+			SpoutOutputCollector collector) {
 		super.open(conf, context, collector);
 
 		// register a callback so we can write the triple counts to zookeeper
@@ -142,15 +143,16 @@ public class FileGraphPatternReader extends AbstractLineReader {
 			@Override
 			public void workerTerminated() {
 				String sourceName;
-				
-				logger.info("Writing triple counts to Zookeeper.");
-				
+
 				sourceName = FileGraphPatternReader.this.getSource().getSourceId();
 				// parse filename from path leaving the last slash present
 				sourceName = sourceName.substring(sourceName.lastIndexOf("/"), sourceName.length());
-				Recorder.getInstance(conf).writeToZookeeper(Recorder.TRIPLES_PROCESSED_PATH + sourceName, 
+
+				logger.info("Writing triple counts for file " + sourceName + " to Zookeeper.");
+
+				Recorder.getInstance(conf).writeToZookeeper(Recorder.TRIPLES_PROCESSED_PATH + sourceName,
 						Long.valueOf(FileGraphPatternReader.this.triplesProcessed));
-				Recorder.getInstance(conf).writeToZookeeper(Recorder.RELEVANT_TRIPLES_PROCESSED_PATH + sourceName, 
+				Recorder.getInstance(conf).writeToZookeeper(Recorder.RELEVANT_TRIPLES_PROCESSED_PATH + sourceName,
 						Long.valueOf(FileGraphPatternReader.this.relevantTriplesProcessed));
 			}
 		});
