@@ -76,7 +76,7 @@ print "total messages:      {0}\n" \
       "improvement:         {5:.2%}".format(total_messages, 
                                         uniform_traffic, float(1.0 * uniform_traffic / total_messages),
                                         partitioned_traffic, float(1.0 * partitioned_traffic / total_messages),
-                                        float(1.0 * uniform_traffic / partitioned_traffic) - 1)
+                                        1-float(1.0 * partitioned_traffic / uniform_traffic))
 
 (uniform_mean, uniform_stdv) = meanstdv(uniform_server_load)
 uniform_relstdv = uniform_stdv / uniform_mean

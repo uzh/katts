@@ -14,6 +14,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.json.simple.JSONValue;
@@ -75,7 +76,13 @@ class Aggregator {
 		taskResolver = new TaskResolver(topologyInfo);
 	}
 
-	public void aggregateMessagePerHost() {
+	/**
+	 * Aggregates all statistics and writes them into the google spreadsheet.
+	 * 
+	 * @return the full row that has been written into the google spreadsheet. The keys are the column headers and the
+	 *         values are the values of the corresponding cell.
+	 */
+	public Map<String, Object> aggregateMessagePerHost() {
 		List<String> children = null;
 
 		try {
@@ -219,6 +226,8 @@ class Aggregator {
 		} catch (Exception e) {
 			log.error("Error while trying to write to Google spreadsheet", e);
 		}
+
+		return data;
 	}
 
 	/**
@@ -273,10 +282,8 @@ class Aggregator {
 		@Override
 		public void process(WatchedEvent event) {
 			if (event.getType() == Event.EventType.None) {
-				switch (event.getState()) {
-				case Expired:
+				if (event.getState() == KeeperState.Expired) {
 					checkIfFinished();
-					break;
 				}
 			} else {
 				checkIfFinished();

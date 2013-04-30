@@ -5,6 +5,10 @@ KATTS
 
 Revision History
 ================
+3.2.3-SNAPSHOT    - reverted process method in aggregator
+
+3.2.2-SNAPSHOT    - support for file output in Aggregator
+
 3.1.0-SNAPSHOT    - fromDate and toDate on fileGraphReader
 
 3.0.5-SNAPSHOT    - new program argument "--max-spout-pending"
