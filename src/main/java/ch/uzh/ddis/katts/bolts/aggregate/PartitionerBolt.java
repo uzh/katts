@@ -78,7 +78,7 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 		super(configuration.getBufferTimeout(), configuration.getWaitTimeout());
 		this.configuration = configuration;
 	}
-	
+
 	@Override
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
@@ -101,8 +101,22 @@ public class PartitionerBolt extends AbstractSynchronizedBolt {
 		return this.getConfiguration().getId();
 	}
 
+	// debugging code for partitioning problems
+	// private String lastSensor = null;
+	// private int lastSourceTask = -1;
+
 	@Override
 	public void execute(Event event) {
+		// int currentSourceTask = event.getTuple().getSourceTask();
+		// String currentSensor = event.getTuple().getStringByField("sensor_id");
+		//
+		// if (this.lastSourceTask != -1 && this.lastSourceTask != currentSourceTask) {
+		// System.out.println(String.format("what what what?? lastTask: %1s - currentTask: %2s", this.lastSourceTask,
+		// currentSourceTask));
+		// System.out.println(String.format("lastSensor: %1s currentSensor: %2s", this.lastSensor, currentSensor));
+		// }
+		// this.lastSensor = currentSensor;
+		// this.lastSourceTask = currentSourceTask;
 
 		String partitionFieldValue = event.getVariableValue(partitionOnField).toString().intern();
 

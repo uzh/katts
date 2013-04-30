@@ -1,13 +1,10 @@
 package ch.uzh.ddis.katts.monitoring;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.SecureRandom;
+import java.io.Serializable;
 import java.util.Map;
 
-import org.apache.commons.collections.MapIterator;
-import org.apache.commons.collections.keyvalue.MultiKey;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -25,9 +22,15 @@ import com.google.common.util.concurrent.AtomicLongMap;
  * @author Thomas Hunziker
  * 
  */
-public final class Recorder implements TerminationWatcher {
+public final class Recorder implements TerminationMonitor.TerminationCallback {
 
 	private static Recorder instance;
+
+	/** The path under which the number of triples processed will be stored in zookeeper. */
+	public static final String TRIPLES_PROCESSED_PATH = "/triples_processed";
+
+	/** The path under which the number of relevant triples processed will be stored in zookeeper. */
+	public static final String RELEVANT_TRIPLES_PROCESSED_PATH = "/relevant_triples_processed";
 
 	/**
 	 * For each host there is a subdirecory in this path containing all the sending data for that host.
@@ -43,7 +46,6 @@ public final class Recorder implements TerminationWatcher {
 	public static final String MESSAGE_RECORDER_FINISHED_PATH = "/message_recorder_finished";
 
 	private String monitoringPath;
-	private String topologyName;
 
 	@SuppressWarnings("rawtypes")
 	private Map stormConfiguration;
@@ -57,9 +59,8 @@ public final class Recorder implements TerminationWatcher {
 	private ZooKeeper zooKeeper;
 	private Logger logger = LoggerFactory.getLogger(StarterMonitor.class);
 
-	private Recorder(Map stormConf, String topologyName) {
+	private Recorder(Map<?, ?> stormConf) {
 		this.stormConfiguration = stormConf;
-		this.topologyName = topologyName;
 
 		try {
 			zooKeeper = Cluster.createZooKeeper(stormConfiguration);
@@ -73,7 +74,7 @@ public final class Recorder implements TerminationWatcher {
 
 		// Currently we write out the results, when we get the signal that the query was completed. This may be changed
 		// in future.
-		TerminationMonitor.getInstance(stormConfiguration).addTerminationWatcher(this);
+		TerminationMonitor.getInstance(stormConfiguration).registerTerminationCallback(this);
 
 	}
 
@@ -114,14 +115,14 @@ public final class Recorder implements TerminationWatcher {
 
 	}
 
-	public static synchronized Recorder getInstance(Map stormConf, String topologyName) {
+	public static synchronized Recorder getInstance(Map<?, ?> stormConf) {
 
 		if (instance == null) {
-			instance = new Recorder(stormConf, topologyName);
+			instance = new Recorder(stormConf);
 
-//			// Start Virtual Machine Monitoring
-//			Thread vmMonitor = new Thread(new VmMonitor(instance, (Long) stormConf.get(VmMonitor.RECORD_INVERVAL)));
-//			vmMonitor.start();
+			// // Start Virtual Machine Monitoring
+			// Thread vmMonitor = new Thread(new VmMonitor(instance, (Long) stormConf.get(VmMonitor.RECORD_INVERVAL)));
+			// vmMonitor.start();
 		}
 
 		return instance;
@@ -146,9 +147,56 @@ public final class Recorder implements TerminationWatcher {
 	}
 
 	@Override
-	public void terminated() {
+	public void workerTerminated() {
 		writeCounts();
 		logger.info("Message counts are written to ZooKeeper");
+	}
+
+	/**
+	 * Serialized the provided value and stores the result into zookeeper.
+	 * 
+	 * @param path
+	 *            the path to store the data at.
+	 * @param value
+	 *            the object to store.
+	 */
+	public void writeToZookeeper(String path, Serializable value) {
+		ZooKeeper zooKeeper;
+
+		try {
+			zooKeeper = Cluster.createZooKeeper(this.stormConfiguration);
+		} catch (IOException e) {
+			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the message sending behaviour.",
+					e);
+		}
+
+		try {
+			int currentIdx = 1;
+			// create the path level by level
+			while (path.indexOf("/", currentIdx) > 0) {
+				currentIdx = path.indexOf("/", currentIdx);
+				String p = path.substring(0, currentIdx);
+
+				try {
+					zooKeeper.create(p, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+				} catch (KeeperException e) {
+					if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
+						logger.warn("Zookeeper node " + p + " already existed.");
+					} else {
+						throw new RuntimeException("Error while creating Zookeeper node " + p, e);
+					}
+
+				}
+
+				currentIdx++;
+			}
+
+			zooKeeper.create(path, SerializationUtils.serialize(value), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+		} catch (KeeperException e) {
+			throw new RuntimeException("Can't write object to Zookeeper.", e);
+		} catch (InterruptedException e) {
+			throw new RuntimeException("Interrupted while writing object to Zookeeper.", e);
+		}
 	}
 
 	private void writeCounts() {
@@ -217,17 +265,19 @@ public final class Recorder implements TerminationWatcher {
 			hash = hash * 23 + dstId;
 			return hash;
 		}
+
 		@Override
 		public boolean equals(Object obj) {
-		    if ( this == obj ) return true; //check for self-comparison
+			if (this == obj)
+				return true; // check for self-comparison
 
-		    if ( obj instanceof SrcDst ) { // null is no instance, so that's checked also
-		    	SrcDst other = (SrcDst)obj;
-			    return this.srcId == other.srcId && this.dstId == other.dstId;
-		    } else {
-		    	return false;
-		    }
-		}		
+			if (obj instanceof SrcDst) { // null is no instance, so that's checked also
+				SrcDst other = (SrcDst) obj;
+				return this.srcId == other.srcId && this.dstId == other.dstId;
+			} else {
+				return false;
+			}
+		}
 	}
 
 }

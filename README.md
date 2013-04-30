@@ -5,6 +5,8 @@ KATTS
 
 Revision History
 ================
+3.3.2-SNAPSHOT    - write triple counts to zookeeper
+
 3.2.3-SNAPSHOT    - reverted process method in aggregator
 
 3.2.2-SNAPSHOT    - support for file output in Aggregator

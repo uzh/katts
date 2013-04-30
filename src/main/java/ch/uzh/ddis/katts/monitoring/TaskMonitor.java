@@ -26,10 +26,8 @@ public class TaskMonitor extends BaseTaskHook {
 	@Override
 	public void prepare(@SuppressWarnings("rawtypes") Map stormConf, TopologyContext context) {
 
-		String topologyId = context.getStormId();
-
 		this.thisTaskId = context.getThisTaskId();
-		this.recorder = Recorder.getInstance(stormConf, topologyId);
+		this.recorder = Recorder.getInstance(stormConf);
 
 		this.recordMessages = true;
 //		// only record messages that are not from a "source" component

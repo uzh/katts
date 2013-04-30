@@ -10,9 +10,13 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import backtype.storm.spout.SpoutOutputCollector;
+import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import ch.uzh.ddis.katts.bolts.source.file.Source;
+import ch.uzh.ddis.katts.monitoring.Recorder;
+import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.query.source.FileGraphPatternReaderConfiguration;
 import ch.uzh.ddis.katts.query.stream.Stream;
 import ch.uzh.ddis.katts.query.stream.Variable;
@@ -58,6 +62,20 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 	/** This set contains the same names as variableNameList, but with O(1) complexity for the contains() method. */
 	private Set<String> variableNameSet;
+
+	/**
+	 * In this variable we count, how many relevant triples we processed using this reader. Relevant triples are triples
+	 * that match any of the configured triple patterns.
+	 */
+	private long relevantTriplesProcessed = 0;
+
+	/**
+	 * In this variable we count how many triples we read in using this reader. Here we count all triples that have been
+	 * read in, the ones that match a triple pattern and the ones that don't match. However, we don't count the triples
+	 * that are being skipped because they were excluded in the configuration using the fromDate or the toDate
+	 * configuratino parameter.
+	 */
+	private long triplesProcessed = 0;
 
 	/*
 	 * A map that maps variable names to their values as well as to all bindings objects that contain this binding.
@@ -112,6 +130,30 @@ public class FileGraphPatternReader extends AbstractLineReader {
 				currentPosition = m.end();
 			}
 		}
+
+	}
+
+	@Override
+	public void open(@SuppressWarnings("rawtypes") final Map conf, TopologyContext context, SpoutOutputCollector collector) {
+		super.open(conf, context, collector);
+
+		// register a callback so we can write the triple counts to zookeeper
+		TerminationMonitor.getInstance(conf).registerTerminationCallback(new TerminationMonitor.TerminationCallback() {
+			@Override
+			public void workerTerminated() {
+				String sourceName;
+				
+				logger.info("Writing triple counts to Zookeeper.");
+				
+				sourceName = FileGraphPatternReader.this.getSource().getSourceId();
+				// parse filename from path leaving the last slash present
+				sourceName = sourceName.substring(sourceName.lastIndexOf("/"), sourceName.length());
+				Recorder.getInstance(conf).writeToZookeeper(Recorder.TRIPLES_PROCESSED_PATH + sourceName, 
+						Long.valueOf(FileGraphPatternReader.this.triplesProcessed));
+				Recorder.getInstance(conf).writeToZookeeper(Recorder.RELEVANT_TRIPLES_PROCESSED_PATH + sourceName, 
+						Long.valueOf(FileGraphPatternReader.this.relevantTriplesProcessed));
+			}
+		});
 	}
 
 	@Override
@@ -130,6 +172,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 			if (quadruple != null) {
 				Date semanticDate;
+				boolean tripleMatchesAtLeastOnePattern = false;
 
 				// parse the date field, this supports raw millisecond values and ISO formatted datetime strings
 				semanticDate = extractDate(quadruple.get(0));
@@ -162,6 +205,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 					Bindings currentBindings = tryToBindVariables(pattern, quadruple);
 
 					if (currentBindings != null) { // the quadruple could be bound
+						tripleMatchesAtLeastOnePattern = true; // the quadruple matches at least one pattern
 
 						if (currentBindings.isFullyBound()) {
 							// if this is the case (most likely not yet), emit it straight away
@@ -210,13 +254,19 @@ public class FileGraphPatternReader extends AbstractLineReader {
 						}
 
 					}
-				}
+				} // loop over patterns
 
 				if (lastLineRead % 30000 == 0) {
 					logger.info(String.format("Read time of component %1s is %2s. Line: %3s",
 							this.configuration.getId(), semanticDate.toString(), Long.valueOf(lastLineRead)));
 				}
+
+				// book keeping
 				this.lastLineRead++;
+				this.triplesProcessed++;
+				if (tripleMatchesAtLeastOnePattern) {
+					this.relevantTriplesProcessed++;
+				}
 
 			} else {
 				logger.info(String.format("End of file is reached in component %1s on line: %2s",

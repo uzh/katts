@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.thrift7.TException;
 import org.apache.thrift7.protocol.TProtocol;
 import org.apache.zookeeper.CreateMode;
@@ -84,6 +85,8 @@ class Aggregator {
 	 */
 	public Map<String, Object> aggregateMessagePerHost() {
 		List<String> children = null;
+		List<String> triplesProcessedChildren = null;
+		List<String> relevantTriplesProcessedChildren = null;
 
 		try {
 			if (zooKeeper.exists(Recorder.MESSAGE_RECORDER_PATH, false) != null) {
@@ -93,6 +96,9 @@ class Aggregator {
 				 */
 				waitForMonitoringData();
 				children = zooKeeper.getChildren(Recorder.MESSAGE_RECORDER_PATH, false);
+				triplesProcessedChildren = zooKeeper.getChildren(Recorder.TRIPLES_PROCESSED_PATH, false);
+				relevantTriplesProcessedChildren = zooKeeper.getChildren(Recorder.RELEVANT_TRIPLES_PROCESSED_PATH,
+						false);
 			}
 		} catch (KeeperException e) {
 			throw new RuntimeException("Could not load the monitoring message records from ZooKeeper.", e);
@@ -108,6 +114,8 @@ class Aggregator {
 		Map<String, Object> data = new HashMap<String, Object>();
 		long startTime = Long.valueOf(readValueFromZK(StarterMonitor.KATTS_STARTING_TIME_ZK_PATH));
 		long endTime = Long.valueOf(readValueFromZK(TerminationMonitor.KATTS_TERMINATION_ZK_PATH));
+		long triplesProcessed = 0;
+		long relevantTriplesProcessed = 0;
 
 		SankeyNetworkDataCollector sankeyHosts = new SankeyNetworkDataCollector();
 		SankeyNetworkDataCollector sankeyTasks = new SankeyNetworkDataCollector();
@@ -169,9 +177,29 @@ class Aggregator {
 			}
 		}
 
+		// read number of triples procesed from zookeeper
+		for (String path : triplesProcessedChildren) {
+			try {
+				triplesProcessed += ((Long) SerializationUtils.deserialize(zooKeeper.getData(path, false, null)))
+						.longValue();
+			} catch (Exception e) {
+				log.error("Error while reading the number of triples processed from Zookeeper", e);
+			}
+		}
+		
+		// read number of relevant triples procesed from zookeeper
+		for (String path : relevantTriplesProcessedChildren) {
+			try {
+				relevantTriplesProcessed += ((Long) SerializationUtils.deserialize(zooKeeper.getData(path, false, null)))
+						.longValue();
+			} catch (Exception e) {
+				log.error("Error while reading the number of triples processed from Zookeeper", e);
+			}
+		}
+
 		// Get total emitted tuples by spouts
 		// List<ExecutorSummary> executors = this.topologyInfo.get_executors();
-		long numberOfMessagesEmittedBySpouts = 0;
+//		long numberOfMessagesEmittedBySpouts = 0;
 		// for (ExecutorSummary executor : executors) {
 		// try {
 		// ExecutorSpecificStats specific = executor.get_stats().get_specific();
@@ -206,7 +234,8 @@ class Aggregator {
 		data.put("total-remote-messages", totalRemoteMessages);
 		data.put("total-local-messages", totalLocalMessages);
 		data.put("number-of-nodes", numberOfNodes);
-		data.put("number-of-triples-processed", numberOfMessagesEmittedBySpouts); // that's wrong! no?
+		data.put("triples-processed", triplesProcessed); // triples read by readers
+		data.put("relevant-triples-processed", relevantTriplesProcessed); // triples that were matched by readers
 		data.put("sankey-tasks-json", sankeyTasks.toJson());
 		data.put("sankey-components-json", sankeyComponents.toJson());
 		data.put("sankey-hosts-json", sankeyHosts.toJson());

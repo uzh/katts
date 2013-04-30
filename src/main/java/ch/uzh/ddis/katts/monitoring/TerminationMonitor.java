@@ -10,9 +10,6 @@ import java.util.Set;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -26,15 +23,19 @@ import ch.uzh.ddis.katts.utils.Cluster;
  * @see Termination
  * 
  * @author Thomas Hunziker
+ * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
  * 
  */
-public class TerminationMonitor implements Watcher {
+public class TerminationMonitor {
 
+	/** The singleton instance. Each worker can only have one termiation monitor. */
 	private static TerminationMonitor instance;
 
-	private ZooKeeper zooKeeper;
-
-	private Map stormConf;
+	/**
+	 * A reference to the storm configuration object. The information in this object is necessary to start a connection
+	 * to Zookeeper.
+	 */
+	private Map<?, ?> stormConf;
 
 	/** A flag to remember if this monitor has "told" the Zookeeper that all its sources have finished processing. */
 	private boolean isTerminated = false;
@@ -43,7 +44,11 @@ public class TerminationMonitor implements Watcher {
 	public static final String KATTS_TERMINATION_ZK_PATH = "/katts_terminated";
 	public static final String KATTS_TUPLES_OUTPUTTED_ZK_PATH = "/katts_number_of_tuples_outputed";
 
-	private List<TerminationWatcher> watchers = new ArrayList<TerminationWatcher>();
+	/**
+	 * This list contains a reference to all objects that need to be informed when this worker has finished processing
+	 * input.
+	 */
+	private List<TerminationCallback> terminationCallbacks = new ArrayList<TerminationCallback>();
 
 	private Logger logger = LoggerFactory.getLogger(TerminationMonitor.class);
 
@@ -58,13 +63,11 @@ public class TerminationMonitor implements Watcher {
 	 */
 	private Set<String> unfinishedSources = Collections.synchronizedSet(new HashSet<String>());
 
-	private TerminationMonitor(Map stormConf) {
+	private TerminationMonitor(Map<?, ?> stormConf) {
 		this.stormConf = stormConf;
-		this.connect();
-
 	}
 
-	public static synchronized TerminationMonitor getInstance(Map stormConf) {
+	public static synchronized TerminationMonitor getInstance(Map<?, ?> stormConf) {
 		if (instance == null) {
 			instance = new TerminationMonitor(stormConf);
 		}
@@ -72,24 +75,16 @@ public class TerminationMonitor implements Watcher {
 		return instance;
 	}
 
-	private synchronized void connect() {
-		try {
-			zooKeeper = Cluster.createZooKeeper(stormConf);
-		} catch (IOException e1) {
-			throw new RuntimeException("Could not connect to ZooKeeper.", e1);
-		}
-		try {
-			// tell zookeeper, that we want to be informed about changes to this value
-			zooKeeper.exists(KATTS_TERMINATION_ZK_PATH, this);
-		} catch (KeeperException e) {
-			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
-		} catch (InterruptedException e) {
-			throw new RuntimeException("Could not add watcher on the termination znode on ZooKeeper.", e);
-		}
-	}
-
-	public synchronized void addTerminationWatcher(TerminationWatcher watcher) {
-		watchers.add(watcher);
+	/**
+	 * Registers a callback object with this monitor. As soon as the last source has finished processing its input all
+	 * registered callbacks will be informed about the fact that this worker instance has finished processing and will
+	 * now temrinate.
+	 * 
+	 * @param callback
+	 *            the callback object that should be informed when the processing has finished.
+	 */
+	public synchronized void registerTerminationCallback(TerminationCallback callback) {
+		this.terminationCallbacks.add(callback);
 	}
 
 	/**
@@ -112,9 +107,17 @@ public class TerminationMonitor implements Watcher {
 		 * TODO lorenz: This only works for as long as we're only running on one machine! Fix it!
 		 */
 		if (!this.isTerminated && this.unfinishedSources.isEmpty()) {
+			ZooKeeper zooKeeper;
+
 			logger.info("Run terminated.");
 
-			ZooKeeper zooKeeper;
+			// inform all TerminationCallbacks
+			synchronized (this.terminationCallbacks) { // no new callbacks can be added
+				for (TerminationCallback callback : this.terminationCallbacks) {
+					callback.workerTerminated();
+				}
+			}
+
 			try {
 				zooKeeper = Cluster.createZooKeeper(stormConf);
 			} catch (IOException e1) {
@@ -139,21 +142,6 @@ public class TerminationMonitor implements Watcher {
 		}
 	}
 
-	@Override
-	public synchronized void process(WatchedEvent event) {
-
-		if (event.getType() == Event.EventType.None) {
-			if (event.getState() == KeeperState.Expired) {
-				// We need to reconnect
-				this.connect();
-			}
-		} else {
-			for (TerminationWatcher watcher : this.watchers) {
-				watcher.terminated();
-			}
-		}
-	}
-
 	/**
 	 * Tell this termination monitor that there is a source running in the same VM that we have to wait for. The
 	 * termination monitor will only set its state to "terminated" in Zookeeper, when all sources reported that all of
@@ -164,5 +152,28 @@ public class TerminationMonitor implements Watcher {
 	 */
 	public void registerSource(String sourceId) {
 		this.unfinishedSources.add(sourceId);
+	}
+
+	/**
+	 * Classes that implement this interface can register themselves with the {@link TerminationMonitor} using the
+	 * {@link TerminationMonitor#registerTerminationCallback(TerminationCallback)} method. When this monitor has has
+	 * been informed by all registered sources that thei have exhausted their input using the
+	 * {@link TerminationMonitor#terminate(String)} method, all registered {@link TerminationCallback} objects will have
+	 * their {@link #workerTerminated()} method called before this monitor informs the other workers by writing the
+	 * finished flag into zookeeper.
+	 * 
+	 * The {@link #workerTerminated()} method can be used to do cleanup work such as writing performance statistics to
+	 * the filesystem or into zookeeper.
+	 * 
+	 * @author "Lorenz Fischer" <lfischer@ifi.uzh.ch>
+	 * 
+	 */
+	public static interface TerminationCallback {
+
+		/**
+		 * This method will be called when all sources that have registered themselves with the
+		 * {@link TerminationMonitor} have signalled that they have finished processing input.
+		 */
+		public void workerTerminated();
 	}
 }
