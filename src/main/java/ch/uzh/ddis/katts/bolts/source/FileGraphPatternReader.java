@@ -150,10 +150,15 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 				logger.info("Writing triple counts for file " + sourceName + " to Zookeeper.");
 
-				Recorder.getInstance(conf).writeToZookeeper(Recorder.TRIPLES_PROCESSED_PATH + sourceName,
-						Long.valueOf(FileGraphPatternReader.this.triplesProcessed));
-				Recorder.getInstance(conf).writeToZookeeper(Recorder.RELEVANT_TRIPLES_PROCESSED_PATH + sourceName,
-						Long.valueOf(FileGraphPatternReader.this.relevantTriplesProcessed));
+				try {
+					Recorder recorder = Recorder.getInstance(conf);
+					recorder.writeToZookeeper(Recorder.TRIPLES_PROCESSED_PATH + sourceName,
+							Long.valueOf(FileGraphPatternReader.this.triplesProcessed));
+					recorder.writeToZookeeper(Recorder.RELEVANT_TRIPLES_PROCESSED_PATH + sourceName,
+							Long.valueOf(FileGraphPatternReader.this.relevantTriplesProcessed));
+				} catch (Exception e) {
+					logger.error("Could not write triple counts to Zookeeper.", e.getMessage());
+				}
 			}
 		});
 	}

@@ -178,20 +178,20 @@ class Aggregator {
 		}
 
 		// read number of triples procesed from zookeeper
-		for (String path : triplesProcessedChildren) {
+		for (String child : triplesProcessedChildren) {
 			try {
-				triplesProcessed += ((Long) SerializationUtils.deserialize(zooKeeper.getData(path, false, null)))
-						.longValue();
+				triplesProcessed += ((Long) SerializationUtils.deserialize(zooKeeper.getData(
+						Recorder.TRIPLES_PROCESSED_PATH + "/" + child, false, null))).longValue();
 			} catch (Exception e) {
 				log.error("Error while reading the number of triples processed from Zookeeper", e);
 			}
 		}
-		
+
 		// read number of relevant triples procesed from zookeeper
-		for (String path : relevantTriplesProcessedChildren) {
+		for (String child : relevantTriplesProcessedChildren) {
 			try {
-				relevantTriplesProcessed += ((Long) SerializationUtils.deserialize(zooKeeper.getData(path, false, null)))
-						.longValue();
+				relevantTriplesProcessed += ((Long) SerializationUtils.deserialize(zooKeeper.getData(
+						Recorder.RELEVANT_TRIPLES_PROCESSED_PATH + "/" + child, false, null))).longValue();
 			} catch (Exception e) {
 				log.error("Error while reading the number of triples processed from Zookeeper", e);
 			}
@@ -199,7 +199,7 @@ class Aggregator {
 
 		// Get total emitted tuples by spouts
 		// List<ExecutorSummary> executors = this.topologyInfo.get_executors();
-//		long numberOfMessagesEmittedBySpouts = 0;
+		// long numberOfMessagesEmittedBySpouts = 0;
 		// for (ExecutorSummary executor : executors) {
 		// try {
 		// ExecutorSpecificStats specific = executor.get_stats().get_specific();

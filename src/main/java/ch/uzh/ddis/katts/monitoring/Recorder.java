@@ -9,13 +9,13 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.ZooKeeper.States;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.uzh.ddis.katts.utils.Cluster;
 
 import com.google.common.util.concurrent.AtomicLongMap;
+import com.netflix.curator.framework.CuratorFramework;
 
 /**
  * This class records the data and stored it to the ZooKeeper.
@@ -52,26 +52,54 @@ public final class Recorder implements TerminationMonitor.TerminationCallback {
 	private Map stormConfiguration;
 
 	/**
+	 * We use this curator instance to talk to ZK. According to https://github.com/Netflix/curator/wiki/Framework we
+	 * should only have one curator instance and reuse it throughout the VM.
+	 */
+	private CuratorFramework curator;
+
+	/**
 	 * We record all messages in this map, as we will access this map from multiple threads in parallel, this the data
 	 * structure needs to support this.
 	 */
 	private AtomicLongMap<SrcDst> messageCounter = AtomicLongMap.create();
 
-	private ZooKeeper zooKeeper;
 	private Logger logger = LoggerFactory.getLogger(StarterMonitor.class);
 
+	/**
+	 * Returns the singleton instance of this recorder.
+	 * 
+	 * @param stormConf
+	 *            the storm configuration object contains information necessary to connect to zookeeper.
+	 * @return the singleton instance.
+	 */
+	public static synchronized Recorder getInstance(Map<?, ?> stormConf) {
+
+		if (instance == null) {
+			instance = new Recorder(stormConf);
+		}
+
+		return instance;
+	}
+
+	/**
+	 * Private constructor of the singleton object.
+	 * 
+	 * @param stormmConf
+	 *            the storm confiruation object. The information in this object is necessary to create the ZK
+	 *            connection.
+	 */
 	private Recorder(Map<?, ?> stormConf) {
 		this.stormConfiguration = stormConf;
 
 		try {
-			zooKeeper = Cluster.createZooKeeper(stormConfiguration);
+			this.curator = Cluster.getCuratorClient(this.stormConfiguration);
 		} catch (IOException e) {
-			throw new RuntimeException("Can't create ZooKeeper instance for monitoring the message sending behaviour.",
-					e);
+			// we should stop everything right here, since this is not going to end up well
+			throw new IllegalStateException("Could not create the Zookeeper connection using the Curator.", e);
 		}
 
-		createMonitoringRoot();
-		createFinishMonitorRoot();
+		createEmtpyNode(MESSAGE_RECORDER_PATH);
+		createEmtpyNode(MESSAGE_RECORDER_FINISHED_PATH);
 
 		// Currently we write out the results, when we get the signal that the query was completed. This may be changed
 		// in future.
@@ -79,64 +107,21 @@ public final class Recorder implements TerminationMonitor.TerminationCallback {
 
 	}
 
-	private void createMonitoringRoot() {
+	private void createEmtpyNode(String path) {
 
 		try {
-			zooKeeper.create(MESSAGE_RECORDER_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-		} catch (KeeperException e) {
-			if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
-				logger.info("The root monitoring entry was already created.");
-			} else {
-				throw new RuntimeException("Can't create the root monitoring ZooKeeper entry.", e);
+			if (this.curator.checkExists().forPath(path) == null) {
+				this.curator.create().forPath(path);
 			}
-
-		} catch (InterruptedException e) {
-			throw new RuntimeException(
-					"Can't create the root monitoring ZooKeeper entry, because the thread was interrupted.", e);
+		} catch (Exception e) {
+			throw new RuntimeException("Can't create the root '" + path + "' because: " + e.getMessage(), e);
 		}
 
-	}
-
-	private void createFinishMonitorRoot() {
-
-		// Write the root path for the monitoring termination barrier
-		try {
-			zooKeeper.create(MESSAGE_RECORDER_FINISHED_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-		} catch (KeeperException e) {
-			if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
-				logger.info("The root monitoring finish entry was already created.");
-			} else {
-				throw new RuntimeException("Can't create the root monitoring finish ZooKeeper entry.", e);
-			}
-
-		} catch (InterruptedException e) {
-			throw new RuntimeException(
-					"Can't create the root monitoring finish ZooKeeper entry, because the thread was interrupted.", e);
-		}
-
-	}
-
-	public static synchronized Recorder getInstance(Map<?, ?> stormConf) {
-
-		if (instance == null) {
-			instance = new Recorder(stormConf);
-
-			// // Start Virtual Machine Monitoring
-			// Thread vmMonitor = new Thread(new VmMonitor(instance, (Long) stormConf.get(VmMonitor.RECORD_INVERVAL)));
-			// vmMonitor.start();
-		}
-
-		return instance;
 	}
 
 	public void recordMessageSending(int sourceTask, int targetTask) {
 		// AtomicLongMap is thread safe so we don't need to serialize here
 		this.messageCounter.incrementAndGet(new SrcDst(sourceTask, targetTask));
-	}
-
-	public synchronized void recordMemoryStats(long maxMemory, long allocatedMemory, long freeMemory) {
-		// TODO: Find a way to log this data in some other way.
-
 	}
 
 	public String getMonitoringPath() {
@@ -154,50 +139,17 @@ public final class Recorder implements TerminationMonitor.TerminationCallback {
 	}
 
 	/**
-	 * Serialized the provided value and stores the result into zookeeper.
-	 * 
-	 * The method is syncrhonized, so that ZK doesn't get overloaded.
+	 * This method writes the given object to Zookeeper at the given path.
 	 * 
 	 * @param path
 	 *            the path to store the data at.
 	 * @param value
 	 *            the object to store.
+	 * @throws Exception
+	 *             in case of a ZK failure (for example network).
 	 */
-	public synchronized void writeToZookeeper(String path, Serializable value) {
-		ZooKeeper zooKeeper;
-
-		try {
-			zooKeeper = Cluster.createZooKeeper(this.stormConfiguration);
-
-			while (zooKeeper.getState() != States.CONNECTED) {
-				logger.debug("Waiting for Zookeeper to connect...");
-				Thread.sleep(1000);
-			}
-
-			int currentIdx = 1;
-			// create the path level by level
-			while (path.indexOf("/", currentIdx) > 0) {
-				currentIdx = path.indexOf("/", currentIdx);
-				String p = path.substring(0, currentIdx);
-				try {
-					if (zooKeeper.exists(p, null) == null) { // null means it does not exist, yet
-						zooKeeper.create(p, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-					}
-				} catch (KeeperException e) {
-					if (e.code().equals(KeeperException.Code.NODEEXISTS)) {
-						logger.warn("Zookeeper node " + p + " already existed.");
-					} else {
-						throw new RuntimeException("Error while creating Zookeeper node " + p, e);
-					}
-
-				}
-				currentIdx++;
-			}
-
-			zooKeeper.create(path, SerializationUtils.serialize(value), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-		} catch (Exception e) {
-			throw new RuntimeException("Can't write object to Zookeeper at path " + path, e);
-		}
+	public void writeToZookeeper(String path, Serializable value) throws Exception {
+		this.curator.create().creatingParentsIfNeeded().forPath(path, SerializationUtils.serialize(value));
 	}
 
 	private void writeCounts() {
