@@ -3,7 +3,7 @@
 
 	<!-- 
 	   srBench Query 4: 
-	   ----------------
+	   ****************
 	   Get the average wind speed at the stations where the air temperature is >32 degrees in the last hour, 
 	   every 10 minutes. 
 	-->
@@ -29,7 +29,7 @@
 		</produces>
 	</fileGraphPatternReader>
 
-	<partitioner slideSize="PT10M" windowSize="PT3H" partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner">
+	<!-- <partitioner slideSize="PT10M" windowSize="PT3H" partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner">
 		<consumes>
 			<stream maxBufferSize="5" streamId="weathersource">
 				<variableGrouping>
@@ -48,7 +48,7 @@
 		</components>
 	</partitioner>
 
-	<expressionFilter expression="#min_wind_speed > 5" id="expressionFilter"> <!-- 74 -->
+	<expressionFilter expression="#min_wind_speed > 5" id="expressionFilter"> 74
 		<consumes>
 			<stream maxBufferSize="5" streamId="minWindSpeedStream">
 				<variableGrouping>
@@ -62,11 +62,11 @@
 				<variable name="min_wind_speed" referencesTo="min_wind_speed" />
 			</stream>
 		</produces>
-	</expressionFilter>
+	</expressionFilter> -->
 
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>
-			<stream maxBufferSize="5" streamId="filteredMinWindSpeedStream">
+			<stream maxBufferSize="5" streamId="weathersource">
 				<shuffleGrouping />
 			</stream>
 		</consumes>
