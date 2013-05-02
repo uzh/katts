@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query xmlns="http://uzh.ch/ddis/katts/query">
+
+  <fileGraphPatternReader id="fileGraphPatternReader">
+    <files>
+      <file mimeType="text/n5" path="data/charley/charley.00.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.01.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.02.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.03.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.04.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.05.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.06.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.07.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.08.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.09.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.10.n5.gz" readToLineNo="100" />
+      <file mimeType="text/n5" path="data/charley/charley.11.n5.gz" readToLineNo="100" />
+    </files>
+    <patterns>
+      <pattern>?observation_id &lt;om-owl:procedure&gt; ?sensor_id</pattern>
+      <pattern>?observation_id &lt;om-owl:observedProperty&gt; &lt;weather:_WindSpeed&gt;</pattern>
+      <pattern>?observation_id &lt;om-owl:result&gt; ?result_id</pattern>
+      <pattern>?result_id &lt;om-owl:floatValue&gt; ?wind_speed</pattern>
+    </patterns>
+    <produces>
+      <stream id="weathersource">
+          <variable name="observation_id" referencesTo="?observation_id" />
+          <variable name="sensor_id" referencesTo="?sensor_id" />
+          <variable name="result_id" referencesTo="?result_id" />
+          <variable name="wind_speed" referencesTo="?wind_speed" />
+      </stream>
+    </produces>
+  </fileGraphPatternReader>
+
+
+  <partitioner slideSize="PT10M" windowSize="PT3H"
+    partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner" parallelism="48">
+    <consumes>
+      <stream maxBufferSize="5" streamId="weathersource">
+        <variableGrouping>
+          <groupOn variableName="sensor_id" />
+        </variableGrouping>
+      </stream>
+    </consumes>
+    <produces>
+      <stream id="minWindSpeedStream">
+        <variable name="sensor_id" referencesTo="sensor_id" />
+        <variable name="min_wind_speed" referencesTo="min" />
+      </stream>
+    </produces>
+    <components>
+      <minPartitioner />
+    </components>
+  </partitioner>
+
+
+  <expressionFilter expression="#min_wind_speed > 20" id="expressionFilter" parallelism="48"> <!-- 73.9 -->
+    <consumes>
+      <stream maxBufferSize="5" streamId="minWindSpeedStream">
+        <variableGrouping>
+          <groupOn variableName="sensor_id" />
+        </variableGrouping>
+      </stream>
+    </consumes>
+    <produces>
+      <stream id="filteredMinWindSpeedStream">
+           <variable name="sensor_id" referencesTo="sensor_id" />
+           <variable name="min_wind_speed" referencesTo="min_wind_speed" />
+      </stream>
+    </produces>
+  </expressionFilter>
+ 
+
+  <fileOutput filePath="data/output.csv" id="fileOutput">
+    <consumes>
+      <stream maxBufferSize="5" streamId="filteredMinWindSpeedStream">
+        <shuffleGrouping />
+      </stream>
+    </consumes>
+  </fileOutput>
+
+</query>

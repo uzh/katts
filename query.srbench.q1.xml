@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query xmlns="http://uzh.ch/ddis/katts/query">
+
+	<!-- Before the query is deployed the data files are copied to all nodes 
+		with rsync. -->
+	<fileGraphPatternReader id="fileGraphPatternReader" fromDate="2004-08-08T11:40:00" toDate="2004-08-08T18:30:00">
+		<files>
+			<file mimeType="text/n5" path="data/charley.top10k.sorted.n5"/>
+		</files>
+		<patterns>
+			<pattern>?observation_id &lt;om-owl:procedure&gt; ?sensor_id</pattern>
+			<pattern>?observation_id &lt;rdf:type&gt; &lt;weather:RainfallObservation&gt;</pattern>
+			<pattern>?observation_id &lt;om-owl:result&gt; ?result_id</pattern>
+			
+			<pattern>?result_id &lt;om-owl:floatValue&gt; ?value</pattern>
+			<pattern>?result_id &lt;om-owl:uom&gt; ?uom</pattern>
+		</patterns>
+		<produces>
+            <stream id="weathersource">
+                <variable name="source_id" referencesTo="sourceFilePath" />
+                <variable name="observation_id" referencesTo="?observation_id" />
+                <variable name="sensor_id" referencesTo="?sensor_id" />
+                <variable name="result_id" referencesTo="?result_id" />
+                <variable name="wind_speed" referencesTo="?wind_speed" />
+            </stream>
+        </produces>
+	</fileGraphPatternReader>
+
+	<partitioner slideSize="PT10M" windowSize="PT3H"
+		partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner">
+		<consumes>
+			<stream maxBufferSize="5" streamId="weathersource">
+				<variableGrouping>
+					<groupOn variableName="source_id" />
+				</variableGrouping>
+			</stream>
+		</consumes>
+		<produces>
+			<stream id="minWindSpeedStream">
+				<variable name="source_id" referencesTo="source_id" />
+				<variable name="sensor_id" referencesTo="sensor_id" />
+				<variable name="min_wind_speed" referencesTo="min" />
+			</stream>
+		</produces>
+		<components>
+			<minPartitioner />
+		</components>
+	</partitioner>
+
+	<expressionFilter expression="#min_wind_speed > 5" id="expressionFilter"> <!-- 74 -->
+		<consumes>
+			<stream maxBufferSize="5" streamId="minWindSpeedStream">
+				<variableGrouping>
+					<groupOn variableName="source_id" />
+				</variableGrouping>
+			</stream>
+		</consumes>
+		<produces>
+			<stream id="filteredMinWindSpeedStream">
+			     <variable name="sensor_id" referencesTo="sensor_id" />
+			     <variable name="min_wind_speed" referencesTo="min_wind_speed" />
+			</stream>
+		</produces>
+	</expressionFilter>
+
+	<fileOutput filePath="data/output.csv" id="fileOutput">
+		<consumes>
+			<stream maxBufferSize="5" streamId="filteredMinWindSpeedStream">
+				<shuffleGrouping />
+			</stream>
+		</consumes>
+	</fileOutput>
+
+</query>
