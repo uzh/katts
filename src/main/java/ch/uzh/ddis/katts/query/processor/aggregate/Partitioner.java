@@ -19,6 +19,7 @@ import ch.uzh.ddis.katts.bolts.aggregate.PartitionerBolt;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerComponent;
 import ch.uzh.ddis.katts.bolts.aggregate.PartitionerConfiguration;
 import ch.uzh.ddis.katts.query.processor.AbstractSynchronizedProcessor;
+import ch.uzh.ddis.katts.query.processor.aggregate.component.AvgPartitioner;
 import ch.uzh.ddis.katts.query.processor.aggregate.component.MaxPartitioner;
 import ch.uzh.ddis.katts.query.processor.aggregate.component.MinPartitioner;
 import ch.uzh.ddis.katts.query.stream.Variable;
@@ -63,7 +64,9 @@ public class Partitioner extends AbstractSynchronizedProcessor implements Partit
 	@XmlAttribute(required = true)
 	private Duration slideSize;
 
-	@XmlElementRefs({ @XmlElementRef(type = MaxPartitioner.class), @XmlElementRef(type = MinPartitioner.class), })
+	@XmlElementRefs({ @XmlElementRef(type = MaxPartitioner.class), 
+					  @XmlElementRef(type = MinPartitioner.class),
+					  @XmlElementRef(type = AvgPartitioner.class) })
 	@XmlElementWrapper(name = "components")
 	private List<PartitionerComponent> components = new ArrayList<PartitionerComponent>();
 

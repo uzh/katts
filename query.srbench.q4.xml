@@ -3,7 +3,7 @@
 
 	<!-- 
 	   srBench Query 4: 
-	   ----------------
+	   ****************
 	   Get the average wind speed at the stations where the air temperature is >32 degrees in the last hour, 
 	   every 10 minutes. 
 	-->
@@ -11,16 +11,16 @@
 
 	<fileGraphPatternReader id="fileGraphPatternReader">
 		<files>
-			<file mimeType="text/n5" path="data/charley.top10k.sorted.n5" />
+			<file mimeType="text/n5" path="data/charley.q4.test.n5" />
 		</files>
 		<patterns>
-			<pattern>?observation_id &lt;om-owl:procedure&gt; ?sensor_id</pattern>
-			<pattern>?observation_id &lt;om-owl:observedProperty&gt; &lt;weather:_WindSpeed&gt;</pattern>
-			<pattern>?observation_id &lt;om-owl:result&gt; ?result_id</pattern>
-			<pattern>?result_id &lt;om-owl:floatValue&gt; ?wind_speed</pattern>
-		</patterns>
+      <pattern>?observation_id &lt;om-owl:observedProperty&gt; &lt;weather:_WindSpeed&gt;</pattern>
+      <pattern>?observation_id &lt;om-owl:procedure&gt; ?sensor_id</pattern>
+      <pattern>?observation_id &lt;om-owl:result&gt; ?result_id</pattern>
+      <pattern>?result_id &lt;om-owl:floatValue&gt; ?wind_speed</pattern>
+    </patterns>
 		<produces>
-			<stream id="weathersource">
+			<stream id="windStream">
 				<variable name="observation_id" referencesTo="?observation_id" />
 				<variable name="sensor_id" referencesTo="?sensor_id" />
 				<variable name="result_id" referencesTo="?result_id" />
@@ -29,26 +29,9 @@
 		</produces>
 	</fileGraphPatternReader>
 
-	<partitioner slideSize="PT10M" windowSize="PT3H" partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner">
-		<consumes>
-			<stream maxBufferSize="5" streamId="weathersource">
-				<variableGrouping>
-					<groupOn variableName="sensor_id" />
-				</variableGrouping>
-			</stream>
-		</consumes>
-		<produces>
-			<stream id="minWindSpeedStream">
-				<variable name="sensor_id" referencesTo="sensor_id" />
-				<variable name="min_wind_speed" referencesTo="min" />
-			</stream>
-		</produces>
-		<components>
-			<minPartitioner />
-		</components>
-	</partitioner>
+	
 
-	<expressionFilter expression="#min_wind_speed > 5" id="expressionFilter"> <!-- 74 -->
+	<!-- <expressionFilter expression="#min_wind_speed > 5" id="expressionFilter"> 74
 		<consumes>
 			<stream maxBufferSize="5" streamId="minWindSpeedStream">
 				<variableGrouping>
@@ -63,10 +46,10 @@
 			</stream>
 		</produces>
 	</expressionFilter>
-
+ -->
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>
-			<stream maxBufferSize="5" streamId="filteredMinWindSpeedStream">
+			<stream maxBufferSize="5" streamId="windStream">
 				<shuffleGrouping />
 			</stream>
 		</consumes>
