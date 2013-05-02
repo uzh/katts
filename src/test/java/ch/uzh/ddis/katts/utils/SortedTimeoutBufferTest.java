@@ -203,8 +203,8 @@ public class SortedTimeoutBufferTest {
 		resultQueue = new ConcurrentLinkedQueue<DummyEvent>();
 		queueCallback = createQueueCallback(resultQueue);
 		buffer = new SortedTimeoutBuffer<DummyEvent>(Arrays.asList("c0", "c1"), // list of channels
-				3, // buffer timeout
-				10, // wait timeout
+				10, // buffer timeout
+				20, // wait timeout
 				new DummyEventComparator(), // comparator
 				queueCallback);
 
