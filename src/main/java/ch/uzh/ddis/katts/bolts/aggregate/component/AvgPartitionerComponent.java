@@ -36,11 +36,15 @@ public class AvgPartitionerComponent implements PartitionerComponent {
 				continue;
 			}
 			AvgStorageItem internalBucketValue = (AvgStorageItem) bucketValue;
-			totalSum = internalBucketValue.getSum();
-			totalCount = internalBucketValue.getCount();
+			totalSum += internalBucketValue.getSum();
+			totalCount += internalBucketValue.getCount();
 		}
 
-		return totalSum / totalCount;
+		if (totalCount == 0) {
+			return null;
+		} else {
+			return totalSum / totalCount;
+		}
 	}
 
 	@Override

@@ -5,6 +5,8 @@ KATTS
 
 Revision History
 ================
+3.4.1-SNAPSHOT    - graph pattern reader now outputs all matches
+
 3.3.8-SNAPSHOT    - use curator framework to talk to Zookeeper
 
 3.3.6-SNAPSHOT    - fixed bug in recorder that would generate zk-nodes multiple times

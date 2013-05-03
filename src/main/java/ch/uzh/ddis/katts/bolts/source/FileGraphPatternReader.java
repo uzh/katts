@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -209,55 +212,87 @@ public class FileGraphPatternReader extends AbstractLineReader {
 
 				// try to bind to all patterns
 				for (String pattern : this.configuration.getPatterns()) {
-					Bindings currentBindings = tryToBindVariables(pattern, quadruple);
+					Bindings bound = tryToBindVariables(pattern, quadruple);
 
-					if (currentBindings != null) { // the quadruple could be bound
+					if (bound != null) { // the quadruple could be bound
 						tripleMatchesAtLeastOnePattern = true; // the quadruple matches at least one pattern
 
-						if (currentBindings.isFullyBound()) {
+						if (bound.isFullyBound()) {
 							// if this is the case (most likely not yet), emit it straight away
-							if (emitBindings(semanticDate, currentBindings)) {
+							if (emitBindings(semanticDate, bound)) {
 								emittedAtLeastOneTuple = true;
 							}
 						} else {
-							// add the bindings object to our cache and emit fully bound bindings along the way
-							for (String variableName : currentBindings.keySet()) {
-								Object variableValue = currentBindings.get(variableName);
-								Set<Bindings> bindingsInCache;
-								List<Bindings> toAddToCache;
 
-								// find all bindings that have the same variable bound, already
-								bindingsInCache = nameValueBindingsIndex.get(variableName).get(variableValue);
+							Set<Bindings> bindingsToEmit;
+							Queue<Bindings> bindingsToMatchWithCache;
+							Set<Bindings> guard; // prevent adding the same item to the queue multiple times
 
-								/*
-								 * we store bindings that need to be added to the cache in this list to prevent
-								 * concurrent modification exceptions.
-								 */
-								toAddToCache = new ArrayList<Bindings>();
+							/**
+							 * One single new bound bindings object could result in many new variable bindings
+							 * combinations. For this reason we cannot just process the one new variable bindings object
+							 * we would receive from calling tryToBindVariables(), but we create a queue containing all
+							 * the bindings objects that result from the potential chain reaction of one new bindings
+							 * object.
+							 * 
+							 * Example (properties being represented by dashes):
+							 * 
+							 * 1. Let's say we have the following graphs in the cache: A-B and C-D 2. Now we get a new
+							 * triple with B-C. 3. The immediate next graphs generated from this are A-B-C and B-C-D 4.
+							 * However we would also expect A-B-C-D
+							 * 
+							 * So, the process is as follows:
+							 * 
+							 * 1. Add the current binding to the bindingsToMatchWithCache-queue (and the guard) 2. Work
+							 * until queue empty: 2.1 bind with all bindings in cache 2.2 add each new resulting binding
+							 * to queue 2.3 add the current bindings to the cache
+							 */
 
-								for (Bindings inCacheBindings : bindingsInCache) {
-									Bindings merged = currentBindings.mergeWith(inCacheBindings);
-									if (merged != null) {
-										if (merged.isFullyBound()) {
-											if (emitBindings(semanticDate, merged)) {
-												emittedAtLeastOneTuple = true;
+							bindingsToEmit = new HashSet<Bindings>();
+							bindingsToMatchWithCache = new LinkedList<Bindings>();
+							guard = new HashSet<Bindings>();
+							bindingsToMatchWithCache.add(bound);
+
+							while (!bindingsToMatchWithCache.isEmpty()) {
+								Bindings currentBindings = bindingsToMatchWithCache.poll();
+
+								// add the bindings object to our cache and emit fully bound bindings along the way
+								for (String variableName : currentBindings.keySet()) {
+									Object variableValue = currentBindings.get(variableName);
+									Set<Bindings> bindingsInCache;
+
+									// find all bindings that have the same variable bound, already
+									bindingsInCache = nameValueBindingsIndex.get(variableName).get(variableValue);
+
+									for (Bindings inCacheBindings : bindingsInCache) {
+										Bindings merged = currentBindings.mergeWith(inCacheBindings);
+										if (merged != null) {
+											if (merged.isFullyBound()) {
+												bindingsToEmit.add(merged);
+											} else {
+												// add to queue, so we can check this with all bindings that are
+												// already in the cache in the next go.
+												if (guard.add(merged)) {
+													bindingsToMatchWithCache.add(merged);
+												}
 											}
-										} else { // add to cache for each variable
-											toAddToCache.add(merged);
 										}
 									}
-								}
 
-								// store all merged (and not yet fully bound) bindings objects in the index
-								for (Bindings bindingsToAdd : toAddToCache) {
-									for (String vn : bindingsToAdd.keySet()) { // add it for each variable
-										nameValueBindingsIndex.get(vn).put(bindingsToAdd.get(vn), bindingsToAdd);
+									// add the current binding to the index for all its variables
+									for (String vn : currentBindings.keySet()) { // add it for each variable
+										nameValueBindingsIndex.get(vn).put(currentBindings.get(vn), currentBindings);
 									}
 								}
-
-								// store the unmerged bindings object as it's own "root" bindings object in the index
-								nameValueBindingsIndex.get(variableName).put(variableValue, currentBindings);
 							}
+
+							// emit all bindings that were fullly bound
+							for (Bindings toEmit : bindingsToEmit) {
+								if (emitBindings(semanticDate, toEmit)) {
+									emittedAtLeastOneTuple = true;
+								}
+							}
+
 						}
 
 					}
@@ -454,31 +489,42 @@ public class FileGraphPatternReader extends AbstractLineReader {
 		 * 
 		 * @param other
 		 *            the other bindings object to merge with.
-		 * @return a new Bindings instance with the merged variable bindings or <code>null</code> in case of a
-		 *         collision.
+		 * @return a new Bindings instance with the merged variable bindings or <code>null</code> in case of a collision
+		 *         or if nothing new would have emerged from the merge (all keys of one bindings object were already
+		 *         present in the other bindings object.
 		 */
 		public Bindings mergeWith(Bindings other) {
 			Bindings result = new Bindings(this);
 
-			testForCollisions: for (String key : other.keySet()) {
-				Object thisValue = get(key); // we check on "this" as we have not yet copied the content to the result
-				Object otherValue = other.get(key);
-				if (thisValue == null) {
-					result.put(key, otherValue); // does not exist, yet. Cool!
-				} else if (!thisValue.equals(otherValue)) {
-					// collision!
-					result = null; // signal to the calling code that we had a collision
-					break testForCollisions;
+			// make sure that the smaller of the two maps is not already contained in the larger map
+			// if this is the case there is either nothing new to be gained from the merge or there are going
+			// to be collisions. in both cases we need to return null.
+			if ((other.backingMap.size() < this.backingMap.size() && !this.backingMap.keySet().containsAll(
+					other.backingMap.keySet()))
+					|| !other.backingMap.keySet().containsAll(this.backingMap.keySet())) {
+
+				testForCollisions: for (String key : other.keySet()) {
+					Object thisValue = get(key); // we check on "this" as we have not yet copied the content to the
+													// result
+					Object otherValue = other.get(key);
+					if (thisValue == null) {
+						result.put(key, otherValue); // does not exist, yet. Cool!
+					} else if (!thisValue.equals(otherValue)) {
+						// collision!
+						result = null; // signal to the calling code that we had a collision
+						break testForCollisions;
+					}
 				}
-			}
 
-			/*
-			 * We postponed adding all values of "this" bindings object until now, in order to prevent unnecessary work
-			 * in case of a collision.
-			 */
+				/*
+				 * We postponed adding all values of "this" bindings object until now, in order to prevent unnecessary
+				 * work in case of a collision.
+				 */
 
-			if (result != null) {
-				result.putAll(this);
+				if (result != null) {
+					result.putAll(this);
+				}
+
 			}
 
 			return result;

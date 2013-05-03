@@ -28,9 +28,11 @@ public abstract class AbstractProcessor extends AbstractNode implements Processo
 
 	private static final long serialVersionUID = 1L;
 
-	// We assume that a regular processor is fully parallelizable
+	/**
+	 * The number of task instances that should be started for this bolt. If you set this to 0, so task will be started!
+	 */
 	@XmlAttribute
-	private int parallelism = 0;
+	private int parallelism = 1;
 
 	@XmlElementWrapper(name = "produces")
 	@XmlElement(name = "stream")
