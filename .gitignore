@@ -2,6 +2,7 @@
 .classpath
 .project
 .settings
+.idea
 target
 data/test.lorenz.output.OneFieldJoin.csv
 data/test.lorenz.output.RegularJoin.csv

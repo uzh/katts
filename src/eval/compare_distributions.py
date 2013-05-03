@@ -8,85 +8,66 @@
 #       ./compare_distributions.py 12 sendgraph.json sendgraph.metis.part.12
 #
 
+import optparse
 import sys
 import json
+import eval
 
-"""
-Calculate mean and standard deviation of data x[]:
-    mean = {\sum_i x_i \over n}
-    std = sqrt(\sum_i (x_i - mean)^2 \over n-1)
+usage = "Usage: %prog [options] numberOfServers json file partition file"
+description = "This script compares the partitioning of nodes computed by Metis with a random distribution."
 
-Copied from: http://www.physics.rutgers.edu/~masud/computing/WPark_recipes_in_python.html
-"""
-def meanstdv(x):
-    from math import sqrt
-    n, mean, std = len(x), 0, 0
-    for a in x:
-        mean = mean + a
-    mean = mean / float(n)
-    for a in x:
-        std = std + (a - mean)**2
-    std = sqrt(std / float(n-1))
-    return mean, std
+parser = optparse.OptionParser(usage=usage,description=description)
+parser.add_option("-l", "--light", dest="mode_light", action="store_true", default=False,
+                  help="Light mode will print just two values being the two percentage values of messages that are "
+                       "over the network. Example: 0.95,0.7")
+(options, args) = parser.parse_args()
 
 # abort if required options are missing
-if len(sys.argv) < 4:
-    print("You need to specify the number of servers in the cluster, a json file, and the metis partition file.\n"
-          " Usage: compare_distributions.py [numberOfServers] [json file] [partition file]")
-    exit(0)
+if len(args) < 3:
+    parser.print_help()
+    exit(1)
 
-number_of_Servers = int(sys.argv[1])
+mode_light = options.mode_light
+
+number_of_Servers = int(args[0])
 
 # read json file
-with open(sys.argv[2]) as json_file:
+with open(args[1]) as json_file:
     j = json.loads(json_file.read())
     jNodes = j['nodes']
     jLinks = j['links']
 
-# read metis partition
-task_assignment = [0 for x in range(len(jNodes))]
-with open(sys.argv[3]) as metis_file:
-    vertexId = 0
-    for line in metis_file.readlines():
-        task_assignment[vertexId] = int(line)
-        vertexId += 1
+# read task assignment from metis file
+num_vertices = len(jNodes)
+task_assignment = eval.read_metis_partition(args[2])
 
 # compute network traffic
-total_messages = 0
-uniform_traffic = 0
-partitioned_traffic = 0
-uniform_server_load = [0 for x in range(number_of_Servers)]
-partitioned_server_load = [0 for x in range(number_of_Servers)]
-for link in jLinks:
-    sourceId = int(link['source'])
-    targetId = int(link['target'])
-    value = int(link['value'])
-    total_messages += value
-    # random assignment
-    if (sourceId % number_of_Servers) != (targetId % number_of_Servers): uniform_traffic += value
-    # optimized assignment
-    if task_assignment[sourceId] != task_assignment[targetId]: partitioned_traffic += value
-    # compute load
-    uniform_server_load[targetId % number_of_Servers] += value
-    partitioned_server_load[task_assignment[targetId]] += value
+(total_messages, uniform_messages, partitioned_messages, uniform_server_load, partitioned_server_load) \
+    = eval.compare_distributions(jLinks, task_assignment, number_of_Servers)
 
-print "total messages:      {0}\n" \
-      "uniform traffic:     {1}({2:.2%})\n" \
-      "partitioned traffic: {3}({4:.2%})\n" \
-      "improvement:         {5:.2%}".format(total_messages, 
-                                        uniform_traffic, float(1.0 * uniform_traffic / total_messages),
-                                        partitioned_traffic, float(1.0 * partitioned_traffic / total_messages),
-                                        1-float(1.0 * partitioned_traffic / uniform_traffic))
+uniform_traffic = float(1.0 * uniform_messages / total_messages)
+partitioned_traffic = float(1.0 * partitioned_messages / total_messages)
 
-(uniform_mean, uniform_stdv) = meanstdv(uniform_server_load)
-uniform_relstdv = uniform_stdv / uniform_mean
-(partitioned_mean, partitioned_stdv) = meanstdv(partitioned_server_load)
-partitioned_relstdv = partitioned_stdv / partitioned_mean
+if mode_light:
+    print ",".join((str(uniform_traffic), str(partitioned_traffic)))
+else:
+    print "total messages:      {0}\n" \
+          "uniform traffic:     {1}({2:.2%})\n" \
+          "partitioned traffic: {3}({4:.2%})\n" \
+          "improvement:         {5:.2%}".format(total_messages,
+                                                uniform_messages, uniform_traffic,
+                                                partitioned_messages, partitioned_traffic,
+                                                1-float(1.0 * partitioned_messages / uniform_messages))
 
-print "uniform load:        {0}\n" \
-      "mean, stdv, relstdv: {1:.2f},{2:.2f},{3:.2%}\n" \
-      "partitioned load:    {4}\n" \
-      "mean, stdv, relstdv: {5:.2f},{6:.2f},{7:.2%}\n".format(uniform_server_load,
-                                       uniform_mean, uniform_stdv, uniform_relstdv,
-                                       partitioned_server_load,
-                                       partitioned_mean, partitioned_stdv, partitioned_relstdv)
+    (uniform_mean, uniform_stdv) = eval.meanstdv(uniform_server_load)
+    uniform_relstdv = uniform_stdv / uniform_mean
+    (partitioned_mean, partitioned_stdv) = eval.meanstdv(partitioned_server_load)
+    partitioned_relstdv = partitioned_stdv / partitioned_mean
+
+    print "uniform load:        {0}\n" \
+          "mean, stdv, relstdv: {1:.2f},{2:.2f},{3:.2%}\n" \
+          "partitioned load:    {4}\n" \
+          "mean, stdv, relstdv: {5:.2f},{6:.2f},{7:.2%}\n".format(uniform_server_load,
+                                           uniform_mean, uniform_stdv, uniform_relstdv,
+                                           partitioned_server_load,
+                                           partitioned_mean, partitioned_stdv, partitioned_relstdv)
