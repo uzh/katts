@@ -8,7 +8,7 @@
 
 #set -x # print commands with expanded variables
 
-directory="eval.opengov.months"
+directory="eval.opengov2001months"
 
 if [ ! -d "$directory" ]; then
   mkdir $directory
