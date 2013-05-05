@@ -177,7 +177,7 @@ class Aggregator {
 			}
 		}
 
-		// read number of triples procesed from zookeeper
+		// read number of triples processed (i.e. triples read by file readers) from zookeeper
 		for (String child : triplesProcessedChildren) {
 			try {
 				triplesProcessed += ((Long) SerializationUtils.deserialize(zooKeeper.getData(
