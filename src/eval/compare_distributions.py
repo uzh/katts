@@ -49,7 +49,7 @@ uniform_traffic = float(1.0 * uniform_messages / total_messages)
 partitioned_traffic = float(1.0 * partitioned_messages / total_messages)
 
 if mode_light:
-    print ",".join((str(uniform_traffic), str(partitioned_traffic)))
+    print "\t".join((str(uniform_traffic), str(partitioned_traffic)))
 else:
     print "total messages:      {0}\n" \
           "uniform traffic:     {1}({2:.2%})\n" \
