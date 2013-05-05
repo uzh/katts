@@ -2,9 +2,11 @@ package ch.uzh.ddis.katts.evaluation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.google.gson.Gson;
 
@@ -16,15 +18,14 @@ import com.google.gson.Gson;
  */
 class SankeyNetworkDataCollector {
 
+	/** We store the id of all node that are either in a target or a source relationship with another node.*/ 
+	private Set<String> nodeIds = new HashSet<String>();
+	
 	private SankeyLinkMap<Counter> links = new SankeyLinkMap<Counter>();
-	private int nodeCounter = 0;
-	
-	private Map<String, Integer> nodes = new HashMap<String, Integer>();
-	
-	
+		
 	public synchronized void updateEdgeWeights(String source, String destination, long messageCount) {
-		this.addNode(source);
-		this.addNode(destination);
+		this.nodeIds.add(source);
+		this.nodeIds.add(destination);
 		
 		Counter counter = this.links.get(source, destination);
 		if (counter == null) {
@@ -34,28 +35,15 @@ class SankeyNetworkDataCollector {
 		counter.increase(messageCount);
 	}
 	
-	public synchronized void addNode(String nodeName) {
-		if (!this.nodes.containsKey(nodeName)) {
-			this.nodes.put(nodeName, this.nodeCounter);
-			this.nodeCounter++;
-		}
-	}
-	
 	
 	public String toJson() {
 		Map<String, Object> data = new HashMap<String, Object>();
 		
 		List<Map<String, String>> nodes = new ArrayList<Map<String, String>>();
 		
-		Map<Integer, String> nodesInverted = new HashMap<Integer, String>();
-		
-		for (Entry<String, Integer> entry : this.nodes.entrySet()) {
-			nodesInverted.put(entry.getValue(), entry.getKey());
-		}
-		
-		for (int i = 0; i < nodeCounter; i++) {
+		for (String nodeId : nodeIds) {
 			Map<String, String> name = new HashMap<String, String>();
-			name.put("name", nodesInverted.get((Integer)i));
+			name.put("name", nodeId);
 			nodes.add(name);
 		}
 		data.put("nodes", nodes);
@@ -67,8 +55,8 @@ class SankeyNetworkDataCollector {
 			Map<String, Object> values = new HashMap<String, Object>();
 			
 			if (!counter.getSource().equals(counter.getDestination())) {
-				values.put("source", this.nodes.get(counter.getSource()));
-				values.put("target", this.nodes.get(counter.getDestination()));
+				values.put("source", counter.getSource());
+				values.put("target", counter.getDestination());
 				values.put("value", counter.getCounter());
 				links.add(values);
 			}
