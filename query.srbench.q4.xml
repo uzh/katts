@@ -4,13 +4,12 @@
 	<!-- srBench Query 4: Get the average wind speed at the stations where the 
 		air temperature is >32 degrees in the last hour, every 10 minutes. -->
 
-
-	<fileGraphPatternReader id="fileGraphPatternReader">
+	<fileGraphPatternReader id="windPatternReader">
 		<files>
 			<file mimeType="text/n5" path="data/charley.top10k.sorted.n5" />
 		</files>
 		<patterns>
-			<pattern>?observation_id &lt;om-owl:observedProperty&gt; &lt;weather:_WindSpeed&gt;</pattern>
+			<pattern>?observation_id &lt;rdf:type&gt; &lt;weather:WindSpeedObservation&gt;</pattern>
 			<pattern>?observation_id &lt;om-owl:procedure&gt; ?sensor_id</pattern>
 			<pattern>?observation_id &lt;om-owl:result&gt; ?result_id</pattern>
 			<pattern>?result_id &lt;om-owl:floatValue&gt; ?wind_speed</pattern>
@@ -45,9 +44,33 @@
 		</components>
 	</partitioner>
 
+
+ 
+    <fileGraphPatternReader id="temperaturePatternReader">
+        <files>
+            <file mimeType="text/n5" path="data/charley.top10k.sorted.n5" />
+        </files>
+        <patterns>
+            <pattern>?observation_id &lt;rdf:type&gt; &lt;weather:TemperatureObservation&gt;</pattern>
+            <pattern>?observation_id &lt;om-owl:procedure&gt; ?sensor_id</pattern>
+            <pattern>?observation_id &lt;om-owl:result&gt; ?result_id</pattern>
+            <pattern>?result_id &lt;om-owl:floatValue&gt; ?temperature</pattern>
+            <pattern>?result_id &lt;om-owl:uom&gt; &lt;weather:fahrenheit&gt;</pattern>
+        </patterns>
+        <produces>
+            <stream id="temperatureStream">
+                <variable name="observation_id" referencesTo="?observation_id" />
+                <variable name="sensor_id" referencesTo="?sensor_id" />
+                <variable name="result_id" referencesTo="?result_id" />
+                <variable name="temperature" referencesTo="?temperature" />
+            </stream>
+        </produces>
+    </fileGraphPatternReader>
+
+
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>
-			<stream maxBufferSize="5" streamId="avgWindSpeedStream">
+			<stream maxBufferSize="5" streamId="temperatureStream">
 				<shuffleGrouping />
 			</stream>
 		</consumes>
