@@ -28,8 +28,8 @@
 var units = "Messages";
 
 var margin = {top: 10, right: 10, bottom: 10, left: 10},
-    width = 800 - margin.left - margin.right,
-    height = 200 - margin.top - margin.bottom;
+    width = 4000 - margin.left - margin.right,
+    height = 4000 - margin.top - margin.bottom;
 
 var formatNumber = d3.format(",.0f"),    // zero decimal places
     format = function(d) { return formatNumber(d) + " " + units; },
@@ -51,7 +51,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-graph = JSON.parse('{"nodes":[{"name":"fileGraphPatternReader"},{"name":"Partitioner"},{"name":"expressionFilter"},{"name":"fileOutput"}],"links":[{"source":"Partitioner","value":103884,"target":"expressionFilter"},{"source":"expressionFilter","value":1244,"target":"fileOutput"},{"source":"fileGraphPatternReader","value":961591,"target":"Partitioner"}]}');
+graph = JSON.parse('{"nodes":[{"name":"35"},{"name":"36"},{"name":"33"},{"name":"34"},{"name":"39"},{"name":"11"},{"name":"37"},{"name":"38"},{"name":"12"},{"name":"43"},{"name":"42"},{"name":"41"},{"name":"40"},{"name":"45"},{"name":"44"},{"name":"47"},{"name":"46"},{"name":"23"},{"name":"24"},{"name":"25"},{"name":"26"},{"name":"27"},{"name":"28"},{"name":"29"},{"name":"3"},{"name":"2"},{"name":"1"},{"name":"10"},{"name":"30"},{"name":"7"},{"name":"6"},{"name":"5"},{"name":"32"},{"name":"4"},{"name":"31"},{"name":"9"},{"name":"8"}],"links":[{"source":"26","value":304,"target":"47"},{"source":"27","value":306,"target":"47"},{"source":"30","value":352,"target":"47"},{"source":"31","value":402,"target":"47"},{"source":"10","value":25953,"target":"32"},{"source":"7","value":26376,"target":"29"},{"source":"43","value":293832,"target":"4"},{"source":"36","value":340838,"target":"9"},{"source":"45","value":328355,"target":"6"},{"source":"41","value":325008,"target":"2"},{"source":"6","value":27734,"target":"28"},{"source":"8","value":25913,"target":"30"},{"source":"23","value":350,"target":"47"},{"source":"2","value":25757,"target":"24"},{"source":"38","value":314687,"target":"11"},{"source":"11","value":25830,"target":"33"},{"source":"24","value":312,"target":"47"},{"source":"1","value":26410,"target":"23"},{"source":"37","value":330410,"target":"10"},{"source":"9","value":27325,"target":"31"},{"source":"3","value":26538,"target":"25"},{"source":"33","value":289,"target":"47"},{"source":"44","value":333302,"target":"5"},{"source":"4","value":24508,"target":"26"},{"source":"12","value":25565,"target":"34"},{"source":"34","value":357,"target":"47"},{"source":"46","value":316088,"target":"7"},{"source":"28","value":356,"target":"47"},{"source":"35","value":319078,"target":"8"},{"source":"40","value":331585,"target":"1"},{"source":"29","value":371,"target":"47"},{"source":"32","value":203,"target":"47"},{"source":"25","value":327,"target":"47"},{"source":"39","value":308525,"target":"12"},{"source":"42","value":304392,"target":"3"},{"source":"5","value":27387,"target":"27"}]}');
 
 /************************** Workaround ***************************
   The Sankey.js file expects the "source" and "target" values of the links array, to refer to the respective index of the nodes array. We

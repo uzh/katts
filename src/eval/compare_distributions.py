@@ -20,6 +20,9 @@ parser = optparse.OptionParser(usage=usage,description=description)
 parser.add_option("-l", "--light", dest="mode_light", action="store_true", default=False,
                   help="Light mode will print just two values being the two percentage values of messages that are "
                        "over the network. Example: 0.95,0.7")
+parser.add_option("-o", "--load", dest="mode_load", action="store_true", default=False,
+                  help="Load mode will print just two rows of values, containing each first the relative standard " \
+                       "deviation and then a tab separated list of messages that were processed on each host.")
 (options, args) = parser.parse_args()
 
 # abort if required options are missing
@@ -28,6 +31,7 @@ if len(args) < 3:
     exit(1)
 
 mode_light = options.mode_light
+mode_load = options.mode_load
 
 number_of_Servers = int(args[0])
 
@@ -48,8 +52,17 @@ task_assignment = eval.read_metis_partition(args[2])
 uniform_traffic = float(1.0 * uniform_messages / total_messages)
 partitioned_traffic = float(1.0 * partitioned_messages / total_messages)
 
+(uniform_mean, uniform_stdv) = eval.meanstdv(uniform_server_load)
+uniform_relstdv = uniform_stdv / uniform_mean
+(partitioned_mean, partitioned_stdv) = eval.meanstdv(partitioned_server_load)
+partitioned_relstdv = partitioned_stdv / partitioned_mean
+
+
 if mode_light:
     print "\t".join((str(uniform_traffic), str(partitioned_traffic)))
+elif mode_load:
+    print "Uniform"     + "\t" + str(uniform_relstdv)     + "\t" + "\t".join(map(str,uniform_server_load))
+    print "Partitioned" + "\t" + str(partitioned_relstdv) + "\t" + "\t".join(map(str,partitioned_server_load))
 else:
     print "total messages:      {0}\n" \
           "uniform traffic:     {1}({2:.2%})\n" \
@@ -59,15 +72,10 @@ else:
                                                 partitioned_messages, partitioned_traffic,
                                                 1-float(1.0 * partitioned_messages / uniform_messages))
 
-    (uniform_mean, uniform_stdv) = eval.meanstdv(uniform_server_load)
-    uniform_relstdv = uniform_stdv / uniform_mean
-    (partitioned_mean, partitioned_stdv) = eval.meanstdv(partitioned_server_load)
-    partitioned_relstdv = partitioned_stdv / partitioned_mean
-
     print "uniform load:        {0}\n" \
           "mean, stdv, relstdv: {1:.2f},{2:.2f},{3:.2%}\n" \
           "partitioned load:    {4}\n" \
-          "mean, stdv, relstdv: {5:.2f},{6:.2f},{7:.2%}\n".format(uniform_server_load,
+          "mean, stdv, relstdv: {5:.2f},{6:.2f},{7:.2%}\n".format("\t".join(map(str,uniform_server_load)),
                                            uniform_mean, uniform_stdv, uniform_relstdv,
-                                           partitioned_server_load,
+                                           "\t".join(map(str,partitioned_server_load)),
                                            partitioned_mean, partitioned_stdv, partitioned_relstdv)

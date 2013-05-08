@@ -24,11 +24,11 @@ echo "******************************"
 echo "* downloading and converting *"
 echo "******************************"
 
-echo "downloading files ..."
-for test in 08 09 10 11 12 13
-do
-    scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/srBenchQ3charleyDay__$test/evaluation/srBenchQ3charleyDay__$test.task.json srBenchQ3charleyDay__$test.json
-done
+# echo "downloading files ..."
+# for test in 08 09 10 11 12 13
+# do
+#     scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/srBenchQ3charleyDay__$test/evaluation/srBenchQ3charleyDay__$test.task.json srBenchQ3charleyDay__$test.json
+# done
 
 
 echo "converting 1:1 files to metis format ..."
@@ -68,5 +68,16 @@ do
     fi
     last_test=$test
 done
+
+echo ""
+echo "*************************"
+echo "* now load distribution *"
+echo "*************************"
+
+compare_distributions.py -o 12 srBenchQ3charleyDay__09.json srBenchQ3charleyDay__08.metis.part.12 
+compare_distributions.py -o 12 srBenchQ3charleyDay__10.json srBenchQ3charleyDay__09.metis.part.12 
+compare_distributions.py -o 12 srBenchQ3charleyDay__11.json srBenchQ3charleyDay__10.metis.part.12 
+compare_distributions.py -o 12 srBenchQ3charleyDay__12.json srBenchQ3charleyDay__11.metis.part.12 
+compare_distributions.py -o 12 srBenchQ3charleyDay__13.json srBenchQ3charleyDay__12.metis.part.12 
 
 cd ..
