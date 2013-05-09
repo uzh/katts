@@ -6,7 +6,7 @@
 
 	<fileGraphPatternReader id="windPatternReader">
 		<files>
-			<file mimeType="text/n5" path="data/charley.top10k.sorted.n5" />
+			<file mimeType="text/n5" path="data/charley.q4.test.n5" />
 		</files>
 		<patterns>
 			<pattern>?observation_id &lt;rdf:type&gt; &lt;weather:WindSpeedObservation&gt;</pattern>
@@ -24,7 +24,15 @@
 		</produces>
 	</fileGraphPatternReader>
 
-	<partitioner slideSize="PT10M" windowSize="PT1H"  parallelism="1"
+    <fileOutput filePath="data/output.csv" id="fileOutput">
+        <consumes>
+            <stream maxBufferSize="5" streamId="windStream">
+                <shuffleGrouping />
+            </stream>
+        </consumes>
+    </fileOutput>
+
+	<!-- <partitioner slideSize="PT10M" windowSize="PT1H"  parallelism="1"
 		partitionOn="sensor_id" aggregateOn="wind_speed" id="Partitioner">
 		<consumes>
 			<stream maxBufferSize="5" streamId="windStream">
@@ -65,15 +73,7 @@
                 <variable name="temperature" referencesTo="?temperature" />
             </stream>
         </produces>
-    </fileGraphPatternReader>
+    </fileGraphPatternReader> -->
 
-
-	<fileOutput filePath="data/output.csv" id="fileOutput">
-		<consumes>
-			<stream maxBufferSize="5" streamId="temperatureStream">
-				<shuffleGrouping />
-			</stream>
-		</consumes>
-	</fileOutput>
 
 </query>

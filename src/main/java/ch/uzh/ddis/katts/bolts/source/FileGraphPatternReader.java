@@ -1,16 +1,15 @@
 package ch.uzh.ddis.katts.bolts.source;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import backtype.storm.spout.SpoutOutputCollector;
@@ -61,10 +60,10 @@ public class FileGraphPatternReader extends AbstractLineReader {
 	private Date lastDateProcessed = new Date(0); // new Date(0), so that we don't have to deal with null values
 
 	/** This list contains all variables that could be found in the defined patterns of the configuration object. */
-	private List<String> variableNameList;
+	// private List<String> variableNameList;
 
 	/** This set contains the same names as variableNameList, but with O(1) complexity for the contains() method. */
-	private Set<String> variableNameSet;
+	// private Set<String> variableNameSet;
 
 	/**
 	 * In this variable we count, how many relevant triples we processed using this reader. Relevant triples are triples
@@ -103,6 +102,12 @@ public class FileGraphPatternReader extends AbstractLineReader {
 	private long sequenceNumber = 0;
 
 	/**
+	 * This array contains all patterns this reader has been configured with. We use an array data structure as we want
+	 * to use indices to access it and because we need a very fast data structure.
+	 */
+	private String[] patterns;
+
+	/**
 	 * Creates a new reader instance using the provided configuration.
 	 * 
 	 * @param configuration
@@ -110,28 +115,33 @@ public class FileGraphPatternReader extends AbstractLineReader {
 	 */
 	public FileGraphPatternReader(FileGraphPatternReaderConfiguration configuration) {
 		super(configuration);
+		List<String> patternList = configuration.getPatterns();
+		// Pattern variableNamePattern = Pattern.compile("(^|\\s)(\\?\\w+)($|\\s)");
 
-		Pattern variableNamePattern = Pattern.compile("(^|\\s)(\\?\\w+)($|\\s)");
-
-		this.variableNameSet = new HashSet<String>();
+		// this.variableNameSet = new HashSet<String>();
 		this.configuration = configuration;
-		this.variableNameList = new ArrayList<String>();
+		// this.variableNameList = new ArrayList<String>();
+		this.patterns = new String[patternList.size()];
 
-		for (String triplePattern : this.configuration.getPatterns()) {
-			Matcher m = variableNamePattern.matcher(triplePattern);
-			int currentPosition = 0;
-			while (m.find(currentPosition)) {
-				String variableName = m.group(2);
-				if (!this.variableNameSet.contains(variableName)) {
-					this.variableNameList.add(variableName);
-					this.variableNameSet.add(variableName);
-					/*
-					 * why so complicated? so that the order of the variable names is the same as the order in which
-					 * they are listed in the triple patterns.
-					 */
-				}
-				currentPosition = m.end();
-			}
+		for (int i = 0; i < patternList.size(); i++) {
+			// String triplePattern = patternList.get(i);
+			this.patterns[i] = patternList.get(i);
+
+			// Matcher m = variableNamePattern.matcher(triplePattern);
+			// int currentPosition = 0;
+			// while (m.find(currentPosition)) {
+			// String variableName = m.group(2);
+			// if (!this.variableNameSet.contains(variableName)) {
+			// this.variableNameList.add(variableName);
+			// this.variableNameSet.add(variableName);
+			// /*
+			// * why so complicated? so that the order of the variable names is the same as the order in which
+			// * they are listed in the triple patterns.
+			// */
+			// }
+			// currentPosition = m.end();
+			// }
+
 		}
 
 	}
@@ -211,13 +221,13 @@ public class FileGraphPatternReader extends AbstractLineReader {
 				}
 
 				// try to bind to all patterns
-				for (String pattern : this.configuration.getPatterns()) {
-					Bindings bound = tryToBindVariables(pattern, quadruple);
+				for (int patternIndex = 0; patternIndex < this.patterns.length; patternIndex++) {
+					Bindings bound = tryToBindVariables(patternIndex, quadruple);
 
 					if (bound != null) { // the quadruple could be bound
 						tripleMatchesAtLeastOnePattern = true; // the quadruple matches at least one pattern
 
-						if (bound.isFullyBound()) {
+						if (bound.isFullyMatched()) {
 							// if this is the case (most likely not yet), emit it straight away
 							if (emitBindings(semanticDate, bound)) {
 								emittedAtLeastOneTuple = true;
@@ -262,12 +272,12 @@ public class FileGraphPatternReader extends AbstractLineReader {
 									Set<Bindings> bindingsInCache;
 
 									// find all bindings that have the same variable bound, already
-									bindingsInCache = nameValueBindingsIndex.get(variableName).get(variableValue);
+									bindingsInCache = this.nameValueBindingsIndex.get(variableName).get(variableValue);
 
 									for (Bindings inCacheBindings : bindingsInCache) {
 										Bindings merged = currentBindings.mergeWith(inCacheBindings);
 										if (merged != null) {
-											if (merged.isFullyBound()) {
+											if (merged.isFullyMatched()) {
 												bindingsToEmit.add(merged);
 											} else {
 												// add to queue, so we can check this with all bindings that are
@@ -278,15 +288,15 @@ public class FileGraphPatternReader extends AbstractLineReader {
 											}
 										}
 									}
+								}
 
-									// add the current binding to the index for all its variables
-									for (String vn : currentBindings.keySet()) { // add it for each variable
-										nameValueBindingsIndex.get(vn).put(currentBindings.get(vn), currentBindings);
-									}
+								// add the current binding to the index for all its variables
+								for (String vn : currentBindings.keySet()) { // add it for each variable
+									nameValueBindingsIndex.get(vn).put(currentBindings.get(vn), currentBindings);
 								}
 							}
 
-							// emit all bindings that were fullly bound
+							// emit all bindings that were fully bound
 							for (Bindings toEmit : bindingsToEmit) {
 								if (emitBindings(semanticDate, toEmit)) {
 									emittedAtLeastOneTuple = true;
@@ -347,7 +357,7 @@ public class FileGraphPatternReader extends AbstractLineReader {
 			tuple.add(semanticDate); // endDate - same as startDate as we process batches of same-time
 
 			// support sourceFilePath as a propery
-			bindings.put(SOURCE_ID_VARIABLE_NAME, getSource().getSourceId());
+			bindings.bind(SOURCE_ID_VARIABLE_NAME, getSource().getSourceId(), -1);
 
 			for (Variable variable : stream.getVariables()) {
 				tuple.add(bindings.get(variable.getReferencesTo()));
@@ -364,37 +374,48 @@ public class FileGraphPatternReader extends AbstractLineReader {
 	 * Tries to match a triple pattern against the contents of the supplied quadruple and returns the variable bindings
 	 * that result from this process. If the pattern could not be matched, this method returns null.
 	 * 
-	 * @param pattern
+	 * @param patternIndex
 	 *            the triple pattern that we should try and match.
 	 * @param quadruple
 	 *            the quadruple holding the information to match against.
-	 * @return a map containing the bound variables or null, if no variables could be bound.
+	 * @return a map containing the bound variables or null, if no variables could be bound or there was a collision
+	 *         while binding.
 	 */
-	private Bindings tryToBindVariables(String pattern, List<String> quadruple) {
+	private Bindings tryToBindVariables(int patternIndex, List<String> quadruple) {
 		Bindings result;
+		String pattern;
 		String[] patternParts;
 
-		result = new Bindings(this.variableNameSet);
+		result = new Bindings(this.patterns.length);
+		pattern = patterns[patternIndex];
 		patternParts = pattern.split(" ");
 
 		if (patternParts.length != 3) {
 			throw new IllegalStateException("More than three parts in the pattern '" + pattern + "'");
 		}
 
-		tryMach: for (int i = 0; i < 3; i++) {
+		tryMatch: for (int i = 0; i < 3; i++) {
 			String currentPart = patternParts[i];
 			String quadruplePart = quadruple.get(i + 1); // first element is the time
 			if (isVariableName(currentPart)) {
 				if (i == 2) {
 					// objects (index = 2) could be doubles or dates or whatever...
-					result.put(currentPart, Util.convertStringToObject(quadruplePart));
+					if (result.bind(currentPart, Util.convertStringToObject(quadruplePart), patternIndex) == false) {
+						// there was a collision -> abort and return null;
+						result = null;
+						break tryMatch;
+					}
 				} else {
-					result.put(currentPart, quadruplePart);
+					if (result.bind(currentPart, quadruplePart, patternIndex) == false) {
+						// there was a collision -> abort and return null;
+						result = null;
+						break tryMatch;
+					}
 				}
 			} else {
-				if (!currentPart.equals(quadruplePart)) { // did not match!
+				if (!currentPart.equals(quadruplePart)) { // did not match! -> abort and return null;
 					result = null;
-					break tryMach;
+					break tryMatch;
 				}
 			}
 		}
@@ -449,38 +470,34 @@ public class FileGraphPatternReader extends AbstractLineReader {
 		private HashMap<String, Object> backingMap = new HashMap<String, Object>();
 
 		/** We keep track of how manye unbound variables this bindings object has using this set. */
-		private int unboundVariablesCount;
+		private int unmatchedPatternCount;
 
 		/**
-		 * A set that contains all variables that need to be bound before we can say that all variables have been bound.
+		 * This array contains a boolean for each pattern that needs to be matched. Whenever a variables bindings are
+		 * added to this bindings object through either the constructor or the merge method that have not yet been
+		 * matched according to this array, we decrease the unmatchedPatternCount by one. The {@link #isFullyBound()}
+		 * method returns true, when that counter has reached zero. matched patterns using this array.
 		 */
-		private Set<String> variablesToBind;
+		private boolean[] matchedPatterns;
 
 		/**
-		 * Creates a new bindings object. The list of variable names will be used to determine if all variables have
-		 * been bound in this bindings object.
+		 * Creates a new bindings object. The number of patterns parameter will be used to track against how many
+		 * pattern this bindings object has already been matched before the {@link #isFullyMatched()} method returns
+		 * true.
 		 * 
-		 * @param variables
-		 *            the list of all variable names that have to be bound before this bindings object to have fully
-		 *            bound.
+		 * @param numberOfPatternsToMatch
+		 *            the number of patterns that have to be matched before this bindigns object is considered to be
+		 *            fully matched.
 		 */
-		public Bindings(Set<String> variables) {
-			this.variablesToBind = variables;
-			this.unboundVariablesCount = variables.size();
+		public Bindings(int numberOfPatternsToMatch) {
+			this.unmatchedPatternCount = numberOfPatternsToMatch;
+			this.matchedPatterns = new boolean[this.unmatchedPatternCount];
 		}
 
 		/**
-		 * A copy constructor that creates a bindings object using the current state of the provided other bindings
-		 * object.
-		 * 
-		 * @param copyFrom
-		 *            the bindings object to copy all the data from.
+		 * Private default constructor, we handle bookkeeping ourselves.
 		 */
-		private Bindings(Bindings copyFrom) {
-			this.variablesToBind = copyFrom.variablesToBind;
-			this.unboundVariablesCount = copyFrom.unboundVariablesCount;
-			// this will call the map's put method and not the one in this class
-			this.backingMap.putAll(copyFrom.backingMap);
+		private Bindings() {
 		}
 
 		/**
@@ -494,21 +511,36 @@ public class FileGraphPatternReader extends AbstractLineReader {
 		 *         present in the other bindings object.
 		 */
 		public Bindings mergeWith(Bindings other) {
-			Bindings result = new Bindings(this);
+			Bindings result = null;
+			boolean anythingNew = false;
+			/*
+			 * The only requirement to find out if there is anything new to be gained from merging the two bindings is
+			 * to compare their respective matchedPatterns arrays.
+			 */
+			checkForNews: for (int i = 0; i < FileGraphPatternReader.this.patterns.length; i++) {
+				if (this.matchedPatterns[i] != other.matchedPatterns[i]) {
+					/*
+					 * There is at least something new to be gained in merging these two bindings. This does not mean
+					 * that there are necessarily new bindings values to be found, but the patterns that were matched to
+					 * arrive at the bindings object are different and we need to match ALL patterns before we can emit
+					 * a bindings object.
+					 */
+					anythingNew = true;
+					break checkForNews;
+				}
+			}
 
-			// make sure that the smaller of the two maps is not already contained in the larger map
-			// if this is the case there is either nothing new to be gained from the merge or there are going
-			// to be collisions. in both cases we need to return null.
-			if ((other.backingMap.size() < this.backingMap.size() && !this.backingMap.keySet().containsAll(
-					other.backingMap.keySet()))
-					|| !other.backingMap.keySet().containsAll(this.backingMap.keySet())) {
+			if (anythingNew) {
+				result = new Bindings();
+				result.unmatchedPatternCount = this.unmatchedPatternCount;
+				result.matchedPatterns = Arrays.copyOf(this.matchedPatterns, this.matchedPatterns.length);
 
 				testForCollisions: for (String key : other.keySet()) {
 					Object thisValue = get(key); // we check on "this" as we have not yet copied the content to the
 													// result
 					Object otherValue = other.get(key);
 					if (thisValue == null) {
-						result.put(key, otherValue); // does not exist, yet. Cool!
+						result.backingMap.put(key, otherValue); // does not exist, yet. Cool!
 					} else if (!thisValue.equals(otherValue)) {
 						// collision!
 						result = null; // signal to the calling code that we had a collision
@@ -516,13 +548,21 @@ public class FileGraphPatternReader extends AbstractLineReader {
 					}
 				}
 
-				/*
-				 * We postponed adding all values of "this" bindings object until now, in order to prevent unnecessary
-				 * work in case of a collision.
-				 */
-
+				// if there were no collisions
 				if (result != null) {
-					result.putAll(this);
+					// merge matchedPatterns arrays
+					for (int i = 0; i < FileGraphPatternReader.this.patterns.length; i++) {
+						if (!result.matchedPatterns[i] && other.matchedPatterns[i]) {
+							result.matchedPatterns[i] = true;
+							result.unmatchedPatternCount--;
+						}
+					}
+
+					/*
+					 * We postponed adding all values of "this" bindings object until now, in order to prevent
+					 * unnecessary work in case of a collision.
+					 */
+					result.backingMap.putAll(this);
 				}
 
 			}
@@ -530,23 +570,44 @@ public class FileGraphPatternReader extends AbstractLineReader {
 			return result;
 		}
 
+		/**
+		 * Binds a variable name to a value. Basically the same as the {@link Map#put(Object, Object)} method with the
+		 * difference that for this method the user needs to specify the index of the triple pattern that was matched
+		 * when this key-value pair has been generated.
+		 * 
+		 * @param name
+		 *            the name of the variable binding.
+		 * @param value
+		 *            the value of the variable binding.
+		 * @param patternIndex
+		 *            the index of the pattern that was matched when generating the variable binding. If this value is
+		 *            negative, no pattern index will be checked against.
+		 * @return true if no variable with the key has not yet existed in this bindings object or, if it already did
+		 *         had the same value assigned as the one provided, false otherwise. A return value of false means that
+		 *         there was a collision in the bindings object.
+		 */
+		public boolean bind(String name, Object value, int patternIndex) {
+			Object previousValue = super.put(name, value);
+
+			if (patternIndex >= 0 && this.matchedPatterns[patternIndex] == false) {
+				this.matchedPatterns[patternIndex] = true;
+				this.unmatchedPatternCount--;
+			}
+
+			return previousValue == null || previousValue.equals(value);
+		}
+
 		@Override
 		public Object put(String key, Object value) {
-			/*
-			 * If this is one of the variables that we have to bind and it is not already bound we decrease the addition
-			 * of this key represents one step towards being fully bound.
-			 */
-			if (this.variablesToBind.contains(key) && !containsKey(key)) {
-				this.unboundVariablesCount -= 1;
-			}
-			return super.put(key, value);
+			throw new RuntimeException("Operation not suported. Use put(String, String, int) method instead.");
 		}
 
 		/**
-		 * @return true if this bindings object is fully bound (i.e. has no more unbound variables), false otherwise.
+		 * @return true if this bindings object has been fully matched against all bound (i.e. has no more unbound
+		 *         variables), false otherwise.
 		 */
-		public boolean isFullyBound() {
-			return this.unboundVariablesCount == 0;
+		public boolean isFullyMatched() {
+			return this.unmatchedPatternCount == 0;
 		}
 
 		@Override

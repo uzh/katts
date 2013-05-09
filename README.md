@@ -5,6 +5,9 @@ KATTS
 
 Revision History
 ================
+3.5.0-SNAPSHOT    - fixed bug in FileGraphPatternReader where it would emit bindings even though not all triple patterns
+                    were matched, but only all variables had been bound.
+
 3.4.2-SNAPSHOT    - json-sendgraph uses real ids and not mapped ones
 
 3.4.1-SNAPSHOT    - graph pattern reader now outputs all matches

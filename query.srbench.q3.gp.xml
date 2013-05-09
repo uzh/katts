@@ -63,7 +63,7 @@
 
 	<fileOutput filePath="data/output.csv" id="fileOutput">
 		<consumes>
-			<stream maxBufferSize="5" streamId="filteredMinWindSpeedStream">
+			<stream maxBufferSize="5" streamId="weathersource">
 				<shuffleGrouping />
 			</stream>
 		</consumes>
