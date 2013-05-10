@@ -25,10 +25,10 @@ echo "* downloading and converting *"
 echo "******************************"
 
 # echo "downloading files ..."
-# for test in 08 09 10 11 12 13
-# do
-#     scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/srBenchQ3charleyDay__$test/evaluation/srBenchQ3charleyDay__$test.task.json srBenchQ3charleyDay__$test.json
-# done
+for test in 08 09 10 11 12 13
+do
+    scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/srBenchQ3charleyDay__$test/evaluation/srBenchQ3charleyDay__$test.task.json srBenchQ3charleyDay__$test.json
+done
 
 
 echo "converting 1:1 files to metis format ..."

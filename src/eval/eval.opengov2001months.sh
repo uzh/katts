@@ -39,19 +39,19 @@ cd $directory
 #     gpmetis -objtype=vol $directory/$eval_name.metis 12
 # done
 
-# echo "downloading files ..."
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__01/evaluation/opengov2001months__01.task.json opengov2001months__01.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__02/evaluation/opengov2001months__02.task.json opengov2001months__02.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__03/evaluation/opengov2001months__03.task.json opengov2001months__03.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__04/evaluation/opengov2001months__04.task.json opengov2001months__04.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__05/evaluation/opengov2001months__05.task.json opengov2001months__05.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__06/evaluation/opengov2001months__06.task.json opengov2001months__06.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__07/evaluation/opengov2001months__07.task.json opengov2001months__07.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__08/evaluation/opengov2001months__08.task.json opengov2001months__08.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__09/evaluation/opengov2001months__09.task.json opengov2001months__09.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__10/evaluation/opengov2001months__10.task.json opengov2001months__10.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__11/evaluation/opengov2001months__11.task.json opengov2001months__11.json
-# scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__12/evaluation/opengov2001months__12.task.json opengov2001months__12.json
+echo "downloading files ..."
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__01/evaluation/opengov2001months__01.task.json opengov2001months__01.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__02/evaluation/opengov2001months__02.task.json opengov2001months__02.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__03/evaluation/opengov2001months__03.task.json opengov2001months__03.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__04/evaluation/opengov2001months__04.task.json opengov2001months__04.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__05/evaluation/opengov2001months__05.task.json opengov2001months__05.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__06/evaluation/opengov2001months__06.task.json opengov2001months__06.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__07/evaluation/opengov2001months__07.task.json opengov2001months__07.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__08/evaluation/opengov2001months__08.task.json opengov2001months__08.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__09/evaluation/opengov2001months__09.task.json opengov2001months__09.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__10/evaluation/opengov2001months__10.task.json opengov2001months__10.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__11/evaluation/opengov2001months__11.task.json opengov2001months__11.json
+scp lfischer@kraken.ifi.uzh.ch:~/katts_submission_environment/katts_jobs/opengov2001months__12/evaluation/opengov2001months__12.task.json opengov2001months__12.json
 
 echo "converting 1:1 files to metis format ..."
 json2metis.py opengov2001months__01.json > opengov2001months__01.metis
