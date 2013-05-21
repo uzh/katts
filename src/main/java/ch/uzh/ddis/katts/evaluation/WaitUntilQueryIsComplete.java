@@ -3,10 +3,6 @@ package ch.uzh.ddis.katts.evaluation;
 import java.io.IOException;
 
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 
@@ -14,7 +10,7 @@ import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
  * This class implements a runnable to wait for the termination of the query process.
  * 
  * @author Thomas Hunziker
- *
+ * 
  */
 public class WaitUntilQueryIsComplete {
 
@@ -27,14 +23,13 @@ public class WaitUntilQueryIsComplete {
 
 		String zooKeeperConnection = args[0];
 
-		Waiter waiter = new Waiter(zooKeeperConnection, TerminationMonitor.KATTS_TERMINATION_ZK_PATH);
-
+		Waiter waiter = new Waiter(zooKeeperConnection, TerminationMonitor.END_TIME_ZK_PATH);
 
 		System.out.println("Start watching the query completion...");
-		
+
 		// Block here the thread, until it is finished
 		waiter.run();
-		
+
 		System.out.println("Query is completed.");
 
 	}

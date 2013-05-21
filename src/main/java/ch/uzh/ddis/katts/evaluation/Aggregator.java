@@ -30,7 +30,6 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologySummary;
 import ch.uzh.ddis.katts.monitoring.Recorder;
-import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.utils.Cluster;
 import ch.uzh.ddis.katts.utils.EvalInfo;
@@ -43,7 +42,7 @@ import ch.uzh.ddis.katts.utils.EvalInfo;
  */
 class Aggregator {
 
-	private final Logger log = LoggerFactory.getLogger(StarterMonitor.class);
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
 
@@ -112,8 +111,8 @@ class Aggregator {
 		long totalLocalMessages = 0;
 		long totalMessages = 0;
 		Map<String, Object> data = new HashMap<String, Object>();
-		long startTime = Long.valueOf(readValueFromZK(StarterMonitor.KATTS_STARTING_TIME_ZK_PATH));
-		long endTime = Long.valueOf(readValueFromZK(TerminationMonitor.KATTS_TERMINATION_ZK_PATH));
+		long startTime = (Long) readObjectFromZK(TerminationMonitor.START_TIME_ZK_PATH);
+		long endTime = (Long) readObjectFromZK(TerminationMonitor.END_TIME_ZK_PATH);
 		long triplesProcessed = 0;
 		long relevantTriplesProcessed = 0;
 
@@ -347,6 +346,17 @@ class Aggregator {
 			this.latch.await();
 		}
 
+	}
+
+	private Object readObjectFromZK(String path) {
+		try {
+			return SerializationUtils.deserialize(zooKeeper.getData(path, false, null));
+		} catch (KeeperException e) {
+			throw new RuntimeException(String.format("Could not read from the znode %1s.", path), e);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(String.format(
+					"Could not read from the znode %1s, because the thread was interrupted.", path), e);
+		}
 	}
 
 	private String readValueFromZK(String path) {

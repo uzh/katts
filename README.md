@@ -5,8 +5,14 @@ KATTS
 
 Revision History
 ================
+3.6.4-SNAPSHOT    - make number of workers configurable again
+
+3.6.2-SNAPSHOT    - Support for distributed processing (multi worker capabilities TerminationMonitor capabilities) 
+
+3.5.0             - version used for ISWC'13 RT submission.
+
 3.5.0-SNAPSHOT    - fixed bug in FileGraphPatternReader where it would emit bindings even though not all triple patterns
-                    were matched, but only all variables had been bound.
+                    were matched, but only all variables had been bound. 
 
 3.4.2-SNAPSHOT    - json-sendgraph uses real ids and not mapped ones
 
@@ -47,7 +53,7 @@ Revision History
 
 2.4.0-SNAPSHOT    - new AbstractSynchronizedBold implementation using the SortedTimeoutBuffer
 
-2.3.12-SNAPSHOT    - reformat out-of-order message
+2.3.12-SNAPSHOT   - reformat out-of-order message
 
 2.3.8-SNAPSHOT    - graph reader reads one line at the time until it could emit at least one tuple
 

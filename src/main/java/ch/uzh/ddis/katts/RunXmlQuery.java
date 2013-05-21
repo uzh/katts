@@ -51,6 +51,7 @@ public class RunXmlQuery {
 		String terminationCheckInterval = null;
 		String evalNotes = "";
 		long maxSpoutPending = 5 * 1000; // default is 5k
+		int numberOfWorkers = 1000;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("--monitoring")) {
@@ -68,6 +69,9 @@ public class RunXmlQuery {
 			} else if (args[i].equalsIgnoreCase("--max-spout-pending")) {
 				i++;
 				maxSpoutPending = Long.parseLong(args[i]);
+			} else if (args[i].equalsIgnoreCase("--number-of-workers")) {
+				i++;
+				numberOfWorkers = Integer.valueOf(args[i]);
 			} else if (args[i].startsWith("--")) {
 				i++;
 				// Unknown parameter, ignore it.
@@ -97,7 +101,8 @@ public class RunXmlQuery {
 		}
 
 		Config conf = new Config();
-
+		conf.setNumWorkers(numberOfWorkers);
+		
 		// read properties file
 		kattsProperties = new Properties();
 		try {
@@ -129,8 +134,6 @@ public class RunXmlQuery {
 
 		// Disable reliability TODO lorenz: do I have to set this to some value?
 		// conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 0);
-
-		conf.put(RunXmlQueryLocally.RUN_TOPOLOGY_LOCALLY_CONFIG_KEY, false);
 
 		TopologyBuilder builder = new TopologyBuilder();
 		for (Node node : query.getNodes()) {

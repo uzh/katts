@@ -63,7 +63,7 @@ public final class Recorder implements TerminationMonitor.TerminationCallback {
 	 */
 	private AtomicLongMap<SrcDst> messageCounter = AtomicLongMap.create();
 
-	private Logger logger = LoggerFactory.getLogger(StarterMonitor.class);
+	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Returns the singleton instance of this recorder.
@@ -114,7 +114,7 @@ public final class Recorder implements TerminationMonitor.TerminationCallback {
 				this.curator.create().forPath(path);
 			}
 		} catch (Exception e) {
-			throw new RuntimeException("Can't create the root '" + path + "' because: " + e.getMessage(), e);
+			throw new RuntimeException("Can't create node for path '" + path + "' because: " + e.getMessage(), e);
 		}
 
 	}

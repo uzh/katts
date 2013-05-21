@@ -16,7 +16,6 @@ import ch.uzh.ddis.katts.bolts.source.file.GzipSourceWrapper;
 import ch.uzh.ddis.katts.bolts.source.file.N5Source;
 import ch.uzh.ddis.katts.bolts.source.file.Source;
 import ch.uzh.ddis.katts.bolts.source.file.ZipSourceWrapper;
-import ch.uzh.ddis.katts.monitoring.StarterMonitor;
 import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.query.source.File;
 
@@ -32,9 +31,6 @@ public abstract class AbstractLineReader implements IRichSpout {
 
 	/** We emit tuples over this collector. */
 	private SpoutOutputCollector collector;
-
-	/** This monitor will be informed when we reached the end of the input. */
-	private StarterMonitor starterMonitor;
 
 	/** We use this reference to signal that we're done processing. */
 	private TerminationMonitor terminationMonitor;
@@ -76,14 +72,11 @@ public abstract class AbstractLineReader implements IRichSpout {
 	@Override
 	public void open(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, SpoutOutputCollector collector) {
 		this.collector = collector;
-
 		this.terminationMonitor = TerminationMonitor.getInstance(conf);
 
 		// getThisTaskIndex returns the index of this task among all tasks for this component
 		this.source = buildSources(context.getThisTaskIndex());
 		this.terminationMonitor.registerSource(this.source.getSourceId());
-
-		this.starterMonitor = StarterMonitor.getInstance(conf);
 	}
 
 	/**
@@ -140,7 +133,7 @@ public abstract class AbstractLineReader implements IRichSpout {
 		 * #nextTuple(Source) can take a long time without this counting towards the runtime measurement.
 		 */
 		if (this.emitted == 0) {
-			starterMonitor.start();
+			this.terminationMonitor.start();
 		}
 
 		// We emit on the default stream

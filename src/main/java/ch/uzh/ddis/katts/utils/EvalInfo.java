@@ -6,12 +6,12 @@ package ch.uzh.ddis.katts.utils;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 
 import backtype.storm.Config;
+
+import com.netflix.curator.framework.CuratorFramework;
 
 /**
  * This class takes care of collecting and storing runtime parameters and other information useful for evaluating the
@@ -70,26 +70,20 @@ public final class EvalInfo {
 	 * 
 	 * @param stormConfig
 	 *            the configuration object to search prefixed parameters in.
-	 * @param zkClient
-	 *            the connection object to use for the connection to Zookeeper.
-	 * @return
-	 * @throws KeeperException
-	 *             if the server returns a non-zero error code
-	 * @throws InterruptedException
-	 *             if the transaction is interrupted
+	 * @param curator
+	 *            the curator instance to use when writing information to ZK.
+	 * @throws Exception
+	 *             if anything happens while talking to ZK.
 	 */
-	public static void persistInfoToZookeeper(Map<Object, Object> stormConfig, ZooKeeper zkClient)
-			throws KeeperException, InterruptedException {
-		// create root node
-		zkClient.create(ZK_PATH, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-
+	public static void persistInfoToZookeeper(Map<?, ?> stormConfig, CuratorFramework curator)
+			throws Exception {
 		// create node for each item of the map
 		for (Object keyObj : stormConfig.keySet()) {
 			String key = keyObj.toString();
 			if (key.startsWith(PREFIX)) {
 				String keyWithoutPrefix = key.substring(PREFIX.length());
-				zkClient.create(ZK_PATH + "/" + keyWithoutPrefix, stormConfig.get(key).toString().getBytes(),
-						Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+				curator.create().creatingParentsIfNeeded()
+						.forPath(ZK_PATH + "/" + keyWithoutPrefix, stormConfig.get(key).toString().getBytes());
 			}
 		}
 	}

@@ -21,7 +21,7 @@ import ch.uzh.ddis.katts.bolts.source.file.CSVSource;
 import ch.uzh.ddis.katts.bolts.source.file.GzipSourceWrapper;
 import ch.uzh.ddis.katts.bolts.source.file.Source;
 import ch.uzh.ddis.katts.bolts.source.file.ZipSourceWrapper;
-import ch.uzh.ddis.katts.monitoring.StarterMonitor;
+import ch.uzh.ddis.katts.monitoring.TerminationMonitor;
 import ch.uzh.ddis.katts.query.source.File;
 import ch.uzh.ddis.katts.query.source.NTupleFileSource;
 
@@ -47,7 +47,7 @@ public class FileNTupleReader implements IRichSpout {
 	private SpoutOutputCollector collector;
 	private NTupleFileSource configuration;
 	private Source source = null;
-	private StarterMonitor starterMonitor;
+	private TerminationMonitor terminationMontor;
 
 	private Thread thread = null;
 
@@ -239,7 +239,7 @@ public class FileNTupleReader implements IRichSpout {
 		int sourceIndex = context.getThisTaskIndex();
 		buildSources(sourceIndex);
 
-		starterMonitor = StarterMonitor.getInstance(stormConf);
+		this.terminationMontor = TerminationMonitor.getInstance(stormConf);
 	}
 
 	public int getNumberOfFields() {
