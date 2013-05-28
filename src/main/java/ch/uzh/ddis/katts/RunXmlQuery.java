@@ -101,8 +101,17 @@ public class RunXmlQuery {
 		}
 
 		Config conf = new Config();
-		conf.setNumWorkers(numberOfWorkers);
 		
+		/*
+		 * Number of workers is the number of worker processes (JVMs) that Storm should create for this topology. Each
+		 * worker can have multiple executors (threads).
+		 * 
+		 * Therefore, we use as many workers as we have nodes in the cluster.
+		 * 
+		 * More information about this can be found here: https://github.com/nathanmarz/storm/wiki/Understanding-the-parallelism-of-a-Storm-topology
+		 */
+		conf.setNumWorkers(numberOfWorkers);
+
 		// read properties file
 		kattsProperties = new Properties();
 		try {

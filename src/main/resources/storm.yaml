@@ -1,0 +1,27 @@
+storm.local.dir: "$JOB_WORKING_DIRECTORY/storm/mnt"
+
+java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib:$KATTS_HOME/dependencies/bin/lib"
+
+storm.zookeeper.servers:
+     - "localhost"
+
+nimbus.host: "localhost"
+
+storm.local.hostname: "localhost"
+
+
+# nimbus.thrift.port: 9835
+
+
+# We have only one Worker per machine (For each Worker a JVM is created. This normally not required.)
+supervisor.slots.ports:
+    - 6700
+
+# Profiling
+# worker.childopts: "-agentpath:/home/user/lfischer/katts_submission_environment/dependencies/yjp-11.0.10/bin/linux-x86-64/libyjpagent.so=sampling,noj2ee"
+
+# give the worker 5gb of memory
+#worker.childopts: "-Xmx5000m -Xms5000m"
+
+# tell nimbus to use this custom scheduler
+storm.scheduler: "ch.uzh.ddis.katts.scheduler.MetisPartitionFileScheduler"

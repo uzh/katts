@@ -7,6 +7,6 @@
 #
 
 python json2metis.py $1.json > $1.metis
-gpmetis -objtype=vol $1.metis 12
+gpmetis -objtype=vol $1.metis 6
 #gpmetis -objtype=cut $1.metis 12
-python compare_distributions.py 12 $1.json $1.metis.part.12
+python compare_distributions.py 6 $1.json $1.metis.part.6

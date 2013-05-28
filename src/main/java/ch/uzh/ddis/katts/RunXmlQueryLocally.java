@@ -47,7 +47,7 @@ public class RunXmlQueryLocally {
 		conf.put(Config.TOPOLOGY_AUTO_TASK_HOOKS, hookClass);
 
 		conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 10); // 10 acker threads let's see what this brings
-		conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 60*60); // we wait for up to one hour
+		conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 60 * 60); // we wait for up to one hour
 		conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 5 * 1000); // only allow 5k unacked-messages per spout
 
 		// read properties file
@@ -67,7 +67,7 @@ public class RunXmlQueryLocally {
 			node.createTopology(builder);
 		}
 		LocalCluster cluster = new LocalCluster();
-		cluster.submitTopology("test", conf, builder.createTopology());
+		cluster.submitTopology("katts-topology", conf, builder.createTopology());
 	}
 
 }

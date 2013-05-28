@@ -5,6 +5,16 @@ KATTS
 
 Revision History
 ================
+
+3.7.8-SNAPSHOT    - don't print supervisor names during each schedule cycle
+3.7.7-SNAPSHOT    - use partition file with number-of-partitions
+3.7.6-SNAPSHOT    - only do the scheduling if supervisors could be found.
+3.7.5-SNAPSHOT    - do the regular scheduling also
+3.7.4-SNAPSHOT    - new metis file scheduler
+3.7.2-SNAPSHOT    - use logger in scheduler
+3.7.1-SNAPSHOT    - remove zookeeper map (conflict with zookeeper version) --> we use zookeeper 3.3.3 (for storm 0.8.2)
+3.7.0-SNAPSHOT    - scheduler test
+
 3.6.4-SNAPSHOT    - make number of workers configurable again
 
 3.6.2-SNAPSHOT    - Support for distributed processing (multi worker capabilities TerminationMonitor capabilities) 

@@ -3,11 +3,10 @@
 
 	<groupId>ch.uzh.ifi.ddis.katts</groupId>
 	<artifactId>katts</artifactId>
-	<version>3.6.4-SNAPSHOT</version>
+	<version>3.7.8-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>katts</name>
-	<url>http://maven.apache.org</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -79,11 +78,11 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.4</version>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
       <groupId>com.twitter.common.zookeeper</groupId>
       <artifactId>map</artifactId>
       <version>0.0.29</version>
-    </dependency>
+    </dependency> -->
     
 		<!-- used by the evaluation package -->
 		<dependency>
@@ -125,6 +124,9 @@
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>true</filtering> <!-- replace instances of ${variableName} with the correpsonding values. -->
+				<excludes>
+				  <exclude>storm.yaml</exclude> <!-- don't bundle storm.yaml with jar. -->
+				</excludes>
 			</resource>
 
 			<!-- include jaxb index files -->
@@ -195,10 +197,10 @@
 			<id>twitter4j</id>
 			<url>http://twitter4j.org/maven2</url>
 		</repository>
-		<repository>
-      <id>twitter-commons</id> <!-- has zookeepermap -->
+		<!-- <repository>
+      <id>twitter-commons</id> has zookeepermap 
       <url>http://maven.twttr.com/</url>
-    </repository>
+    </repository>-->
 		<repository>
 			<id>EclipseLink Repo</id>
 			<url>http://www.eclipse.org/downloads/download.php?r=1&amp;nf=1&amp;file=/rt/eclipselink/maven.repo</url>
