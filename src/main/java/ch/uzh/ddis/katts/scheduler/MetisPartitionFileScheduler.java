@@ -71,7 +71,7 @@ public class MetisPartitionFileScheduler implements IScheduler {
 
 				if (partitionFile.exists()) {
 					if (cluster.needsScheduling(topology)) {
-						ArrayList<Integer> taskToSupervisorAssignment;
+						ArrayList<Integer> taskToSupervisorAssignment; // index = task_id, value = partition
 						SetMultimap<SupervisorDetails, ExecutorDetails> supervisorToExecutor;
 						supervisorToExecutor = HashMultimap.create();
 
