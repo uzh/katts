@@ -23,13 +23,13 @@
 <body>
 <p id="chart">
 <script type="text/javascript" src="http://d3js.org/d3.v2.min.js"></script>
-<script type="text/javascript" src="https://raw.github.com/d3/d3-plugins/master/sankey/sankey.js"></script>
+<script type="text/javascript" src="https://rawgithub.com/d3/d3-plugins/master/sankey/sankey.js"></script>
 <script>
 var units = "Messages";
 
 var margin = {top: 10, right: 10, bottom: 10, left: 10},
     width = 1200 - margin.left - margin.right,
-    height = 800 - margin.top - margin.bottom;
+    height = 100 - margin.top - margin.bottom;
 
 var formatNumber = d3.format(",.0f"),    // zero decimal places
     format = function(d) { return formatNumber(d) + " " + units; },
