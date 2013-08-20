@@ -53,6 +53,30 @@ var path = sankey.link();
 
 graph = JSON.parse('{"nodes":[{"name":"52"},{"name":"4"},{"name":"5"},{"name":"2"},{"name":"3"},{"name":"8"},{"name":"9"},{"name":"6"},{"name":"7"},{"name":"26"},{"name":"17"},{"name":"16"},{"name":"19"},{"name":"18"},{"name":"20"},{"name":"21"},{"name":"22"},{"name":"23"},{"name":"14"},{"name":"24"},{"name":"15"},{"name":"13"},{"name":"11"},{"name":"12"},{"name":"10"},{"name":"1"}],"links":[{"source":9,"value":21,"target":15},{"source":9,"value":19,"target":12},{"source":9,"value":26,"target":14},{"source":9,"value":16,"target":20},{"source":9,"value":18,"target":19},{"source":9,"value":23,"target":11},{"source":9,"value":25,"target":17},{"source":9,"value":26,"target":10},{"source":9,"value":27,"target":16},{"source":9,"value":14,"target":13},{"source":9,"value":14,"target":21},{"source":9,"value":21,"target":18},{"source":0,"value":310,"target":23},{"source":0,"value":282,"target":24},{"source":0,"value":277,"target":22},{"source":0,"value":277,"target":3},{"source":0,"value":282,"target":25},{"source":0,"value":285,"target":1},{"source":0,"value":278,"target":4},{"source":0,"value":269,"target":6},{"source":0,"value":266,"target":7},{"source":0,"value":283,"target":2},{"source":0,"value":253,"target":5},{"source":0,"value":281,"target":8}]}');
 
+/************************** Workaround ***************************
+  The Sankey.js file expects the "source" and "target" values of the links array, to refer to the respective index of the nodes array. We
+  store not indices, but names for the source and target values. The following lines replace these names with their respective index values
+  and overrides the values of the links-array in the graph struct afterwards.
+*/
+
+// convert links map into
+var nameToIndexMap = {};
+var nodes = graph.nodes;
+for (var i=0; i < nodes.length; i++) {
+  nameToIndexMap[nodes[i]["name"]] = i;
+}
+// now, in the links array, replace all names with their respective index value from the nodes array
+var links = graph.links;
+for (var i=0; i < links.length; i++) {
+  sourceId = links[i]["source"];
+  targetId = links[i]["target"];
+  links[i]["source"] = nameToIndexMap[sourceId] // example: the map maps name->1
+  links[i]["target"] = nameToIndexMap[targetId]
+}
+graph.links = links // override original
+/************************** Workaround ****************************/
+
+
   sankey
       .nodes(graph.nodes)
       .links(graph.links)
