@@ -1,4 +1,4 @@
-For the ISWC'13 publication we ran the following evaluation scripts:
+For the SSWS 2013 publication we ran the following evaluation scripts:
 
 eval.opengov2001months.sh
 eval.srBenchQ3charleyDay.sh
